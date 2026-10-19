@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -15,7 +13,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -25,14 +22,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api, ApiError } from "@/lib/api";
+import { useApi } from "@/lib/use-api";
+import { WithPortfolio } from "./with-portfolio";
 import { pct, signedPct } from "@/lib/format";
 import type { PortfolioAnalytics } from "@/server/portfolios";
-
-interface Summary {
-  id: string;
-  name: string;
-}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -46,97 +39,20 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 export function Dashboard() {
-  const [list, setList] = useState<Summary[] | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [result, setResult] = useState<{
-    id: string;
-    data?: PortfolioAnalytics;
-    error?: string;
-  } | null>(null);
-  const [listError, setListError] = useState<string | null>(null);
+  return <WithPortfolio>{(id) => <PortfolioView id={id} />}</WithPortfolio>;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      // The session cookie is set by the layout bootstrap; retry once if this races it.
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const r = await api<{ portfolios: Summary[] }>("/api/portfolios");
-          if (cancelled) return;
-          setList(r.portfolios);
-          setSelected(r.portfolios[0]?.id ?? null);
-          return;
-        } catch (e) {
-          if (attempt === 1 || !(e instanceof ApiError && e.status === 401)) {
-            if (!cancelled) setListError(e instanceof Error ? e.message : "Failed to load");
-            return;
-          }
-          await new Promise((r) => setTimeout(r, 400));
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selected) return;
-    let cancelled = false;
-    api<PortfolioAnalytics>(`/api/portfolios/${selected}/analytics`)
-      .then((data) => !cancelled && setResult({ id: selected, data }))
-      .catch(
-        (e) =>
-          !cancelled &&
-          setResult({ id: selected, error: e instanceof Error ? e.message : "Failed to load" }),
-      );
-    return () => {
-      cancelled = true;
-    };
-  }, [selected]);
-
-  const current = result?.id === selected ? result : null;
-  const data = current?.data ?? null;
-  const error = listError ?? current?.error ?? null;
-
-  if (list && list.length === 0) {
-    return (
-      <div className="space-y-4">
-        <p className="text-muted-foreground">You have no portfolios yet.</p>
-        <Button render={<Link href="/portfolios/new" />}>Create a portfolio</Button>
-      </div>
-    );
-  }
+function PortfolioView({ id }: { id: string }) {
+  const { data, error } = useApi<PortfolioAnalytics>(`/api/portfolios/${id}/analytics`);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        {list && list.length > 1 && (
-          <select
-            aria-label="Portfolio"
-            className="rounded-md border bg-background px-2 py-1 text-sm"
-            value={selected ?? ""}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            {list.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        )}
-        <Button variant="outline" size="sm" render={<Link href="/portfolios/new" />}>
-          New portfolio
-        </Button>
-      </div>
-
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
       {!data && !error && <p className="text-muted-foreground">Loading</p>}
-
       {data && (
         <>
           <p className="text-sm text-muted-foreground">

@@ -1,8 +1,10 @@
+import { ExposureView } from "@/components/portfolio/exposure-view";
+
 export default function Page() {
   return (
-    <section>
+    <section className="space-y-4">
       <h1 className="text-2xl font-semibold">Exposures</h1>
-      <p className="mt-2 text-muted-foreground">The Hidden Exposure Engine arrives in Phase 4.</p>
+      <ExposureView />
     </section>
   );
 }

@@ -186,6 +186,8 @@ Progress (2026-10-19): done and tested - portfolio math (`packages/finance`), pr
 
 ### Phase 4 - Hidden Exposure Engine (2 weeks) [item 4] - the centerpiece
 
+Progress (2026-10-19): done and tested without real data - loadings, factor HHI per ADR 0004, pairwise overlap and shared/offsetting factors (`packages/finance/src/exposure.ts`), exposure service and API, exposures page (empty state until factors are seeded). Remaining: LOW/MEDIUM/HIGH/VERY HIGH bucketing (needs calibration on real exposure data), exposure tree per holding, factor drill-down, calculation-audit panel. Blocked on the taxonomy review (Phase 3).
+
 - Portfolio factor vector: `E_p[f] = sum_i w_i * signed_exposure_i[f]`. Also report gross (abs) exposure and the per-holding contribution breakdown.
 - Bucketing into LOW/MEDIUM/HIGH/VERY HIGH via documented, calibrated thresholds (calibrate on a set of reference portfolios, including an index-like diversified one, so a diversified portfolio does not read VERY HIGH everywhere).
 - Hidden concentration metrics (as decided in Phase 0): HHI over factors, effective number of bets, top-factor share. Compare "sector view" vs "factor view" to show the gap (the product's core claim).
@@ -196,6 +198,8 @@ Progress (2026-10-19): done and tested - portfolio math (`packages/finance`), pr
   Exit: the NVDA/AAPL/MSFT/AMZN/JPM example reproduces the description's table qualitatively (AI, mega-cap tech, Taiwan, rates HIGH+).
 
 ### Phase 5 - Correlation analyzer (1 week) [item 5]
+
+Progress (2026-10-19): done and tested - Pearson matrix, average pairwise, diversification ratio, correlation with portfolio, worst-days stress correlation, rolling correlation, clustered heatmap order, API and Correlation page (6m/1y/3y windows). Remaining: Ledoit-Wolf shrinkage covariance (planned for the Python service), rolling-correlation chart, and the correlation versus exposure-overlap scatter (needs exposure data).
 
 - Return correlation matrix (daily log returns, configurable window 6m/1y/3y, Pearson plus Spearman optional); shrinkage covariance (Ledoit-Wolf) for stability.
 - Rolling correlation, correlation to portfolio, average pairwise correlation, diversification ratio.
