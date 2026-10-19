@@ -27,8 +27,10 @@ export class TiingoProvider implements PriceProvider {
   }
 
   async getDailyBars(ticker: string, from: string, to: string): Promise<DailyBar[]> {
+    // Tiingo writes share classes with a hyphen (BRK-B); our canonical form is BRK.B.
+    const symbol = ticker.replace(".", "-");
     const url =
-      `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(ticker)}/prices` +
+      `https://api.tiingo.com/tiingo/daily/${encodeURIComponent(symbol)}/prices` +
       `?startDate=${from}&endDate=${to}&token=${this.apiKey}`;
     const raw = await fetchJson(url, { ...this.http, provider: this.name });
     const parsed = z.array(rowSchema).safeParse(raw);

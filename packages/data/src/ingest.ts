@@ -1,6 +1,7 @@
 import { and, eq, max } from "drizzle-orm";
+import { asc, sql } from "drizzle-orm";
 import { companies, pricesDaily, type Db } from "@portfolio-lab/db";
-import type { PriceProvider } from "./providers/types";
+import { ProviderError, type PriceProvider } from "./providers/types";
 
 export interface IngestResult {
   ticker: string;
@@ -69,4 +70,63 @@ export async function findPriceGaps(
     if (days > maxGapDays) gaps.push({ after: rows[i - 1]!.d, before: rows[i]!.d, days });
   }
   return gaps;
+}
+
+export interface UpdateSummary {
+  ok: IngestResult[];
+  failed: { ticker: string; error: string }[];
+  stoppedEarly: "rate_limited" | null;
+  remaining: string[];
+}
+
+/**
+ * Updates up to `limit` tickers, stalest first (never-loaded companies before the rest), so a rate-limited
+ * free tier can be worked through over several runs. Stops at the first rate-limit error instead of burning
+ * the remaining quota on guaranteed failures. Other per-ticker failures are recorded and skipped.
+ */
+export async function runUpdate(
+  db: Db,
+  provider: PriceProvider,
+  opts: {
+    backfillFrom: string;
+    to: string;
+    limit?: number;
+    tickers?: readonly string[];
+    delayMs?: number;
+    sleep?: (ms: number) => Promise<void>;
+  },
+): Promise<UpdateSummary> {
+  const {
+    limit = Infinity,
+    delayMs = 0,
+    sleep = (ms) => new Promise<void>((r) => setTimeout(r, ms)),
+  } = opts;
+  const rows = await db
+    .select({ ticker: companies.ticker, latest: max(pricesDaily.date) })
+    .from(companies)
+    .leftJoin(pricesDaily, eq(pricesDaily.companyId, companies.id))
+    .groupBy(companies.ticker)
+    .orderBy(sql`max(${pricesDaily.date}) asc nulls first`, asc(companies.ticker));
+
+  const wanted = opts.tickers ? new Set(opts.tickers) : null;
+  const queue = rows.map((r) => r.ticker).filter((t) => !wanted || wanted.has(t));
+  const batch = queue.slice(0, limit);
+  const summary: UpdateSummary = { ok: [], failed: [], stoppedEarly: null, remaining: [] };
+
+  for (let i = 0; i < batch.length; i++) {
+    const ticker = batch[i]!;
+    try {
+      summary.ok.push(await ingestPrices(db, provider, ticker, opts));
+    } catch (err) {
+      if (err instanceof ProviderError && err.kind === "rate_limited") {
+        summary.stoppedEarly = "rate_limited";
+        summary.remaining = queue.slice(i);
+        return summary;
+      }
+      summary.failed.push({ ticker, error: err instanceof Error ? err.message : String(err) });
+    }
+    if (delayMs > 0 && i < batch.length - 1) await sleep(delayMs);
+  }
+  summary.remaining = queue.slice(batch.length);
+  return summary;
 }

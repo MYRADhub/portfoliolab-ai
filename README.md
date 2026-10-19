@@ -12,6 +12,8 @@ pnpm install
 pnpm db:up          # Postgres on localhost:54330
 pnpm db:migrate
 pnpm db:seed        # development fixtures only
+pnpm data:sp500     # load the committed S&P 500 snapshot (add --refresh to re-fetch)
+pnpm data:ingest --provider fixture   # synthetic prices; use --provider tiingo with a key, --limit N to stage
 pnpm --filter @portfolio-lab/web dev
 ```
 

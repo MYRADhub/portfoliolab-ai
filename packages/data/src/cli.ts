@@ -1,9 +1,9 @@
-// Usage: tsx src/cli.ts --provider fixture|tiingo [--tickers NVDA,AAPL] [--years 5]
+// Usage: tsx src/cli.ts --provider fixture|tiingo [--tickers NVDA,AAPL] [--years 5] [--limit N] [--delay-ms N]
 import { parseArgs } from "node:util";
-import { createDb, companies } from "@portfolio-lab/db";
+import { createDb } from "@portfolio-lab/db";
 import { FixtureProvider } from "./providers/fixture";
 import { TiingoProvider } from "./providers/tiingo";
-import { ingestPrices } from "./ingest";
+import { runUpdate } from "./ingest";
 import type { PriceProvider } from "./providers/types";
 
 const { values } = parseArgs({
@@ -11,6 +11,8 @@ const { values } = parseArgs({
     provider: { type: "string", default: "fixture" },
     tickers: { type: "string" },
     years: { type: "string", default: "5" },
+    limit: { type: "string" },
+    "delay-ms": { type: "string", default: "0" },
   },
 });
 
@@ -29,24 +31,24 @@ if (values.provider === "fixture") {
 }
 
 const { db, close } = createDb(url);
-const tickers = values.tickers
-  ? values.tickers.split(",").map((t) => t.trim().toUpperCase())
-  : (await db.select({ t: companies.ticker }).from(companies)).map((r) => r.t);
 
 const now = new Date();
 const from = new Date(now);
 from.setUTCFullYear(from.getUTCFullYear() - Number(values.years));
-const range = { backfillFrom: from.toISOString().slice(0, 10), to: now.toISOString().slice(0, 10) };
-
-let failures = 0;
-for (const ticker of tickers) {
-  try {
-    const r = await ingestPrices(db, provider, ticker, range);
-    console.log(`${ticker}: inserted ${r.inserted} (${r.from}..${r.to})`);
-  } catch (err) {
-    failures++;
-    console.error(`${ticker}: FAILED ${err instanceof Error ? err.message : err}`);
-  }
-}
+const summary = await runUpdate(db, provider, {
+  backfillFrom: from.toISOString().slice(0, 10),
+  to: now.toISOString().slice(0, 10),
+  limit: values.limit ? Number(values.limit) : undefined,
+  tickers: values.tickers?.split(",").map((t) => t.trim().toUpperCase()),
+  delayMs: Number(values["delay-ms"]),
+});
 await close();
-if (failures) process.exit(1);
+
+for (const r of summary.ok) console.log(`${r.ticker}: inserted ${r.inserted} (${r.from}..${r.to})`);
+for (const f of summary.failed) console.error(`${f.ticker}: FAILED ${f.error}`);
+console.log(
+  `ok ${summary.ok.length}, failed ${summary.failed.length}, remaining ${summary.remaining.length}`,
+);
+if (summary.stoppedEarly)
+  console.error(`stopped early: ${summary.stoppedEarly}; rerun later to continue`);
+if (summary.failed.length || summary.stoppedEarly) process.exit(1);

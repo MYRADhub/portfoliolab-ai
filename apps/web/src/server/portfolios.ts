@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, or, sql } from "drizzle-orm";
 import { companies, holdings, portfolios, pricesDaily, type Db } from "@portfolio-lab/db";
 import {
   annualizedReturn,
@@ -104,16 +104,15 @@ export async function listPortfolios(db: Db, sessionId: string) {
 }
 
 export async function searchCompanies(db: Db, q: string, limit = 10) {
-  const term = q.trim().toUpperCase();
+  const term = q.trim();
   if (!term) return [];
-  const rows = await db
+  const escaped = term.replace(/[\\%_]/g, "\\$&");
+  return db
     .select({ ticker: companies.ticker, name: companies.name, sector: companies.sector })
     .from(companies)
-    .orderBy(asc(companies.ticker));
-  return rows
-    .filter((r) => r.ticker.startsWith(term) || r.name.toUpperCase().includes(term))
-    .sort((a, b) => Number(b.ticker.startsWith(term)) - Number(a.ticker.startsWith(term)))
-    .slice(0, limit);
+    .where(or(ilike(companies.ticker, `${escaped}%`), ilike(companies.name, `%${escaped}%`)))
+    .orderBy(sql`(${companies.ticker} ilike ${`${escaped}%`}) desc`, asc(companies.ticker))
+    .limit(limit);
 }
 
 export interface PortfolioAnalytics {

@@ -161,6 +161,8 @@ Goal: skeleton app with DB, auth-lite, design system.
 
 ### Phase 2 - Market data and portfolio creation (1.5 weeks) [description item 1, 2]
 
+Progress (2026-10-19): done and tested - portfolio math (`packages/finance`), provider interface with retry and fixture provider, Tiingo adapter (mock-tested only), idempotent ingestion with staged `runUpdate` (stalest first, stops on rate limit), S&P 500 constituent load from a dated Wikipedia snapshot (503 tickers), portfolio and company APIs, portfolio form, dashboard. Remaining: verify Tiingo against live data and split handling (NVDA 2024, AAPL 2020), real 5-year backfill (needs API key), scheduled nightly job (needs deploy target), UI visual check. The constituent list is current membership, not point-in-time.
+
 - Provider adapters: `PriceProvider` with rate limiting, retry/backoff, raw-response cache.
 - Universe load (tickers, sector, industry, market cap). Backfill 5 years of adjusted daily prices. Nightly incremental update job; gap detection and alerting.
 - Corporate-action handling: use adjusted close for returns; test around known splits (NVDA 2024, AAPL 2020).

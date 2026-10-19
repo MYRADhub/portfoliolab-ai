@@ -10,6 +10,8 @@ import {
   fetchJson,
   findPriceGaps,
   ingestPrices,
+  runUpdate,
+  type PriceProvider,
 } from "./index";
 
 let ctx: Awaited<ReturnType<typeof createTestDb>>;
@@ -90,6 +92,15 @@ describe("TiingoProvider", () => {
   });
 });
 
+describe("TiingoProvider symbols", () => {
+  it("maps share-class dots to hyphens", async () => {
+    let seen = "";
+    const fetchImpl = (async (u: string) => ((seen = u), resp([]))) as unknown as typeof fetch;
+    await new TiingoProvider("k", { fetchImpl }).getDailyBars("BRK.B", "2024-01-01", "2024-01-02");
+    expect(seen).toContain("/daily/BRK-B/prices");
+  });
+});
+
 describe("FixtureProvider", () => {
   it("is deterministic and independent of the requested start", async () => {
     const p = new FixtureProvider();
@@ -140,5 +151,70 @@ describe("ingestPrices", () => {
     expect(await findPriceGaps(ctx.db, c!.id)).toEqual([
       { after: "2024-01-03", before: "2024-01-20", days: 17 },
     ]);
+  });
+});
+
+describe("runUpdate", () => {
+  const range = { backfillFrom: "2024-05-01", to: "2024-05-31" };
+
+  it("processes stalest tickers first and respects the limit", async () => {
+    const c = await createTestDb();
+    await seedDevCompanies(c.db);
+    const calls: string[] = [];
+    const base = new FixtureProvider();
+    const spy: PriceProvider = {
+      name: "spy",
+      getDailyBars: (t, f, to) => (calls.push(t), base.getDailyBars(t, f, to)),
+    };
+    // MSFT already has data, so every never-loaded ticker goes first.
+    await ingestPrices(c.db, base, "MSFT", { backfillFrom: "2024-04-01", to: "2024-04-30" });
+    const summary = await runUpdate(c.db, spy, { ...range, limit: 3 });
+    expect(calls).toHaveLength(3);
+    expect(calls).not.toContain("MSFT");
+    expect(summary.ok).toHaveLength(3);
+    expect(summary.remaining).toHaveLength(2);
+    await c.teardown();
+  });
+
+  it("stops on rate limiting and reports what is left", async () => {
+    const c = await createTestDb();
+    await seedDevCompanies(c.db);
+    const base = new FixtureProvider();
+    let n = 0;
+    const limited: PriceProvider = {
+      name: "limited",
+      getDailyBars: async (t, f, to) => {
+        if (++n === 3) throw new ProviderError("limited", "429", "rate_limited");
+        return base.getDailyBars(t, f, to);
+      },
+    };
+    const summary = await runUpdate(c.db, limited, range);
+    expect(summary.stoppedEarly).toBe("rate_limited");
+    expect(summary.ok).toHaveLength(2);
+    expect(summary.remaining).toHaveLength(3);
+    await c.teardown();
+  });
+
+  it("records other failures and continues", async () => {
+    const c = await createTestDb();
+    await seedDevCompanies(c.db);
+    const base = new FixtureProvider();
+    const flaky: PriceProvider = {
+      name: "flaky",
+      getDailyBars: async (t, f, to) => {
+        if (t === "AAPL") throw new ProviderError("flaky", "gone", "not_found");
+        return base.getDailyBars(t, f, to);
+      },
+    };
+    const sleeps: number[] = [];
+    const summary = await runUpdate(c.db, flaky, {
+      ...range,
+      delayMs: 10,
+      sleep: async (ms) => void sleeps.push(ms),
+    });
+    expect(summary.failed).toEqual([{ ticker: "AAPL", error: "flaky: gone" }]);
+    expect(summary.ok).toHaveLength(4);
+    expect(sleeps).toHaveLength(4);
+    await c.teardown();
   });
 });

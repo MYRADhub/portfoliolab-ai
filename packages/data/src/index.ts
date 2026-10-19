@@ -3,3 +3,4 @@ export * from "./providers/fixture";
 export * from "./providers/tiingo";
 export * from "./http";
 export * from "./ingest";
+export * from "./sp500";

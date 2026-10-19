@@ -181,5 +181,7 @@ describe("searchCompanies", () => {
     expect(r[0]!.ticker).toBe("AAPL");
     expect((await searchCompanies(ctx.db, "micro"))[0]!.ticker).toBe("MSFT");
     expect(await searchCompanies(ctx.db, "")).toEqual([]);
+    expect(await searchCompanies(ctx.db, "%")).toEqual([]);
+    expect(await searchCompanies(ctx.db, "ms", 1)).toHaveLength(1);
   });
 });
