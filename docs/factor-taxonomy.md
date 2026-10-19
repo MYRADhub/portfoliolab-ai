@@ -78,7 +78,7 @@ Rules for the taxonomy:
 2. Is `ai_adoption` separable from `ai_infrastructure_capex` for our universe? They move together, which makes Stress Lab results look redundant.
 3. Taiwan risk: model as a single factor (as drafted) or split into a probability factor and a supply-effect factor? The first is simpler.
 4. Missing: tariffs and trade policy (probably under `geopolitical_tension`), climate/physical risk, and consumer credit. Add or defer?
-5. 34 factors is above the 15-30 target in the roadmap. Candidates to cut: `labor_costs`, `agri_commodities`, `cybersecurity_threat`, `europe_demand`, `drug_pricing_regulation`.
+5. 31 factors is above the 15-30 target in the roadmap. Candidates to cut: `labor_costs`, `agri_commodities`, `cybersecurity_threat`, `europe_demand`, `drug_pricing_regulation`.
 
 ## Next steps once approved
 

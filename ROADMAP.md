@@ -232,6 +232,8 @@ Layered matcher, cheapest first:
 
 ### Phase 8 - News classification: fundamental / narrative / noise (2 weeks) [item 8]
 
+Progress (2026-10-19): harness built, no live run yet - draft event taxonomy (31 types, `packages/classify/src/events.ts`, pending review), strict structured-output schema with range validation, injection-safe prompt (versioned `cls-v1`), Anthropic classifier (`messages.parse`, handles refusal, truncation, invalid output), DB tables (`news_articles`, `event_types`, `news_classifications`, `llm_runs`), idempotent classify-and-store with run-log cache, and an eval harness (accuracy, per-class F1, confusion, calibration, slices) with a 25-example synthetic dev set. All tested with fake clients. Remaining: human-labeled eval set (300+), a real eval run (needs ANTHROPIC_API_KEY), model and effort choice, triage tier, news ingestion (Phase 6) feeding it.
+
 - Event type taxonomy (about 30-50 types) with definitions and examples; each type has a default class prior.
 - LLM classifier with strict JSON schema: event_type, class, fundamental_importance 0-10, market_relevance 0-10, expected_persistence 0-10, mechanism (one sentence: how it changes revenue/cost/risk or why it does not), confidence. Prompt versioned; temperature 0; model recorded in `llm_runs`.
 - Two-tier cost control: cheap model for relevance triage on all articles; stronger model only for articles above a relevance threshold.
