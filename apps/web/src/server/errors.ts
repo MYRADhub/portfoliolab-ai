@@ -28,15 +28,20 @@ export interface ErrorBody {
   error: { code: ErrorCode; message: string; requestId: string; details?: unknown };
 }
 
-type Handler = (req: Request, requestId: string) => Promise<Response>;
+export type RouteContext<P = Record<string, never>> = { params: Promise<P> };
+
+type Handler<P> = (req: Request, requestId: string, ctx: RouteContext<P>) => Promise<Response>;
 
 /** Wraps a route handler: assigns a request id, logs, and maps errors to a stable JSON shape. */
-export function route(handler: Handler) {
-  return async (req: Request): Promise<Response> => {
+export function route<P = Record<string, never>>(handler: Handler<P>) {
+  return async (
+    req: Request,
+    ctx: RouteContext<P> = { params: Promise.resolve({} as P) },
+  ): Promise<Response> => {
     const requestId = req.headers.get("x-request-id") ?? randomUUID();
     const started = Date.now();
     try {
-      const res = await handler(req, requestId);
+      const res = await handler(req, requestId, ctx);
       res.headers.set("x-request-id", requestId);
       logger.info({
         requestId,

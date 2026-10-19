@@ -15,7 +15,8 @@
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @portfolio-lab/db migrate",
     "db:seed": "pnpm --filter @portfolio-lab/db seed",
-    "db:generate": "pnpm --filter @portfolio-lab/db generate"
+    "db:generate": "pnpm --filter @portfolio-lab/db generate",
+    "data:ingest": "pnpm --filter @portfolio-lab/data ingest"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
