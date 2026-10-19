@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+.env
+.env.local
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+*.log
+scripts/provider-spike/out
+.DS_Store
