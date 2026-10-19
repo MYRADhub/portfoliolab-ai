@@ -1,6 +1,15 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -39,7 +48,7 @@ function Content({ id }: { id: string }) {
   if (!data.available) {
     return (
       <Card>
-        <CardContent className="space-y-2 pt-6">
+        <CardContent className="space-y-2">
           {data.reason === "no_factors" ? (
             <p>Exposure data has not been loaded yet, so there is nothing to analyze.</p>
           ) : (
@@ -56,6 +65,7 @@ function Content({ id }: { id: string }) {
   const c = data.concentration;
   const tickers = [...new Set(data.cells.map((x) => x.ticker))].sort();
   const factorSlugs = data.factors.map((f) => f.slug);
+  const nameOf = (slug: string) => data.factors.find((f) => f.slug === slug)?.name ?? slug;
   const cell = (ticker: string, factor: string) =>
     data.cells.find((x) => x.ticker === ticker && x.factor === factor);
 
@@ -118,7 +128,14 @@ function Content({ id }: { id: string }) {
               <XAxis type="number" fontSize={12} />
               <YAxis type="category" dataKey="name" fontSize={12} width={160} />
               <Tooltip formatter={(v) => Number(v).toFixed(2)} />
-              <Bar dataKey="net" fill="currentColor" />
+              <Bar dataKey="net">
+                {data.factors.map((f) => (
+                  <Cell
+                    key={f.slug}
+                    fill={f.net >= 0 ? "hsl(215 80% 50% / 0.7)" : "hsl(0 80% 50% / 0.7)"}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -196,8 +213,8 @@ function Content({ id }: { id: string }) {
                   <TableCell className="text-right tabular-nums">
                     {p.similarity === null ? "n/a" : p.similarity.toFixed(2)}
                   </TableCell>
-                  <TableCell>{p.shared.join(", ") || "none"}</TableCell>
-                  <TableCell>{p.offsetting.join(", ") || "none"}</TableCell>
+                  <TableCell>{p.shared.map(nameOf).join(", ") || "none"}</TableCell>
+                  <TableCell>{p.offsetting.map(nameOf).join(", ") || "none"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
