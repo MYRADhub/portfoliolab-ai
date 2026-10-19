@@ -6,13 +6,16 @@
     "node": ">=22"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint . && pnpm --filter @portfolio-lab/web lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @portfolio-lab/db migrate",
+    "db:seed": "pnpm --filter @portfolio-lab/db seed",
+    "db:generate": "pnpm --filter @portfolio-lab/db generate"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

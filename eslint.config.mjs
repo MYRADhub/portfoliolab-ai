@@ -9,6 +9,7 @@ export default tseslint.config(
       "**/dist/**",
       "**/.next/**",
       "services/**",
+      "apps/web/**",
       "scripts/**/*.json",
     ],
   },
