@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
 import { buildSystemPrompt, buildUserMessage, PROMPT_VERSION } from "./prompt";
 import {
   outputSchema,
@@ -24,41 +24,47 @@ export interface Classifier {
   classify(article: ArticleInput): Promise<ClassifierResult>;
 }
 
-export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
+/** Same mid-tier model the sibling logistics-ai project uses for structured extraction. */
+export const DEFAULT_MODEL = "gpt-6-sol";
 
-export const DEFAULT_MODEL = "claude-opus-5-5";
-
-export class AnthropicClassifier implements Classifier {
+export class OpenAIClassifier implements Classifier {
   readonly promptVersion = PROMPT_VERSION;
 
   constructor(
-    private readonly client: Anthropic,
+    private readonly client: OpenAI,
     readonly model: string = DEFAULT_MODEL,
-    private readonly effort: Effort = "low",
   ) {}
 
   async classify(article: ArticleInput): Promise<ClassifierResult> {
-    const response = await this.client.messages.parse({
+    const response = await this.client.responses.parse({
       model: this.model,
-      max_tokens: 16000,
-      system: [{ type: "text", text: buildSystemPrompt(), cache_control: { type: "ephemeral" } }],
-      messages: [{ role: "user", content: buildUserMessage(article) }],
-      output_config: { effort: this.effort, format: zodOutputFormat(outputSchema) },
+      instructions: buildSystemPrompt(),
+      input: buildUserMessage(article),
+      text: { format: zodTextFormat(outputSchema, "news_classification") },
     });
 
     const usage: Usage = {
-      tokensIn: response.usage.input_tokens,
-      tokensOut: response.usage.output_tokens,
-      cacheReadTokens: response.usage.cache_read_input_tokens ?? null,
+      tokensIn: response.usage?.input_tokens ?? null,
+      tokensOut: response.usage?.output_tokens ?? null,
+      cacheReadTokens: response.usage?.input_tokens_details?.cached_tokens ?? null,
     };
 
-    if (response.stop_reason === "refusal") {
-      return { status: "refusal", detail: response.stop_details?.category ?? "refused", usage };
+    const refusal = response.output
+      .filter((item) => item.type === "message")
+      .flatMap((item) => item.content)
+      .find((part) => part.type === "refusal");
+    if (refusal) return { status: "refusal", detail: refusal.refusal, usage };
+
+    if (response.status === "incomplete") {
+      const reason = response.incomplete_details?.reason ?? "unknown";
+      return {
+        status: reason === "content_filter" ? "refusal" : "truncated",
+        detail: reason,
+        usage,
+      };
     }
-    if (response.stop_reason === "max_tokens") {
-      return { status: "truncated", detail: "response hit max_tokens", usage };
-    }
-    const checked = validatedOutputSchema.safeParse(response.parsed_output);
+
+    const checked = validatedOutputSchema.safeParse(response.output_parsed);
     if (!checked.success) {
       return {
         status: "invalid",

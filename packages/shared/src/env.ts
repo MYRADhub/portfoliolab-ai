@@ -5,7 +5,7 @@ const optionalKey = z.string().min(1).optional();
 export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   ANALYTICS_URL: z.string().url(),
-  ANTHROPIC_API_KEY: optionalKey,
+  OPENAI_API_KEY: optionalKey,
   TIINGO_API_KEY: optionalKey,
   FINNHUB_API_KEY: optionalKey,
   MARKETAUX_API_KEY: optionalKey,

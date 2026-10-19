@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import type Anthropic from "@anthropic-ai/sdk";
+import type OpenAI from "openai";
 import { llmRuns, newsArticles, newsClassifications } from "@portfolio-lab/db";
 import { createTestDb } from "@portfolio-lab/db/testing";
 import {
-  AnthropicClassifier,
+  OpenAIClassifier,
   ArticleTooLongError,
   EVENT_SLUGS,
   EVENT_TYPES,
@@ -107,23 +107,21 @@ describe("validatedOutputSchema", () => {
   });
 });
 
-describe("AnthropicClassifier", () => {
+describe("OpenAIClassifier", () => {
   const withResponse = (r: object) =>
-    new AnthropicClassifier(
-      { messages: { parse: async () => r } } as unknown as Anthropic,
+    new OpenAIClassifier(
+      { responses: { parse: async () => r } } as unknown as OpenAI,
       "test-model",
     );
   const base = {
-    usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 3 },
-    stop_details: null,
+    status: "completed",
+    incomplete_details: null,
+    output: [{ type: "message", content: [{ type: "output_text", text: "{}" }] }],
+    usage: { input_tokens: 10, output_tokens: 5, input_tokens_details: { cached_tokens: 3 } },
   };
 
   it("returns the parsed output and usage", async () => {
-    const r = await withResponse({
-      ...base,
-      stop_reason: "end_turn",
-      parsed_output: okOutput,
-    }).classify(article);
+    const r = await withResponse({ ...base, output_parsed: okOutput }).classify(article);
     expect(r).toEqual({
       status: "ok",
       output: okOutput,
@@ -131,55 +129,74 @@ describe("AnthropicClassifier", () => {
     });
   });
 
-  it("maps refusal, truncation, and invalid output", async () => {
+  it("maps refusal, truncation, content filtering, and invalid output", async () => {
+    const refused = {
+      ...base,
+      output: [{ type: "message", content: [{ type: "refusal", refusal: "cannot help" }] }],
+      output_parsed: null,
+    };
+    expect(await withResponse(refused).classify(article)).toMatchObject({
+      status: "refusal",
+      detail: "cannot help",
+    });
+    const truncated = {
+      ...base,
+      status: "incomplete",
+      incomplete_details: { reason: "max_output_tokens" },
+      output_parsed: null,
+    };
+    expect(await withResponse(truncated).classify(article)).toMatchObject({ status: "truncated" });
+    const filtered = {
+      ...base,
+      status: "incomplete",
+      incomplete_details: { reason: "content_filter" },
+      output_parsed: null,
+    };
+    expect(await withResponse(filtered).classify(article)).toMatchObject({
+      status: "refusal",
+      detail: "content_filter",
+    });
+    expect(await withResponse({ ...base, output_parsed: null }).classify(article)).toMatchObject({
+      status: "invalid",
+    });
     expect(
-      await withResponse({
-        ...base,
-        stop_reason: "refusal",
-        stop_details: { category: "cyber" },
-        parsed_output: null,
-      }).classify(article),
-    ).toMatchObject({ status: "refusal", detail: "cyber" });
-    expect(
-      await withResponse({ ...base, stop_reason: "max_tokens", parsed_output: null }).classify(
+      await withResponse({ ...base, output_parsed: { ...okOutput, confidence: 3 } }).classify(
         article,
       ),
-    ).toMatchObject({ status: "truncated" });
-    expect(
-      await withResponse({ ...base, stop_reason: "end_turn", parsed_output: null }).classify(
-        article,
-      ),
-    ).toMatchObject({ status: "invalid" });
-    expect(
-      await withResponse({
-        ...base,
-        stop_reason: "end_turn",
-        parsed_output: { ...okOutput, confidence: 3 },
-      }).classify(article),
     ).toMatchObject({ status: "invalid" });
   });
 
-  it("sends structured output config, the stable system prompt and the delimited article", async () => {
+  it("tolerates missing usage details", async () => {
+    const r = await withResponse({ ...base, usage: undefined, output_parsed: okOutput }).classify(
+      article,
+    );
+    expect(r).toMatchObject({
+      status: "ok",
+      usage: { tokensIn: null, tokensOut: null, cacheReadTokens: null },
+    });
+  });
+
+  it("sends the stable instructions, structured format and the delimited article", async () => {
     let captured: Record<string, unknown> = {};
-    const c = new AnthropicClassifier(
+    const c = new OpenAIClassifier(
       {
-        messages: {
+        responses: {
           parse: async (p: Record<string, unknown>) => (
             (captured = p),
-            { ...base, stop_reason: "end_turn", parsed_output: okOutput }
+            { ...base, output_parsed: okOutput }
           ),
         },
-      } as unknown as Anthropic,
+      } as unknown as OpenAI,
       "test-model",
-      "low",
     );
     await c.classify(article);
     expect(captured.model).toBe("test-model");
-    expect((captured.output_config as { effort: string }).effort).toBe("low");
-    expect((captured.output_config as { format: unknown }).format).toBeDefined();
-    expect(JSON.stringify(captured.messages)).toContain("<article>");
-    expect(captured).not.toHaveProperty("temperature");
-    expect(captured).not.toHaveProperty("thinking");
+    expect(captured.instructions).toBe(buildSystemPrompt());
+    expect(String(captured.input)).toContain("<article>");
+    expect((captured.text as { format: { type: string; name: string } }).format).toMatchObject({
+      type: "json_schema",
+      name: "news_classification",
+    });
   });
 });
 

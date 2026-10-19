@@ -10,3 +10,4 @@ __pycache__
 *.log
 scripts/provider-spike/out
 .DS_Store
+packages/classify/evals/out

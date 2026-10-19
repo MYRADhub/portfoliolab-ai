@@ -8,7 +8,7 @@ Status: accepted (2026-10-18)
 - Analytics: Python FastAPI service (pandas, numpy, statsmodels) under `services/analytics`.
 - DB: PostgreSQL 16, Drizzle for migrations/queries from TypeScript.
 - Monorepo: pnpm workspaces for TypeScript, uv for Python.
-- LLM: Anthropic API, structured outputs, every call logged to `llm_runs`.
+- LLM: OpenAI API (decided 2026-10-19; default model `gpt-6-sol`, same as the sibling logistics-ai project), structured outputs through the Responses API, every call logged to `llm_runs`. The classifier sits behind a `Classifier` interface, so the provider is swappable.
 
 ## Context
 

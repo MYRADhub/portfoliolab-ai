@@ -10,10 +10,10 @@
     "eval": "tsx src/eval-cli.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
     "@portfolio-lab/db": "workspace:*",
     "drizzle-orm": "^0.36.0",
-    "zod": "^3.23.0"
+    "zod": "^4.0.0",
+    "openai": "^7.23.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
