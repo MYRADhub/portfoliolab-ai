@@ -248,6 +248,8 @@ Progress (2026-10-19): harness built, first live run done (25 synthetic examples
 
 ### Phase 9 - AI explanation layer (1.5 weeks) [item 9]
 
+Progress (2026-10-19): V1 flow complete end to end. `packages/explain`: numbered facts, grounding validator (every digit in the output must appear in a fact label or text; citations must exist; no buy/sell/hold directives), one retry with the problems listed, deterministic fallback that is never cached, OpenAI generator (`gpt-6-sol`, Responses API with a Zod schema). Web: facts built from analytics, correlation and exposures, cached in `llm_runs` by facts, model and prompt version, in-memory per-session rate limit (10 per hour, uncached requests only), `POST /api/portfolios/[id]/explain`, dashboard panel with citations and the disclaimer. Live check against OpenAI produced a fully grounded explanation and a cache hit. Not built: streaming responses, explanations for exposures and single articles, graceful degradation of other panels when the LLM is down (the fallback covers this panel), shared rate limiting across instances, cost and token reporting.
+
 - Context builder: assembles a typed, size-bounded JSON of portfolio, exposures, relevant events and their classification, computed metrics. This is the only thing the LLM sees.
 - Explanation prompts per surface: portfolio summary, exposure explanation ("why am I vulnerable to rates"), single-article impact.
 - Grounding rules: every numeric claim must come from the context; post-validate (regex/parse numbers in output and verify each exists in context; if not, regenerate or strip). Citations to the underlying record IDs rendered as links.

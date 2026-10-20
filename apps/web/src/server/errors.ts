@@ -2,13 +2,22 @@ import { randomUUID } from "node:crypto";
 import { ZodError } from "zod";
 import { logger } from "./logger";
 
-export type ErrorCode = "bad_request" | "unauthorized" | "not_found" | "conflict" | "internal";
+export type ErrorCode =
+  | "bad_request"
+  | "unauthorized"
+  | "not_found"
+  | "conflict"
+  | "rate_limited"
+  | "unavailable"
+  | "internal";
 
 const statusByCode: Record<ErrorCode, number> = {
   bad_request: 400,
   unauthorized: 401,
   not_found: 404,
   conflict: 409,
+  rate_limited: 429,
+  unavailable: 503,
   internal: 500,
 };
 

@@ -15,6 +15,7 @@
     "@next/env": "^16.4.2",
     "@portfolio-lab/data": "workspace:*",
     "@portfolio-lab/db": "workspace:*",
+    "@portfolio-lab/explain": "workspace:*",
     "@portfolio-lab/finance": "workspace:*",
     "@portfolio-lab/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",

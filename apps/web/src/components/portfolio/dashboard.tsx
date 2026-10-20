@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useApi } from "@/lib/use-api";
+import { ExplainPanel } from "./explain-panel";
 import { WithPortfolio } from "./with-portfolio";
 import { pct, signedPct } from "@/lib/format";
 import type { PortfolioAnalytics } from "@/server/portfolios";
@@ -69,6 +70,8 @@ function PortfolioView({ id }: { id: string }) {
             <Stat label="Max drawdown" value={pct(data.stats.maxDrawdown)} />
             <Stat label="Sharpe" value={data.stats.sharpe.toFixed(2)} />
           </div>
+
+          <ExplainPanel portfolioId={id} />
 
           <Card>
             <CardHeader>
