@@ -22,6 +22,7 @@ import {
   loadConstituents,
   type Constituent,
 } from "@portfolio-lab/data";
+import { seedDemoPrices } from "@portfolio-lab/demo";
 import { adminDatabaseUrl, E2E_DB_NAME, e2eDatabaseUrl, REPO_ROOT } from "./env";
 
 /** The weekday `n` weekdays before today (UTC). */
@@ -60,6 +61,8 @@ async function main() {
   for (const t of ["NVDA", "AAPL", "MSFT", "AMZN", "JPM", "XOM"]) {
     await ingestPrices(db, provider, t, { backfillFrom: threeYearsAgo, to: today });
   }
+  // Prices for the 24 companies used by the sample portfolios (no demo news or exposures: tests assert on their own fixtures).
+  await seedDemoPrices(db);
   // TGT has only about ten days of history; GOOGL has none. Both exist to exercise the error paths.
   await ingestPrices(db, provider, "TGT", { backfillFrom: twoWeeksAgo, to: today });
 

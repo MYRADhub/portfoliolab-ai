@@ -19,7 +19,9 @@
     "data:ingest": "pnpm --filter @portfolio-lab/data ingest",
     "data:sp500": "pnpm --filter @portfolio-lab/data sp500",
     "data:news": "pnpm --filter @portfolio-lab/data news",
-    "data:aliases": "pnpm --filter @portfolio-lab/data aliases"
+    "data:aliases": "pnpm --filter @portfolio-lab/data aliases",
+    "demo:seed": "pnpm --filter @portfolio-lab/demo seed",
+    "demo": "node scripts/run-demo.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

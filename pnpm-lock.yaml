@@ -99,6 +99,9 @@ importers:
       '@playwright/test':
         specifier: ^1.64.1
         version: 1.64.1
+      '@portfolio-lab/demo':
+        specifier: workspace:*
+        version: link:../../packages/demo
       '@tailwindcss/turbopack':
         specifier: ^4
         version: 4.3.3
@@ -192,6 +195,31 @@ importers:
       drizzle-kit:
         specifier: ^0.28.0
         version: 0.28.1
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.15
+
+  packages/demo:
+    dependencies:
+      '@portfolio-lab/classify':
+        specifier: workspace:*
+        version: link:../classify
+      '@portfolio-lab/data':
+        specifier: workspace:*
+        version: link:../data
+      '@portfolio-lab/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.36.0
+        version: 0.36.4(@opentelemetry/api@1.9.1)(@types/react@19.3.0)(postgres@3.4.9)(react@19.3.0)
+      postgres:
+        specifier: ^3.4.0
+        version: 3.4.9
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
       tsx:
         specifier: ^4.19.0
         version: 4.23.15

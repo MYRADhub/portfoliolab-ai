@@ -348,11 +348,11 @@ test.describe("analytics", () => {
     );
     const none = await createPortfolio(ctx, "None", [
       { ticker: "NVDA", weightPct: 50 },
-      { ticker: "GOOGL", weightPct: 50 },
+      { ticker: "ZTS", weightPct: 50 },
     ]);
     const r2 = await ctx.get(`/api/portfolios/${none}/analytics`);
     expect(r2.status()).toBe(409);
-    expect(((await r2.json()) as Json).error.message).toBe("No price history yet for: GOOGL");
+    expect(((await r2.json()) as Json).error.message).toBe("No price history yet for: ZTS");
   });
 });
 

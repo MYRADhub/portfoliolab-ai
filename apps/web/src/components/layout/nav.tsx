@@ -6,10 +6,12 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/terminal", label: "Terminal" },
   { href: "/exposures", label: "Exposures" },
   { href: "/correlation", label: "Correlation" },
-  { href: "/research", label: "Research" },
   { href: "/news", label: "News" },
+  { href: "/research", label: "Research" },
+  { href: "/guide", label: "Guide" },
 ];
 
 export function Nav() {

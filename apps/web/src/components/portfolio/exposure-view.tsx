@@ -145,7 +145,12 @@ function Content({ id }: { id: string }) {
         <CardHeader>
           <CardTitle>Holdings by factor (signed exposure, -3 to +3)</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent
+          className="overflow-x-auto"
+          role="region"
+          aria-label="Holdings by factor, scrollable"
+          tabIndex={0}
+        >
           <table
             className="border-separate border-spacing-1 text-sm"
             aria-label="Holdings by factor"

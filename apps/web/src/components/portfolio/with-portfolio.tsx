@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { api, ensureSession } from "@/lib/api";
+import { loadSamplePortfolios } from "./sample-picker";
 
 interface Summary {
   id: string;
@@ -29,7 +30,8 @@ export function WithPortfolio({
 
   useEffect(() => {
     let cancelled = false;
-    api<{ portfolios: Summary[] }>("/api/portfolios")
+    ensureSession()
+      .then(() => api<{ portfolios: Summary[] }>("/api/portfolios"))
       .then((r) => {
         if (cancelled) return;
         setList(r.portfolios);
@@ -52,12 +54,7 @@ export function WithPortfolio({
   }
   if (!list) return <p className="text-muted-foreground">Loading</p>;
   if (list.length === 0) {
-    return (
-      <div className="space-y-4">
-        <p className="text-muted-foreground">You have no portfolios yet.</p>
-        <Button render={<Link href="/portfolios/new" />}>Create a portfolio</Button>
-      </div>
-    );
+    return <EmptyState onLoaded={() => setVersion((v) => v + 1)} />;
   }
 
   return (
@@ -77,9 +74,9 @@ export function WithPortfolio({
             ))}
           </select>
         )}
-        <Button variant="outline" size="sm" render={<Link href="/portfolios/new" />}>
+        <Link href="/portfolios/new" className={buttonVariants({ variant: "outline", size: "sm" })}>
           New portfolio
-        </Button>
+        </Link>
         {selected && (
           <DeleteButton key={selected} id={selected} onDeleted={() => void reload(selected)} />
         )}
@@ -129,5 +126,51 @@ function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) 
         Cancel
       </Button>
     </span>
+  );
+}
+
+function EmptyState({ onLoaded }: { onLoaded: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await loadSamplePortfolios();
+      if (r.created.length === 0 && r.skipped.length > 0)
+        setError(r.skipped.map((s) => s.reason).join("; "));
+      else onLoaded();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="max-w-xl space-y-4">
+      <p>You have no portfolios yet.</p>
+      <p className="text-muted-foreground">
+        Build your own, or load five sample portfolios to explore the app straight away. New here?
+        The guide explains everything in plain language.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Link href="/portfolios/new" className={buttonVariants()}>
+          Create a portfolio
+        </Link>
+        <Button variant="outline" onClick={() => void load()} disabled={busy}>
+          {busy ? "Loading" : "Load sample portfolios"}
+        </Button>
+        <Link href="/guide" className={buttonVariants({ variant: "ghost" })}>
+          Read the guide
+        </Link>
+      </div>
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

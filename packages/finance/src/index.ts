@@ -5,3 +5,4 @@ export * from "./exposure";
 export * from "./correlation";
 export * from "./attribution";
 export * from "./relevance";
+export * from "./terminal";

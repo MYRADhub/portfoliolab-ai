@@ -117,7 +117,12 @@ function Content({ id }: { id: string }) {
             <CardHeader>
               <CardTitle>Correlation matrix</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent
+              className="overflow-x-auto"
+              role="region"
+              aria-label="Correlation matrix, scrollable"
+              tabIndex={0}
+            >
               <table
                 className="border-separate border-spacing-1 text-sm"
                 aria-label="Correlation matrix"

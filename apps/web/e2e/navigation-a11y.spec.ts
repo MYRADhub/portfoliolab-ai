@@ -4,10 +4,12 @@ import { COVERED, EXAMPLE, mock, startUiSession, waitForDashboard } from "./help
 
 const pages = [
   { path: "/dashboard", heading: "Dashboard", nav: "Dashboard" },
+  { path: "/terminal", heading: "Terminal", nav: "Terminal" },
   { path: "/exposures", heading: "Exposures", nav: "Exposures" },
   { path: "/correlation", heading: "Correlation", nav: "Correlation" },
-  { path: "/research", heading: "Research", nav: "Research" },
   { path: "/news", heading: "News", nav: "News" },
+  { path: "/research", heading: "Research", nav: "Research" },
+  { path: "/guide", heading: "Guide", nav: "Guide" },
 ];
 
 function trackErrors(page: Page) {

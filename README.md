@@ -23,6 +23,13 @@ The analytics service: `cd services/analytics && uv sync && uv run uvicorn analy
 
 `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` (DB tests need `DATABASE_URL` pointing at a running Postgres; they create and drop their own databases).
 
+## Try the app with demo data
+
+`pnpm demo` builds a separate `pl_demo` database (the S&P 500 list, prices for 24 companies, 12 economic factors with
+exposures, and 30 labelled news items) and starts the app on http://localhost:3000 with a "demo mode" banner. Then
+open **Guide** for a five-minute tour, or go to **New portfolio** and press **Load all samples**. Everything in the demo
+is made up and clearly marked; it never touches your real dev database.
+
 ## End-to-end tests
 
 `pnpm --filter @portfolio-lab/web e2e` rebuilds the app, creates a fresh `pl_e2e` database (migrations, the S&P 500

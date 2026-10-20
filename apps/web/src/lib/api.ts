@@ -8,6 +8,21 @@ export class ApiError extends Error {
   }
 }
 
+let sessionReady: Promise<void> | null = null;
+
+/**
+ * Makes sure the anonymous session cookie exists before the first data request, so a first visit does not begin
+ * with a 401. Shared across callers so it runs once per page load.
+ */
+export function ensureSession(): Promise<void> {
+  sessionReady ??= fetch("/api/session", { method: "POST" })
+    .then(() => undefined)
+    .catch(() => {
+      sessionReady = null;
+    });
+  return sessionReady;
+}
+
 /**
  * Fetches JSON. A 401 usually means the anonymous session cookie has not been issued yet (first visit) or has
  * expired, so create a session and retry once before giving up.

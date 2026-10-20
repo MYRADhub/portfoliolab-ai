@@ -322,6 +322,58 @@ Unlike the dashboard, it only needs your holdings and weights, so a brand-new st
 
 ---
 
+## 16. Samples, the Terminal, the Guide and the demo database (added 2026-10-20)
+
+You asked for mock portfolios to review, a more powerful dashboard in the style of a Bloomberg terminal, and a tutorial. This is how I read that and what I chose.
+
+**16.1 Five sample portfolios, loaded with one click into your own session.** Final. Who: Me.
+Each teaches one idea: Mega-cap tech (looks diversified, is not), Balanced across sectors, AI boom bet (one force drives everything), Defensive staples (calmer ride), Energy and banks (different forces). Loading never creates duplicates (matched by name), and one visitor's samples are never visible to another. Why a button and not pre-created data: portfolios belong to a browser cookie, so I cannot create them "for you" ahead of time.
+
+**16.2 The demo runs on its own database, `pl_demo`.** Final. Who: Me.
+Why: your dev database stays clean, and demo data can never be mistaken for real data. `pnpm demo` rebuilds it and starts the app. The app shows a banner saying everything is made up whenever demo mode is on.
+
+**16.3 The demo exposures are my own illustrative guesses.** Revisit. Who: Me.
+I wrote 79 exposure scores for 24 companies (for example "NVIDIA depends strongly on AI spending and on Taiwan chip production") so the Exposures pages have something to show. They are labelled "Demo data: illustrative only, not reviewed", they use 12 factors taken from the draft list, and they live only in the demo database. They are not a substitute for the reviewed taxonomy, which is still waiting on you.
+
+**16.4 Demo news is invented and every title starts with "[DEMO]".** Final. Who: Me.
+Thirty items with plausible types and importance scores, two with syndicated copies. They are about real tickers, so the prefix and the banner are there to prevent any confusion.
+
+**16.5 The Terminal is a separate dark, dense page.** Final. Who: Me.
+Why a new page instead of crowding the dashboard: the dashboard stays readable for a beginner, and the Terminal is for someone who wants everything at once. It turns the app's dark theme on only while it is open. It has twelve panels: portfolio index, performance by period, holdings monitor (with 60-day mini charts), risk, risk versus weight, return distribution, rolling volatility, monthly returns, worst drawdowns, correlation, hidden exposure and relevant news.
+
+**16.6 Risk measures are computed from history, not from a formula.** Final. Who: Me.
+Value at risk (95% and 99%) is the actual 5th or 1st worst daily return in the window, and expected shortfall is the average of the days at or beyond it. Why: it needs no assumption that returns look like a bell curve, which they do not. Limits: with about two years of data, the 99% figure rests on only a handful of days, and the past is not a promise.
+
+**16.7 "Share of risk" is each holding's share of the portfolio's variance.** Final. Who: Me.
+It accounts for how holdings move together, not just their own size. The shares add up to 100% and can be negative for a hedge. A holding turns amber when its share of risk is more than 25% above its weight (the 25% is my choice).
+
+**16.8 The Terminal uses two years of history and has no benchmark.** Open. Who: Together.
+I did not add "versus the market" figures (beta, alpha, tracking error) because the app has no market index data yet. Adding it needs an index price series, which needs a data provider key.
+
+**16.9 Every number in the Terminal comes from the same tested functions as the other pages.** Final. Who: Me.
+The browser tests check that the Terminal's volatility, drawdown, Sharpe and total return equal the Dashboard's, that risk shares add to 100%, that monthly returns compound back to the total, and that the histogram counts every day.
+
+**16.10 The Guide is a plain page, not an interactive tour.** Final. Who: Me.
+It has a five-minute tour with links, six key ideas with analogies, a section for each Terminal panel, a glossary of twelve terms, and an honest section on data limits. Every "?" on a Terminal panel links to its explanation, and a test checks every one of those links lands on a real section. Why not a pop-up tour: it would add fragile moving parts, and a page you can read at your own pace and link to is easier to keep correct.
+
+**16.11 Links that look like buttons are real links.** Final. Who: Me.
+A library component was turning "Create a portfolio" into something screen readers announced as a button. They are now ordinary links with button styling, which also removed a warning in the browser console.
+
+**16.12 The app creates your session before its first data request.** Final. Who: Me.
+Before this, a brand-new visitor's first request failed with a 401 (hidden by an automatic retry but visible in the console).
+
+**16.13 Accessibility problems the automatic scanner found, now fixed.** Final. Who: Me.
+Sample buttons had a spoken name that did not contain their visible words, and two wide tables could not be scrolled with the keyboard. Both fixed, and the scanner now checks the Terminal in its dark theme as well.
+
+### Mistakes in this slice
+
+- The guide page file was not created the first time because I forgot to create its folder; I noticed from the error and wrote it again.
+- Several string replacements silently failed because the code formatter had reflowed the lines. I now check that a replacement actually applied.
+- I assumed the sample "no price history" test ticker would stay unpriced; adding demo prices made it priced, and the test caught it.
+- The first browser run of the empty dashboard showed a console warning that my earlier tests never saw, because they only visited pages with data.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.
