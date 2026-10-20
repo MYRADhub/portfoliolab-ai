@@ -10,3 +10,6 @@ export * from "./news/session";
 export * from "./news/finnhub";
 export * from "./news/marketaux";
 export * from "./news/ingest";
+export * from "./matching/alias";
+export * from "./matching/matcher";
+export * from "./matching/store";

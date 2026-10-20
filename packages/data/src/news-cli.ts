@@ -6,6 +6,7 @@ import { companies, createDb, holdings } from "@portfolio-lab/db";
 import { FinnhubNewsProvider } from "./news/finnhub";
 import { MarketauxNewsProvider } from "./news/marketaux";
 import { ingestNews } from "./news/ingest";
+import { loadAliasIndex, matchArticles, syncAliases } from "./matching/store";
 import type { NewsProvider } from "./news/types";
 
 const { values } = parseArgs({
@@ -56,9 +57,12 @@ const summary = await ingestNews(
   { from: from.toISOString().slice(0, 10), to: now.toISOString().slice(0, 10) },
   { delayMs: Number(values["delay-ms"]) },
 );
+// Link company mentions in newly stored articles by name and ticker form.
+await syncAliases(db);
+const aliasLinks = await matchArticles(db, await loadAliasIndex(db));
 await close();
 
-console.log(JSON.stringify({ ...summary, tickers: tickers.length }, null, 2));
+console.log(JSON.stringify({ ...summary, aliasLinks, tickers: tickers.length }, null, 2));
 if (summary.stoppedEarly)
   console.error(`stopped early: ${summary.stoppedEarly}; rerun later to continue`);
 if (summary.failures.length || summary.stoppedEarly) process.exit(1);

@@ -22,6 +22,13 @@
       "when": 1792450134416,
       "tag": "0002_quick_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792459295510,
+      "tag": "0003_far_mongu",
+      "breakpoints": true
     }
   ]
 }

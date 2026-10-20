@@ -1,4 +1,5 @@
 import {
+  boolean,
   check,
   doublePrecision,
   index,
@@ -142,3 +143,23 @@ export const ingestFailures = pgTable("ingest_failures", {
   payload: jsonb("payload"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Names a company is known by in text. Matching is case-aware; ambiguous aliases score low on their own. */
+export const companyAliases = pgTable(
+  "company_aliases",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    alias: text("alias").notNull(),
+    /** name, product, executive */
+    kind: text("kind").notNull().default("name"),
+    /** True when the alias is also an everyday word or another entity (Target, Fox, Dow). */
+    ambiguous: boolean("ambiguous").notNull().default(false),
+  },
+  (t) => [
+    uniqueIndex("company_alias_idx").on(t.companyId, t.alias),
+    index("company_alias_text_idx").on(t.alias),
+  ],
+);

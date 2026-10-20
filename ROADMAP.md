@@ -221,6 +221,8 @@ Progress (2026-10-19): built and tested with mocked responses, not yet run again
 
 ### Phase 7 - News to company matching (1.5 weeks) [item 7]
 
+Progress (2026-10-19): layers 1 and 2 built and tested. Provider tags are linked at ingest. Alias matching (`packages/data/src/matching`) uses generated short names for all 503 companies, case-aware matching, longest-match-wins, cashtag and exchange-qualified tickers, and a curated ambiguous-name list (Target, Fox, Visa and similar) that scores 0.3 alone versus 0.8 for a clear name and 0.95 for a ticker form; evidence combines as a noisy-or with title, summary and body weights, and `MIN_LINK_SCORE` is 0.5. A 19-headline labeled check against the real S&P names passes, and one known false positive (geographic "Amazon") is documented in a test. Not built: layer 3 (event to factor to company, needs the factor taxonomy and exposures), layer 4 (portfolio relevance score; the formula is a design decision to agree on), the roadmap's 200-article hand-labeled set, executive and product aliases.
+
 Layered matcher, cheapest first:
 
 1. Provider ticker tags.
