@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   serial,
   smallint,
   text,
@@ -13,6 +14,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { companies } from "./market";
 
 export const newsClass = pgEnum("news_class", ["fundamental", "narrative", "noise", "unclear"]);
 
@@ -31,9 +33,16 @@ export const newsArticles = pgTable(
     ingestedAt: timestamp("ingested_at", { withTimezone: true }).notNull().defaultNow(),
     /** Hash of the normalized title, for near-duplicate collapsing. */
     dedupeHash: text("dedupe_hash").notNull(),
+    /** Id of the earliest article in this article's near-duplicate group (itself if unique). */
     clusterId: integer("cluster_id"),
+    /** US equity session at publish time: pre, regular, after, closed. Determines the event day. */
+    marketSession: text("market_session"),
   },
   (t) => [
+    check(
+      "news_session_chk",
+      sql`${t.marketSession} is null or ${t.marketSession} in ('pre', 'regular', 'after', 'closed')`,
+    ),
     uniqueIndex("news_provider_id_idx").on(t.provider, t.providerId),
     index("news_dedupe_idx").on(t.dedupeHash),
     index("news_published_idx").on(t.publishedAt),
@@ -103,3 +112,33 @@ export const newsClassifications = pgTable(
     check("news_class_conf_chk", sql`${t.confidence} between 0 and 1`),
   ],
 );
+
+export const newsCompanyLinks = pgTable(
+  "news_company_links",
+  {
+    articleId: integer("article_id")
+      .notNull()
+      .references(() => newsArticles.id, { onDelete: "cascade" }),
+    companyId: integer("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    /** provider_tag, alias, llm, exposure */
+    method: text("method").notNull(),
+    score: doublePrecision("score").notNull().default(1),
+  },
+  (t) => [
+    primaryKey({ columns: [t.articleId, t.companyId, t.method] }),
+    index("news_links_company_idx").on(t.companyId),
+    check("news_links_score_chk", sql`${t.score} between 0 and 1`),
+  ],
+);
+
+/** Dead-letter record for items that could not be ingested, kept for inspection and replay. */
+export const ingestFailures = pgTable("ingest_failures", {
+  id: serial("id").primaryKey(),
+  provider: text("provider").notNull(),
+  subject: text("subject").notNull(),
+  error: text("error").notNull(),
+  payload: jsonb("payload"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ingest": "tsx src/cli.ts",
-    "sp500": "tsx src/sp500-cli.ts"
+    "sp500": "tsx src/sp500-cli.ts",
+    "news": "tsx src/news-cli.ts"
   },
   "dependencies": {
     "@portfolio-lab/db": "workspace:*",

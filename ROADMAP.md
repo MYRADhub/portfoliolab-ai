@@ -210,6 +210,8 @@ Progress (2026-10-19): done and tested - Pearson matrix, average pairwise, diver
 
 ### Phase 6 - News ingestion (1.5 weeks) [item 6]
 
+Progress (2026-10-19): built and tested with mocked responses, not yet run against live providers - `NewsProvider` interface, Finnhub and Marketaux adapters, canonical URLs, title-hash dedup plus bigram-Jaccard near-duplicate clustering (48h window), US market session and event trading date with DST handling (`packages/data/src/news`), idempotent ingest with provider-tag company links, dead-letter table, rate-limit stop, CLI `pnpm data:news`. Remaining: live verification (needs a Finnhub or Marketaux key), scheduled pulls, historical backfill limits, ingestion dashboard, NYSE holiday calendar for `eventTradingDate` (currently weekday-only unless a predicate is passed). Clustering compares against all articles in the window, which is fine for V1 volume but needs an index or MinHash at scale.
+
 - `NewsProvider` adapter; scheduled pulls (every 5-15 min for portfolio tickers, hourly for the universe); backfill 1-2 years for event-study work (check provider limits).
 - Normalization: UTC timestamps, source, canonical URL.
 - Dedup: URL + normalized-title hash, then near-duplicate clustering (MinHash/SimHash or embedding similarity) into `cluster_id`; syndicated copies must collapse to one event.

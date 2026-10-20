@@ -15,6 +15,13 @@
       "when": 1792446297287,
       "tag": "0001_steady_demogoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792450134416,
+      "tag": "0002_quick_vulcan",
+      "breakpoints": true
     }
   ]
 }
