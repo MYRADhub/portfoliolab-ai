@@ -21,7 +21,7 @@ export const DISCLAIMER =
 
 const PURPOSE = "portfolio_explanation";
 
-export const explainLimiter = new RateLimiter(10, 60 * 60 * 1000);
+export const EXPLAIN_LIMIT = { max: 10, windowMs: 60 * 60 * 1000 };
 
 /** Every number the explanation may use, computed deterministically from the portfolio. */
 export async function buildPortfolioFacts(
@@ -121,7 +121,7 @@ export async function getExplanation(
   generator: ExplainGenerator,
   opts: { now?: Date; limiter?: RateLimiter } = {},
 ): Promise<ExplainResult> {
-  const { now, limiter = explainLimiter } = opts;
+  const { now, limiter = new RateLimiter(db, EXPLAIN_LIMIT.max, EXPLAIN_LIMIT.windowMs) } = opts;
   const facts = await buildPortfolioFacts(db, sessionId, portfolioId, now);
   const hash = createHash("sha256")
     .update(JSON.stringify([EXPLAIN_PROMPT_VERSION, generator.model, facts]))
@@ -143,7 +143,7 @@ export async function getExplanation(
     };
   }
 
-  if (!limiter.tryAcquire(sessionId)) {
+  if (!(await limiter.tryAcquire(`explain:${sessionId}`))) {
     throw new AppError("rate_limited", "Too many explanation requests. Try again later.");
   }
   const explanation = await explainPortfolio(generator, facts);

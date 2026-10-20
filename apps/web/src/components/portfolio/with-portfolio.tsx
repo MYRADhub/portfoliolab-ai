@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface Summary {
   id: string;
@@ -20,30 +20,28 @@ export function WithPortfolio({
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [version, setVersion] = useState(0);
+  const reload = async (deletedId: string) => {
+    setList((l) => (l ? l.filter((p) => p.id !== deletedId) : l));
+    setSelected((cur) => (cur === deletedId ? null : cur));
+    setVersion((v) => v + 1);
+  };
+
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      // The session cookie is set by the layout bootstrap; retry once if this races it.
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const r = await api<{ portfolios: Summary[] }>("/api/portfolios");
-          if (cancelled) return;
-          setList(r.portfolios);
-          setSelected(r.portfolios[0]?.id ?? null);
-          return;
-        } catch (e) {
-          if (attempt === 1 || !(e instanceof ApiError && e.status === 401)) {
-            if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
-            return;
-          }
-          await new Promise((r) => setTimeout(r, 400));
-        }
-      }
-    })();
+    api<{ portfolios: Summary[] }>("/api/portfolios")
+      .then((r) => {
+        if (cancelled) return;
+        setList(r.portfolios);
+        setSelected(r.portfolios[0]?.id ?? null);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [version]);
 
   if (error) {
     return (
@@ -64,7 +62,7 @@ export function WithPortfolio({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {list.length > 1 && (
           <select
             aria-label="Portfolio"
@@ -82,8 +80,54 @@ export function WithPortfolio({
         <Button variant="outline" size="sm" render={<Link href="/portfolios/new" />}>
           New portfolio
         </Button>
+        {selected && (
+          <DeleteButton key={selected} id={selected} onDeleted={() => void reload(selected)} />
+        )}
       </div>
       {selected && children(selected)}
     </div>
+  );
+}
+
+/** Two-step delete so a stray click cannot remove a portfolio. */
+function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function remove() {
+    setError(null);
+    try {
+      await api(`/api/portfolios/${id}`, { method: "DELETE" });
+      onDeleted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+      setConfirming(false);
+    }
+  }
+
+  if (!confirming) {
+    return (
+      <>
+        <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
+          Delete
+        </Button>
+        {error && (
+          <span role="alert" className="text-sm text-destructive">
+            {error}
+          </span>
+        )}
+      </>
+    );
+  }
+  return (
+    <span className="flex items-center gap-2 text-sm">
+      Delete this portfolio?
+      <Button variant="destructive" size="sm" onClick={() => void remove()}>
+        Confirm delete
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+        Cancel
+      </Button>
+    </span>
   );
 }

@@ -13,3 +13,4 @@ export * from "./news/ingest";
 export * from "./matching/alias";
 export * from "./matching/matcher";
 export * from "./matching/store";
+export * from "./news/calendar";

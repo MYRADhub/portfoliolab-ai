@@ -8,6 +8,7 @@ import {
   timestamp,
   uuid,
   index,
+  serial,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { companies } from "./market";
@@ -49,4 +50,15 @@ export const holdings = pgTable(
     primaryKey({ columns: [t.portfolioId, t.companyId] }),
     check("holdings_weight_chk", sql`${t.weight} > 0 and ${t.weight} <= 1`),
   ],
+);
+
+/** One row per allowed request, used for sliding-window rate limits that hold across server instances. */
+export const rateLimitHits = pgTable(
+  "rate_limit_hits",
+  {
+    id: serial("id").primaryKey(),
+    key: text("key").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("rate_limit_key_at_idx").on(t.key, t.at)],
 );

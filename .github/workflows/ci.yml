@@ -35,6 +35,39 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @portfolio-lab/web build
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: portfoliolab
+          POSTGRES_PASSWORD: portfoliolab
+          POSTGRES_DB: portfoliolab
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U portfoliolab"
+          --health-interval 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://portfoliolab:portfoliolab@localhost:5432/portfoliolab
+      ANALYTICS_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @portfolio-lab/web exec playwright install chrome --with-deps
+      - run: pnpm --filter @portfolio-lab/web e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: apps/web/test-results
   analytics:
     runs-on: ubuntu-latest
     defaults:

@@ -5,6 +5,7 @@ import { FixtureProvider, ingestPrices } from "@portfolio-lab/data";
 import { seedDevCompanies } from "../../../../packages/db/src/seed/companies";
 import {
   createPortfolio,
+  deletePortfolio,
   getPortfolioAnalytics,
   listPortfolios,
   searchCompanies,
@@ -172,6 +173,21 @@ describe("getPortfolioAnalytics", () => {
     await expect(getPortfolioAnalytics(ctx.db, other, mine!.id, { now })).rejects.toMatchObject({
       code: "not_found",
     });
+  });
+});
+
+describe("deletePortfolio", () => {
+  it("deletes an owned portfolio with its holdings and refuses another session's", async () => {
+    const p = await createPortfolio(ctx.db, sid, {
+      name: "Temp",
+      normalize: false,
+      holdings: holdingsOf([["NVDA", 100]]),
+    });
+    await expect(deletePortfolio(ctx.db, other, p.id)).rejects.toMatchObject({ code: "not_found" });
+    expect((await listPortfolios(ctx.db, sid)).some((x) => x.id === p.id)).toBe(true);
+    await deletePortfolio(ctx.db, sid, p.id);
+    expect((await listPortfolios(ctx.db, sid)).some((x) => x.id === p.id)).toBe(false);
+    await expect(deletePortfolio(ctx.db, sid, p.id)).rejects.toMatchObject({ code: "not_found" });
   });
 });
 

@@ -153,7 +153,7 @@ function PortfolioView({ id }: { id: string }) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ticker</TableHead>
-                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">Name</TableHead>
                     <TableHead>Sector</TableHead>
                     <TableHead className="text-right">Weight</TableHead>
                   </TableRow>
@@ -162,7 +162,7 @@ function PortfolioView({ id }: { id: string }) {
                   {data.holdings.map((h) => (
                     <TableRow key={h.ticker}>
                       <TableCell className="font-medium">{h.ticker}</TableCell>
-                      <TableCell>{h.name}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{h.name}</TableCell>
                       <TableCell>{h.sector ?? "Unclassified"}</TableCell>
                       <TableCell className="text-right">{pct(h.weight)}</TableCell>
                     </TableRow>

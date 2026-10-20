@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { companies, ingestFailures, newsArticles, newsCompanyLinks } from "@portfolio-lab/db";
+import {
+  companies,
+  ingestFailures,
+  newsArticles,
+  newsCompanyLinks,
+  pricesDaily,
+} from "@portfolio-lab/db";
 import { createTestDb } from "@portfolio-lab/db/testing";
 import { seedDevCompanies } from "../../db/src/seed/companies";
 import {
@@ -11,6 +17,7 @@ import {
   eventTradingDate,
   ingestNews,
   jaccard,
+  loadTradingDays,
   marketSession,
   normalizeTitle,
   shingles,
@@ -316,5 +323,42 @@ describe("ingestNews", () => {
 
   it("knows the seeded companies", async () => {
     expect((await ctx.db.select().from(companies)).length).toBe(5);
+  });
+});
+
+describe("loadTradingDays", () => {
+  let ctx: Awaited<ReturnType<typeof createTestDb>>;
+  beforeAll(async () => {
+    ctx = await createTestDb();
+    await seedDevCompanies(ctx.db);
+    const [c] = await ctx.db.select().from(companies).where(eq(companies.ticker, "NVDA"));
+    // 2026-07-03 (Friday) is the observed Independence Day holiday, so it has no bar; 2026-07-06 is a Monday.
+    const dates = ["2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07"];
+    await ctx.db
+      .insert(pricesDaily)
+      .values(dates.map((date) => ({ companyId: c!.id, date, close: 1, adjClose: 1 })));
+  });
+  afterAll(async () => {
+    await ctx.teardown();
+  });
+
+  it("treats a weekday without bars inside the loaded range as a holiday and rolls news past it", async () => {
+    const isTrading = await loadTradingDays(ctx.db, "2026-06-01", "2026-07-31");
+    expect(isTrading("2026-07-02")).toBe(true);
+    expect(isTrading("2026-07-03")).toBe(false);
+    // After-hours Thursday news: the next trading day is Monday, not the Friday holiday.
+    expect(eventTradingDate(new Date("2026-07-02T21:00:00Z"), isTrading)).toBe("2026-07-06");
+    // Pre-market news on the holiday itself also lands on Monday.
+    expect(eventTradingDate(new Date("2026-07-03T12:00:00Z"), isTrading)).toBe("2026-07-06");
+  });
+
+  it("falls back to the weekday rule outside the loaded range, and when there are no bars at all", async () => {
+    const isTrading = await loadTradingDays(ctx.db, "2026-06-01", "2026-07-31");
+    expect(isTrading("2026-07-15")).toBe(true); // after the last bar: unknown, weekday
+    expect(isTrading("2026-07-18")).toBe(false); // Saturday
+    expect(isTrading("2026-05-01")).toBe(true); // before the first bar
+    const empty = await loadTradingDays(ctx.db, "2020-01-01", "2020-01-31");
+    expect(empty("2020-01-01")).toBe(true);
+    expect(empty("2020-01-04")).toBe(false);
   });
 });

@@ -8,8 +8,16 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Fetches JSON. A 401 usually means the anonymous session cookie has not been issued yet (first visit) or has
+ * expired, so create a session and retry once before giving up.
+ */
 export async function api<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  let res = await fetch(url, init);
+  if (res.status === 401 && url !== "/api/session") {
+    const session = await fetch("/api/session", { method: "POST" });
+    if (session.ok) res = await fetch(url, init);
+  }
   const body = (await res.json().catch(() => null)) as
     { error?: { code: string; message: string } } | T | null;
   if (!res.ok) {

@@ -290,6 +290,8 @@ Python service. Abnormal return = actual - market-model prediction (estimation w
 
 ## 5. Cross-cutting engineering
 
+Progress (2026-10-20): end-to-end suite in `apps/web/e2e` (98 tests, desktop and mobile Chrome): API contract and validation matrix, independent recomputation of exposure and concentration numbers, session isolation and deletion, explanation behavior against a mock OpenAI server (grounded, ungrounded, retry, refusal, incomplete, upstream error, rate limit, caching), every page and flow in the UI, hostile and unicode portfolio names, session loss and recovery, axe accessibility scans on every page (with a negative control), and mobile layout checks. Mutation checks confirmed the suite fails when grounding or session ownership is broken. Rate limiting is now stored in Postgres so it holds across instances.
+
 **Testing**
 
 - Unit: all finance math against hand-computed/pandas fixtures (tolerance 1e-6). Property tests for exposure aggregation.

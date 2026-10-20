@@ -110,7 +110,7 @@ describe("getExplanation", () => {
 
   it("returns a grounded explanation with the disclaimer, then serves repeats from cache without calling the model", async () => {
     const g = new FakeGenerator(grounded);
-    const limiter = new RateLimiter(5, 60_000);
+    const limiter = new RateLimiter(ctx.db, 5, 60_000);
     const first = await getExplanation(ctx.db, sid, portfolioId, g, { now, limiter });
     expect(first).toMatchObject({
       cached: false,
@@ -135,21 +135,21 @@ describe("getExplanation", () => {
     const g = new FakeGenerator(() => ungrounded);
     const r = await getExplanation(ctx.db, other!.id, p.id, g, {
       now,
-      limiter: new RateLimiter(5, 60_000),
+      limiter: new RateLimiter(ctx.db, 5, 60_000),
     });
     expect(r.explanation.source).toBe("fallback");
     expect(r.explanation.summary).not.toContain("99.9");
     expect(g.calls).toBe(2); // one attempt plus one retry
     const again = await getExplanation(ctx.db, other!.id, p.id, g, {
       now,
-      limiter: new RateLimiter(5, 60_000),
+      limiter: new RateLimiter(ctx.db, 5, 60_000),
     });
     expect(again.cached).toBe(false);
   });
 
   it("rate limits uncached requests per session but not cache hits", async () => {
-    let t = 0;
-    const limiter = new RateLimiter(1, 1000, () => t);
+    let t = new Date("2026-01-01T00:00:00Z");
+    const limiter = new RateLimiter(ctx.db, 1, 1000, () => t);
     const [s2] = await ctx.db.insert(sessions).values({}).returning();
     const p = await createPortfolio(ctx.db, s2!.id, {
       name: "RL",
@@ -169,22 +169,35 @@ describe("getExplanation", () => {
     await expect(getExplanation(ctx.db, s2!.id, p2.id, g, { now, limiter })).rejects.toMatchObject({
       code: "rate_limited",
     });
-    t = 2000;
+    t = new Date("2026-01-01T00:00:02Z");
     await expect(getExplanation(ctx.db, s2!.id, p2.id, g, { now, limiter })).resolves.toBeDefined();
   });
 });
 
 describe("RateLimiter", () => {
-  it("allows up to max per window, forgets old hits, and tracks keys separately", () => {
-    let t = 0;
-    const l = new RateLimiter(2, 100, () => t);
-    expect([l.tryAcquire("a"), l.tryAcquire("a"), l.tryAcquire("a"), l.tryAcquire("b")]).toEqual([
-      true,
-      true,
-      false,
-      true,
-    ]);
-    t = 101;
-    expect(l.tryAcquire("a")).toBe(true);
+  it("allows up to max per window, forgets old hits, and tracks keys separately", async () => {
+    let t = new Date("2026-01-01T00:00:00Z");
+    const l = new RateLimiter(ctx.db, 2, 100, () => t);
+    expect([
+      await l.tryAcquire("a"),
+      await l.tryAcquire("a"),
+      await l.tryAcquire("a"),
+      await l.tryAcquire("b"),
+    ]).toEqual([true, true, false, true]);
+    t = new Date(t.getTime() + 101);
+    expect(await l.tryAcquire("a")).toBe(true);
+  });
+
+  it("does not let concurrent requests exceed the limit", async () => {
+    const l = new RateLimiter(ctx.db, 3, 60_000);
+    const results = await Promise.all(Array.from({ length: 10 }, () => l.tryAcquire("race")));
+    expect(results.filter(Boolean)).toHaveLength(3);
+  });
+
+  it("shares state between limiter instances, as separate servers would", async () => {
+    const a = new RateLimiter(ctx.db, 1, 60_000);
+    const b = new RateLimiter(ctx.db, 1, 60_000);
+    expect(await a.tryAcquire("shared")).toBe(true);
+    expect(await b.tryAcquire("shared")).toBe(false);
   });
 });

@@ -46,7 +46,7 @@ export function ExplainPanel({ portfolioId }: { portfolioId: string }) {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Explain this portfolio</CardTitle>
         <Button size="sm" onClick={() => void run()} disabled={current?.busy}>
-          {current?.busy ? "Working" : r ? "Regenerate" : "Explain"}
+          {current?.busy ? "Working" : r ? "Refresh" : "Explain"}
         </Button>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">

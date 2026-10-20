@@ -1,4 +1,4 @@
-import { asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { companies, holdings, portfolios, type Db } from "@portfolio-lab/db";
 import {
   annualizedReturn,
@@ -93,6 +93,19 @@ export async function createPortfolio(db: Db, sessionId: string, input: CreatePo
     );
     return p!;
   });
+}
+
+/** Deletes a session-owned portfolio and its holdings. Another session's portfolio is reported as not found. */
+export async function deletePortfolio(
+  db: Db,
+  sessionId: string,
+  portfolioId: string,
+): Promise<void> {
+  const deleted = await db
+    .delete(portfolios)
+    .where(and(eq(portfolios.id, portfolioId), eq(portfolios.sessionId, sessionId)))
+    .returning({ id: portfolios.id });
+  if (deleted.length === 0) throw new AppError("not_found", "Portfolio not found");
 }
 
 export async function listPortfolios(db: Db, sessionId: string) {

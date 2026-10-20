@@ -198,23 +198,27 @@ function Content({ id }: { id: string }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Pair</TableHead>
-                <TableHead className="text-right">Similarity</TableHead>
-                <TableHead>Shared exposure</TableHead>
-                <TableHead>Offsetting</TableHead>
+                <TableHead className="whitespace-normal">Pair</TableHead>
+                <TableHead className="text-right whitespace-normal">Similarity</TableHead>
+                <TableHead className="whitespace-normal">Shared exposure</TableHead>
+                <TableHead className="whitespace-normal">Offsetting</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.pairs.map((p) => (
                 <TableRow key={`${p.a}-${p.b}`}>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium whitespace-normal">
                     {p.a} / {p.b}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="text-right whitespace-normal tabular-nums">
                     {p.similarity === null ? "n/a" : p.similarity.toFixed(2)}
                   </TableCell>
-                  <TableCell>{p.shared.map(nameOf).join(", ") || "none"}</TableCell>
-                  <TableCell>{p.offsetting.map(nameOf).join(", ") || "none"}</TableCell>
+                  <TableCell className="whitespace-normal">
+                    {p.shared.map(nameOf).join(", ") || "none"}
+                  </TableCell>
+                  <TableCell className="whitespace-normal">
+                    {p.offsetting.map(nameOf).join(", ") || "none"}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

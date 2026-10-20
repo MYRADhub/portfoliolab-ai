@@ -15,7 +15,7 @@ const items = [
 export function Nav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Primary" className="flex flex-col gap-1">
+    <nav aria-label="Primary" className="flex flex-wrap gap-1 md:flex-col">
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
@@ -24,7 +24,7 @@ export function Nav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium hover:bg-muted",
+              "rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap hover:bg-muted",
               active && "bg-muted text-foreground",
             )}
           >
