@@ -82,7 +82,9 @@ class FakeGenerator implements ExplainGenerator {
   readonly model = "fake";
   calls: GroundingIssue[][] = [];
   constructor(private readonly outputs: (RawExplanation | null)[]) {}
-  async generate(_f: unknown, issues: readonly GroundingIssue[]) {
+  tasks: (string | undefined)[] = [];
+  async generate(_f: unknown, issues: readonly GroundingIssue[], task?: string) {
+    this.tasks.push(task);
     this.calls.push([...issues]);
     return this.outputs[Math.min(this.calls.length - 1, this.outputs.length - 1)] ?? null;
   }
@@ -119,6 +121,15 @@ describe("explainPortfolio", () => {
     expect(g.calls).toHaveLength(2);
   });
 
+  it("passes a custom task to the generator on every attempt", async () => {
+    const g = new FakeGenerator([bad, good]);
+    await explainPortfolio(g, facts, { task: "Explain the move on 2026-01-05." });
+    expect(g.tasks).toEqual(["Explain the move on 2026-01-05.", "Explain the move on 2026-01-05."]);
+    const plain = new FakeGenerator([good]);
+    await explainPortfolio(plain, facts);
+    expect(plain.tasks).toEqual([undefined]);
+  });
+
   it("validates highlights as well as the summary", async () => {
     const g = new FakeGenerator([{ summary: good.summary, highlights: ["It rose 99% [F2]."] }]);
     expect((await explainPortfolio(g, facts)).source).toBe("fallback");
@@ -136,6 +147,8 @@ describe("prompt and OpenAI client", () => {
     const plain = buildInput(facts);
     expect(plain).toContain("F2 | Total return: +30.7%");
     expect(plain).not.toContain("rejected");
+    expect(plain.endsWith("Explain this portfolio.")).toBe(true);
+    expect(buildInput(facts, [], "Explain the move.").endsWith("Explain the move.")).toBe(true);
     expect(buildInput(facts, [{ kind: "ungrounded_number", detail: "31" }])).toContain(
       "ungrounded_number (31)",
     );

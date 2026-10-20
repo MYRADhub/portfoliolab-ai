@@ -1,6 +1,6 @@
 # PortfolioLab AI
 
-Product description: `description.md`. Plan: `ROADMAP.md`. Decisions: `docs/adr`.
+Product description: `description.md`. Plan: `ROADMAP.md`. Decisions in plain language: `docs/DECISIONS.md` (short technical notes in `docs/adr`).
 
 ## Local setup
 

@@ -1,4 +1,6 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { MOCK_PORT, WEB_PORT } from "./env";
 
 export const BASE = `http://127.0.0.1:${WEB_PORT}`;
@@ -104,3 +106,16 @@ export const pct = (x: number, d = 1) => `${(x * 100).toFixed(d)}%`;
 /** The app's own alert messages, excluding Next.js's hidden route announcer, which also has role="alert". */
 export const appAlert = (page: Page) =>
   page.locator('[role="alert"]:not(#__next-route-announcer__)');
+
+/** The known past trading day that has seeded news for NVDA (see setup-db.ts). */
+export const NEWS_DATE: string = (
+  JSON.parse(readFileSync(resolve(__dirname, ".fixtures.json"), "utf8")) as { newsDate: string }
+).newsDate;
+export const NEWS_TITLE = "E2E Acme cuts outlook on weak orders";
+
+/** The dashboard's holdings card, so row counts are not confused by the other tables on the page. */
+export const holdingsCard = (page: Page) =>
+  page.getByText("Holdings (effective").locator("xpath=ancestor::*[@data-slot='card'][1]");
+/** The "Why did my portfolio move?" card. */
+export const moveCard = (page: Page) =>
+  page.getByText("Why did my portfolio move?").locator("xpath=ancestor::*[@data-slot='card'][1]");

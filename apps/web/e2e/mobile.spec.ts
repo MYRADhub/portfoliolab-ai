@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { COVERED, EXAMPLE, startUiSession, waitForDashboard } from "./helpers";
+import { COVERED, EXAMPLE, holdingsCard, startUiSession, waitForDashboard } from "./helpers";
 
 async function noPageOverflow(page: Page) {
   const { scrollWidth, innerWidth } = await page.evaluate(() => ({
@@ -62,15 +62,15 @@ test.describe("mobile layout", () => {
     const vw = page.viewportSize()!.width;
     await page.goto("/dashboard");
     await waitForDashboard(page);
-    const weight = page.getByRole("columnheader", { name: "Weight" });
+    const weight = holdingsCard(page).getByRole("columnheader", { name: "Weight" });
     await expect(weight).toBeVisible();
     const wb = await weight.boundingBox();
     expect(
       wb!.x + wb!.width,
       "Weight column header is fully inside the viewport",
     ).toBeLessThanOrEqual(vw);
-    await expect(page.getByRole("columnheader", { name: "Name" })).toBeHidden(); // dropped on phones to make room
-    await expect(page.getByRole("cell", { name: "40.0%" })).toBeVisible();
+    await expect(holdingsCard(page).getByRole("columnheader", { name: "Name" })).toBeHidden(); // dropped on phones to make room
+    await expect(holdingsCard(page).getByRole("cell", { name: "40.0%" })).toBeVisible();
 
     await page.goto("/exposures");
     const shared = page

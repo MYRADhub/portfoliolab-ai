@@ -264,6 +264,8 @@ Progress (2026-10-19): V1 flow complete end to end. `packages/explain`: numbered
 **Phase 10 - Why Did My Portfolio Move? (1.5 wk)**
 Return attribution (weight x return, contribution in percentage points), grouping by factor cluster, link top contributors to events from Phase 7-8 in the same window, LLM narrates computed shares. Key rule: attribution math is deterministic; the "70% from semis/AI" is computed by factor-cluster grouping, not by the LLM. Handle: intraday vs close-to-close, weight drift during the day, cash.
 
+Progress (2026-10-20): holding-level and sector-level attribution built and tested (`packages/finance/src/attribution.ts`, `apps/web/src/server/move.ts`): exact contributions that sum to the portfolio return and match the analytics curve, a day picker over the last 30 trading days, a deterministic headline, linked news merged by cluster and ranked by classification, grounded AI narration with the shared safety net and rate limit, a dashboard card, plus unit and e2e tests. Not built: grouping by economic factor (needs exposures), abnormal-return check across the universe (Phase 15), intraday attribution, cash.
+
 **Phase 11 - Market Radar (1 wk)**
 Ranked feed per portfolio using relevance score, severity, recency decay; filters (class, factor, holding); "why am I seeing this"; daily digest; the low-relevance items collapsed, not hidden.
 

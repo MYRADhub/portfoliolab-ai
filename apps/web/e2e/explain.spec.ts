@@ -95,7 +95,7 @@ test.describe("explain panel", () => {
     await waitForDashboard(page);
     await page.getByRole("button", { name: "Explain", exact: true }).click();
     await expect(page.getByRole("button", { name: "Refresh" })).toBeVisible();
-    await page.getByLabel("Portfolio").selectOption({ label: "First" });
+    await page.getByLabel("Portfolio", { exact: true }).selectOption({ label: "First" });
     await waitForDashboard(page);
     await expect(page.getByRole("button", { name: "Explain", exact: true })).toBeVisible();
     await expect(

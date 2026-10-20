@@ -16,6 +16,7 @@ export interface ExplainGenerator {
   generate(
     facts: readonly Fact[],
     issues: readonly GroundingIssue[],
+    task?: string,
   ): Promise<RawExplanation | null>;
 }
 
@@ -30,11 +31,12 @@ export class OpenAIExplainer implements ExplainGenerator {
   async generate(
     facts: readonly Fact[],
     issues: readonly GroundingIssue[],
+    task?: string,
   ): Promise<RawExplanation | null> {
     const response = await this.client.responses.parse({
       model: this.model,
       instructions: buildInstructions(),
-      input: buildInput(facts, issues),
+      input: buildInput(facts, issues, task),
       text: { format: zodTextFormat(explanationSchema, "portfolio_explanation") },
     });
     if (response.status === "incomplete") return null;
@@ -73,10 +75,11 @@ const MAX_ATTEMPTS = 2;
 export async function explainPortfolio(
   generator: ExplainGenerator,
   facts: readonly Fact[],
+  opts: { task?: string } = {},
 ): Promise<Explanation> {
   let issues: GroundingIssue[] = [];
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const raw = await generator.generate(facts, issues);
+    const raw = await generator.generate(facts, issues, opts.task);
     if (!raw) {
       issues = [{ kind: "empty", detail: "no usable output" }];
       continue;

@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { COVERED, EXAMPLE, appAlert, startUiSession, waitForDashboard } from "./helpers";
+import {
+  COVERED,
+  EXAMPLE,
+  appAlert,
+  holdingsCard,
+  startUiSession,
+  waitForDashboard,
+} from "./helpers";
 
 test.describe("first visit", () => {
   test("the root redirects to the dashboard, which invites creating a portfolio", async ({
@@ -128,8 +135,8 @@ test.describe("portfolio form", () => {
     await page.getByRole("button", { name: "Create portfolio" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await waitForDashboard(page);
-    await expect(page.getByRole("row", { name: /AAPL.*75\.0%/ })).toBeVisible();
-    await expect(page.getByRole("row", { name: /NVDA.*25\.0%/ })).toBeVisible();
+    await expect(holdingsCard(page).getByRole("row", { name: /AAPL.*75\.0%/ })).toBeVisible();
+    await expect(holdingsCard(page).getByRole("row", { name: /NVDA.*25\.0%/ })).toBeVisible();
   });
 
   test("pressing Enter in a weight field submits the form", async ({ page }) => {
@@ -219,7 +226,7 @@ test.describe("dashboard", () => {
         /trading days\)\. Constant target weights, rebalanced daily\. Risk-free rate 0\.0%\./,
       ),
     ).toBeVisible();
-    await expect(page.locator(".recharts-surface")).toHaveCount(3);
+    await expect(page.locator(".recharts-surface")).toHaveCount(4);
     await expect(page.getByText("Growth of 1.00")).toBeVisible();
     await expect(page.getByText("Drawdown", { exact: true })).toBeVisible();
     await expect(page.getByText("Sector allocation")).toBeVisible();
@@ -227,7 +234,7 @@ test.describe("dashboard", () => {
       page.getByText("Holdings (effective number of positions 4.9, largest 25%)"),
     ).toBeVisible();
 
-    const rows = page.getByRole("row");
+    const rows = holdingsCard(page).getByRole("row");
     await expect(rows).toHaveCount(6); // header + five holdings
     for (const [t, w] of [
       ["AAPL", "20.0%"],
@@ -236,7 +243,9 @@ test.describe("dashboard", () => {
       ["MSFT", "20.0%"],
       ["NVDA", "25.0%"],
     ] as const) {
-      await expect(page.getByRole("row", { name: new RegExp(`${t}.*${w}`) })).toBeVisible();
+      await expect(
+        holdingsCard(page).getByRole("row", { name: new RegExp(`${t}.*${w}`) }),
+      ).toBeVisible();
     }
   });
 
@@ -266,15 +275,15 @@ test.describe("dashboard", () => {
     await s.create("Covered four", COVERED);
     await page.reload();
     await waitForDashboard(page);
-    const select = page.getByLabel("Portfolio");
+    const select = page.getByLabel("Portfolio", { exact: true });
     await expect(select).toBeVisible();
     await expect(select.locator("option")).toHaveText(["Covered four", "Mega caps"]);
-    await expect(page.getByRole("row")).toHaveCount(5); // newest first: four holdings
+    await expect(holdingsCard(page).getByRole("row")).toHaveCount(5); // newest first: four holdings
     await select.selectOption({ label: "Mega caps" });
-    await expect(page.getByRole("row")).toHaveCount(6);
-    await expect(page.getByRole("row", { name: /JPM/ })).toBeVisible();
+    await expect(holdingsCard(page).getByRole("row")).toHaveCount(6);
+    await expect(holdingsCard(page).getByRole("row", { name: /JPM/ })).toBeVisible();
     await select.selectOption({ label: "Covered four" });
-    await expect(page.getByRole("row", { name: /JPM/ })).toHaveCount(0);
+    await expect(holdingsCard(page).getByRole("row", { name: /JPM/ })).toHaveCount(0);
   });
 
   test("explains why a portfolio cannot be analyzed instead of failing silently", async ({
@@ -301,7 +310,7 @@ test.describe("dashboard", () => {
     ]);
     await page.reload();
     await expect(appAlert(page)).toBeVisible();
-    await page.getByLabel("Portfolio").selectOption({ label: "Good" });
+    await page.getByLabel("Portfolio", { exact: true }).selectOption({ label: "Good" });
     await waitForDashboard(page);
     await expect(appAlert(page)).toHaveCount(0);
   });
@@ -316,19 +325,22 @@ test.describe("deleting a portfolio", () => {
     await s.create("Remove me", COVERED);
     await page.reload();
     await waitForDashboard(page);
-    await expect(page.getByLabel("Portfolio").locator("option")).toHaveText(["Remove me", "Keep"]);
+    await expect(page.getByLabel("Portfolio", { exact: true }).locator("option")).toHaveText([
+      "Remove me",
+      "Keep",
+    ]);
 
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await expect(page.getByText("Delete this portfolio?")).toBeVisible();
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByText("Delete this portfolio?")).toHaveCount(0);
-    await expect(page.getByLabel("Portfolio").locator("option")).toHaveCount(2);
+    await expect(page.getByLabel("Portfolio", { exact: true }).locator("option")).toHaveCount(2);
 
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await page.getByRole("button", { name: "Confirm delete" }).click();
-    await expect(page.getByRole("row", { name: /NVDA/ })).toBeVisible(); // falls back to the remaining portfolio
-    await expect(page.getByRole("row")).toHaveCount(6);
-    await expect(page.getByLabel("Portfolio")).toHaveCount(0); // a single portfolio needs no selector
+    await expect(holdingsCard(page).getByRole("row", { name: /NVDA/ })).toBeVisible(); // falls back to the remaining portfolio
+    await expect(holdingsCard(page).getByRole("row")).toHaveCount(6);
+    await expect(page.getByLabel("Portfolio", { exact: true })).toHaveCount(0); // a single portfolio needs no selector
     const list = (await (await page.request.get("/api/portfolios")).json()) as {
       portfolios: { name: string }[];
     };
@@ -364,7 +376,10 @@ test.describe("hostile and unusual portfolio names", () => {
     for (const name of nasty) await s.create(name, EXAMPLE);
     await page.reload();
     await waitForDashboard(page);
-    const options = await page.getByLabel("Portfolio").locator("option").allTextContents();
+    const options = await page
+      .getByLabel("Portfolio", { exact: true })
+      .locator("option")
+      .allTextContents();
     expect(options.sort()).toEqual([...nasty].sort());
     expect(
       await page.evaluate(() => (window as unknown as { __xss?: number }).__xss),
@@ -386,7 +401,10 @@ test.describe("hostile and unusual portfolio names", () => {
     await s.create("Портфолио 投資 🙂", COVERED);
     await page.reload();
     await waitForDashboard(page);
-    const options = await page.getByLabel("Portfolio").locator("option").allTextContents();
+    const options = await page
+      .getByLabel("Portfolio", { exact: true })
+      .locator("option")
+      .allTextContents();
     expect(options).toEqual(["Портфолио 投資 🙂", long]);
     const { scrollWidth, innerWidth } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,

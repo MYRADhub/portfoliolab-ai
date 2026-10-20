@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { useApi } from "@/lib/use-api";
 import { ExplainPanel } from "./explain-panel";
+import { MovePanel } from "./move-panel";
 import { WithPortfolio } from "./with-portfolio";
 import { pct, signedPct } from "@/lib/format";
 import type { PortfolioAnalytics } from "@/server/portfolios";
@@ -72,6 +73,8 @@ function PortfolioView({ id }: { id: string }) {
           </div>
 
           <ExplainPanel portfolioId={id} />
+
+          <MovePanel portfolioId={id} />
 
           <Card>
             <CardHeader>

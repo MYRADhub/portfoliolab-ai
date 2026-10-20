@@ -13,6 +13,7 @@ import { pct, signedPct } from "@/lib/format";
 import { AppError } from "./errors";
 import { getPortfolioCorrelation } from "./correlation";
 import { getPortfolioExposures } from "./exposures";
+import { buildMoveFacts, getPortfolioMove, moveTask, type PortfolioMove } from "./move";
 import { getPortfolioAnalytics } from "./portfolios";
 import { RateLimiter } from "./rate-limit";
 
@@ -111,23 +112,26 @@ export interface ExplainResult {
 }
 
 /**
- * Explains a session-owned portfolio. Grounded model output is cached by (facts, model, prompt version), so
- * repeats are free and do not count against the rate limit; fallback output is never cached.
+ * Runs the grounded explanation for a list of facts. Grounded model output is cached by (purpose, task, facts,
+ * model, prompt version), so repeats are free and do not count against the rate limit; fallback output is never cached.
  */
-export async function getExplanation(
+export async function runGroundedExplanation(
   db: Db,
   sessionId: string,
-  portfolioId: string,
+  facts: Fact[],
   generator: ExplainGenerator,
-  opts: { now?: Date; limiter?: RateLimiter } = {},
+  opts: { purpose: string; task?: string; limiter?: RateLimiter },
 ): Promise<ExplainResult> {
-  const { now, limiter = new RateLimiter(db, EXPLAIN_LIMIT.max, EXPLAIN_LIMIT.windowMs) } = opts;
-  const facts = await buildPortfolioFacts(db, sessionId, portfolioId, now);
+  const {
+    purpose,
+    task,
+    limiter = new RateLimiter(db, EXPLAIN_LIMIT.max, EXPLAIN_LIMIT.windowMs),
+  } = opts;
   const hash = createHash("sha256")
-    .update(JSON.stringify([EXPLAIN_PROMPT_VERSION, generator.model, facts]))
+    .update(JSON.stringify([EXPLAIN_PROMPT_VERSION, generator.model, task ?? "", facts]))
     .digest("hex");
   const key = and(
-    eq(llmRuns.purpose, PURPOSE),
+    eq(llmRuns.purpose, purpose),
     eq(llmRuns.model, generator.model),
     eq(llmRuns.promptVersion, EXPLAIN_PROMPT_VERSION),
     eq(llmRuns.inputHash, hash),
@@ -143,15 +147,16 @@ export async function getExplanation(
     };
   }
 
+  // One shared allowance covers every kind of explanation.
   if (!(await limiter.tryAcquire(`explain:${sessionId}`))) {
     throw new AppError("rate_limited", "Too many explanation requests. Try again later.");
   }
-  const explanation = await explainPortfolio(generator, facts);
+  const explanation = await explainPortfolio(generator, facts, { task });
   if (explanation.source === "model") {
     await db
       .insert(llmRuns)
       .values({
-        purpose: PURPOSE,
+        purpose,
         model: generator.model,
         promptVersion: EXPLAIN_PROMPT_VERSION,
         inputHash: hash,
@@ -161,4 +166,39 @@ export async function getExplanation(
       .onConflictDoNothing();
   }
   return { explanation, facts, cached: false, disclaimer: DISCLAIMER };
+}
+
+/** Explains a session-owned portfolio from its computed figures. */
+export async function getExplanation(
+  db: Db,
+  sessionId: string,
+  portfolioId: string,
+  generator: ExplainGenerator,
+  opts: { now?: Date; limiter?: RateLimiter } = {},
+): Promise<ExplainResult> {
+  const facts = await buildPortfolioFacts(db, sessionId, portfolioId, opts.now);
+  return runGroundedExplanation(db, sessionId, facts, generator, {
+    purpose: PURPOSE,
+    limiter: opts.limiter,
+  });
+}
+
+/** Explains a day's move, grounded in the contribution figures and linked news. */
+export async function getMoveExplanation(
+  db: Db,
+  sessionId: string,
+  portfolioId: string,
+  generator: ExplainGenerator,
+  opts: { date?: string; now?: Date; limiter?: RateLimiter } = {},
+): Promise<ExplainResult & { move: PortfolioMove }> {
+  const move = await getPortfolioMove(db, sessionId, portfolioId, {
+    date: opts.date,
+    now: opts.now,
+  });
+  const result = await runGroundedExplanation(db, sessionId, buildMoveFacts(move), generator, {
+    purpose: "portfolio_move_explanation",
+    task: moveTask(move),
+    limiter: opts.limiter,
+  });
+  return { ...result, move };
 }
