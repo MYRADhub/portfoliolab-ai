@@ -17,6 +17,7 @@ import {
 } from "@portfolio-lab/db";
 import {
   FixtureProvider,
+  eventTradingDate,
   ingestPrices,
   loadConstituents,
   type Constituent,
@@ -128,8 +129,16 @@ async function main() {
       definition: "e2e fixture",
     })
     .returning();
-  const nvda = (await db.select().from(companies).where(eq(companies.ticker, "NVDA")))[0]!;
-  const addArticle = async (title: string, hour: number, score: number, cluster?: number) => {
+  const addArticle = async (
+    title: string,
+    hour: number,
+    score: number,
+    cluster?: number,
+    ticker = "NVDA",
+    at?: Date,
+  ) => {
+    const company = (await db.select().from(companies).where(eq(companies.ticker, ticker)))[0]!;
+    const publishedAt = at ?? new Date(`${newsDate}T${String(hour).padStart(2, "0")}:00:00Z`);
     const [a] = await db
       .insert(newsArticles)
       .values({
@@ -138,7 +147,7 @@ async function main() {
         url: `https://news.example.com/${encodeURIComponent(title)}`,
         title,
         sourceName: "E2E Wire",
-        publishedAt: new Date(`${newsDate}T${String(hour).padStart(2, "0")}:00:00Z`),
+        publishedAt,
         dedupeHash: title,
         marketSession: "regular",
       })
@@ -149,26 +158,79 @@ async function main() {
       .where(eq(newsArticles.id, a!.id));
     await db
       .insert(newsCompanyLinks)
-      .values({ articleId: a!.id, companyId: nvda.id, method: "alias", score });
-    return a!.id;
+      .values({ articleId: a!.id, companyId: company.id, method: "alias", score });
+    return { id: a!.id, publishedAt };
   };
-  const story = await addArticle("E2E Acme cuts outlook on weak orders", 14, 0.9);
+  const classify = async (
+    articleId: number,
+    cls: "fundamental" | "narrative" | "noise",
+    importance: number,
+    key: string,
+  ) => {
+    await db.insert(newsClassifications).values({
+      articleId,
+      eventTypeId: guidance!.id,
+      class: cls,
+      fundamentalImportance: importance,
+      marketRelevance: 5,
+      expectedPersistence: 5,
+      mechanism: `E2E mechanism ${key}`,
+      confidence: 0.9,
+      model: "e2e",
+      promptVersion: "e2e",
+      contentHash: key,
+    });
+  };
+  const story = (await addArticle("E2E Acme cuts outlook on weak orders", 14, 0.9)).id;
   await addArticle("E2E Acme cuts outlook on weak orders - Wire", 15, 0.8, story);
   await addArticle("E2E Target noise only", 14, 0.3); // weak ambiguous link: must not appear
-  await db.insert(newsClassifications).values({
-    articleId: story,
-    eventTypeId: guidance!.id,
-    class: "fundamental",
-    fundamentalImportance: 8,
-    marketRelevance: 7,
-    expectedPersistence: 8,
-    mechanism: "Lower guided revenue reduces expected cash flows.",
-    confidence: 0.9,
-    model: "e2e",
-    promptVersion: "e2e",
-    contentHash: "e2e",
-  });
-  writeFileSync(`${REPO_ROOT}apps/web/e2e/.fixtures.json`, JSON.stringify({ newsDate }));
+  await classify(story, "fundamental", 8, "story");
+
+  // Recent news for the radar tests. Titles and classes are chosen so scores differ clearly.
+  const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
+  const r1 = await addArticle(
+    "E2E Radar NVDA earnings miss",
+    0,
+    0.9,
+    undefined,
+    "NVDA",
+    hoursAgo(2),
+  );
+  await classify(r1.id, "fundamental", 9, "r1");
+  await addArticle("E2E Radar NVDA earnings miss - Wire", 0, 0.8, r1.id, "NVDA", hoursAgo(1.5));
+  const r2 = await addArticle(
+    "E2E Radar AAPL product buzz",
+    0,
+    0.8,
+    undefined,
+    "AAPL",
+    hoursAgo(26),
+  );
+  await classify(r2.id, "narrative", 5, "r2");
+  const r3 = await addArticle(
+    "E2E Radar MSFT celebrity gossip",
+    0,
+    0.9,
+    undefined,
+    "MSFT",
+    hoursAgo(5),
+  );
+  await classify(r3.id, "noise", 1, "r3");
+  await addArticle("E2E Radar AMZN unclassified", 0, 0.8, undefined, "AMZN", hoursAgo(3));
+  await addArticle("E2E Radar JPM stale rumor", 0, 0.5, undefined, "JPM", hoursAgo(24 * 6)); // old, weak, unclassified: collapsed
+
+  // A trading day on which no seeded news lands, for tests that need an empty day.
+  const eventDays = new Set(
+    [hoursAgo(2), hoursAgo(1.5), hoursAgo(26), hoursAgo(5), hoursAgo(3), hoursAgo(24 * 6)].map(
+      (d) => eventTradingDate(d),
+    ),
+  );
+  eventDays.add(newsDate);
+  const quietDate = [1, 2, 3, 4, 5].map(nthWeekdayBack).find((d) => !eventDays.has(d));
+  if (!quietDate) throw new Error("could not find a quiet day for the fixtures");
+
+  writeFileSync(`${REPO_ROOT}apps/web/e2e/.fixtures.json`, JSON.stringify({ newsDate, quietDate }));
+  writeFileSync(`${REPO_ROOT}apps/web/e2e/.counter`, "0");
 
   await close();
   console.log("e2e database ready");

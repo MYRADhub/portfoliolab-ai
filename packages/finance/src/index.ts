@@ -4,3 +4,4 @@ export * from "./weights";
 export * from "./exposure";
 export * from "./correlation";
 export * from "./attribution";
+export * from "./relevance";

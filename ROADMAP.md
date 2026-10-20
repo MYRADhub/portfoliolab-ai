@@ -269,6 +269,8 @@ Progress (2026-10-20): holding-level and sector-level attribution built and test
 **Phase 11 - Market Radar (1 wk)**
 Ranked feed per portfolio using relevance score, severity, recency decay; filters (class, factor, holding); "why am I seeing this"; daily digest; the low-relevance items collapsed, not hidden.
 
+Progress (2026-10-20): built and tested. Relevance score (`packages/finance/src/relevance.ts`) = 10 x holdings touched x economic impact (class-capped) x freshness (3-day half-life), with the parts returned for a "why am I seeing this" breakdown; radar service and API with period, type and holding filters; News page with collapsed low-relevance items. See docs/DECISIONS.md section 15. Not built: scoring through economic factors (needs exposures), daily digest.
+
 **Phase 12 - Stress Lab (2 wk)**
 Scenario library (rates +2%, oil +50%, AI capex down, China demand down, Taiwan disruption) as `scenario_factor_shocks`. V1 method: linear `shock * signed_exposure * beta_scale` with per-factor sensitivity calibrated from history (regress holding returns on factor proxies: DGS10 changes, WTI returns, DXY, SOX, etc.) so "magnitude 2" maps to an estimated percent impact rather than an arbitrary number. Show a range, not a point. Custom scenario builder (choose factors and shocks). Second-order propagation via `factor_relationships` with damping. Clearly label as scenario analysis, not prediction.
 

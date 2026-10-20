@@ -48,7 +48,7 @@ test.describe("mobile layout", () => {
   }) => {
     const s = await startUiSession(page);
     await s.create("Mobile", COVERED);
-    for (const path of ["/dashboard", "/correlation", "/exposures"]) {
+    for (const path of ["/dashboard", "/correlation", "/exposures", "/news"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

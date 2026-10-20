@@ -36,11 +36,13 @@ test.describe("navigation", () => {
     expect(errors).toEqual([]);
   });
 
-  test("placeholder pages say what is coming rather than looking broken", async ({ page }) => {
+  test("the Research placeholder says what is coming, and News describes itself", async ({
+    page,
+  }) => {
     await page.goto("/research");
     await expect(page.getByText(/research terminal arrives in Phase 13/)).toBeVisible();
     await page.goto("/news");
-    await expect(page.getByText(/News ingestion and relevance ranking arrive/)).toBeVisible();
+    await expect(page.getByText(/Fewer, more relevant stories/)).toBeVisible();
   });
 
   test("an unknown route shows the not-found page and the app recovers", async ({ page }) => {

@@ -42,3 +42,4 @@ next-env.d.ts
 /test-results
 /playwright-report
 /e2e/.fixtures.json
+/e2e/.counter

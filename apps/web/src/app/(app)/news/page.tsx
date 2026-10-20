@@ -1,10 +1,13 @@
+import { RadarView } from "@/components/portfolio/radar-view";
+
 export default function Page() {
   return (
-    <section>
+    <section className="space-y-4">
       <h1 className="text-2xl font-semibold">News</h1>
-      <p className="mt-2 text-muted-foreground">
-        News ingestion and relevance ranking arrive in Phases 6-8.
+      <p className="text-muted-foreground">
+        Fewer, more relevant stories: ranked by how much each one matters to the companies you hold.
       </p>
+      <RadarView />
     </section>
   );
 }

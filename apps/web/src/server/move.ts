@@ -1,16 +1,11 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
-import {
-  eventTypes,
-  newsArticles,
-  newsClassifications,
-  newsCompanyLinks,
-  type Db,
-} from "@portfolio-lab/db";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { newsArticles, newsCompanyLinks, type Db } from "@portfolio-lab/db";
 import { eventTradingDate, loadTradingDays, MIN_LINK_SCORE } from "@portfolio-lab/data";
 import { dailyReturns, dayContributions, groupContributions } from "@portfolio-lab/finance";
 import { factsFromEntries, type Fact } from "@portfolio-lab/explain";
 import { pct } from "@/lib/format";
 import { AppError } from "./errors";
+import { latestClassifications, mergeClusters } from "./news-links";
 import { addDays, loadPortfolioWithPrices, monthsAgo } from "./portfolio-data";
 
 /** How many recent trading days can be picked, and how many linked news items are shown. */
@@ -114,40 +109,11 @@ async function linkedNews(
 
   const onDate = rows.filter((r) => eventTradingDate(r.publishedAt, isTrading) === date);
 
-  // One entry per near-duplicate group: the earliest article, with the best link score per company.
-  const groups = new Map<number, typeof onDate>();
-  for (const r of onDate) {
-    const key = r.clusterId ?? r.id;
-    groups.set(key, [...(groups.get(key) ?? []), r]);
-  }
-  const picked = [...groups.values()].map((members) => {
-    const earliest = members.reduce((a, b) => (b.publishedAt < a.publishedAt ? b : a));
-    const articleIds = new Set(members.map((m) => m.id));
-    const perCompany = new Map<number, number>();
-    for (const m of members.filter((m) => m.id === earliest.id))
-      perCompany.set(m.companyId, Math.max(perCompany.get(m.companyId) ?? 0, m.score));
-    return { earliest, copies: articleIds.size - 1, perCompany };
-  });
-
-  const ids = picked.map((p) => p.earliest.id);
-  const cls = ids.length
-    ? await db
-        .select({
-          articleId: newsClassifications.articleId,
-          class: newsClassifications.class,
-          eventType: eventTypes.slug,
-          fundamentalImportance: newsClassifications.fundamentalImportance,
-          marketRelevance: newsClassifications.marketRelevance,
-          expectedPersistence: newsClassifications.expectedPersistence,
-          mechanism: newsClassifications.mechanism,
-        })
-        .from(newsClassifications)
-        .leftJoin(eventTypes, eq(eventTypes.id, newsClassifications.eventTypeId))
-        .where(inArray(newsClassifications.articleId, ids))
-        .orderBy(desc(newsClassifications.createdAt))
-    : [];
-  const latest = new Map<number, (typeof cls)[number]>();
-  for (const c of cls) if (!latest.has(c.articleId)) latest.set(c.articleId, c);
+  const picked = mergeClusters(onDate);
+  const latest = await latestClassifications(
+    db,
+    picked.map((p) => p.earliest.id),
+  );
 
   const items: MoveNews[] = picked.map(({ earliest, copies, perCompany }) => {
     const c = latest.get(earliest.id);
@@ -160,16 +126,7 @@ async function linkedNews(
       tickers: [...perCompany.keys()].map((id) => tickerById.get(id)!).sort(),
       linkScore: Math.max(...perCompany.values()),
       copies,
-      classification: c
-        ? {
-            class: c.class,
-            eventType: c.eventType,
-            fundamentalImportance: c.fundamentalImportance,
-            marketRelevance: c.marketRelevance,
-            expectedPersistence: c.expectedPersistence,
-            mechanism: c.mechanism,
-          }
-        : null,
+      classification: c ?? null,
     };
   });
   // Most economically important first, then strongest company link, then newest.

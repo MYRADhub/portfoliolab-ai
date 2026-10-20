@@ -276,6 +276,52 @@ No grouping by economic factor yet (needs exposure data). No check of whether ot
 
 ---
 
+## 15. The News page and its relevance score (added 2026-10-20)
+
+This answers the open question "how relevant is this news to my portfolio?". You had not chosen a formula, so I proposed one that a non-expert can read, and put every part of it on screen.
+
+**15.1 Relevance is a 0 to 10 score built from three simple parts multiplied together.** Final for now. Who: Me. Revisit once real data exists.
+Score = 10 x holdings touched x economic impact x freshness.
+
+- **Holdings touched** (0 to 100%): how strongly the article is about things you own. Each matched holding contributes how sure we are the article is about that company, times a size factor, and several holdings reinforce each other without ever reaching certainty.
+- **Economic impact** (0 to 100%): from the classifier. It is the "importance" score, but each type has a ceiling: real economic news can reach 100%, narrative news 60%, "unclear" 30%, and noise 20%. Why: so a gossip story the model rated "importance 9" can never outrank a genuine earnings change.
+- **Freshness**: halves every 3 days, so a story from 6 days ago keeps a quarter of its weight.
+
+**15.2 Position size matters, but small holdings still count.** Final for now. Who: Me.
+A holding of 25% or more counts fully; a 2% holding counts about 45%; nothing counts for less than 40%. Why: a story about a tiny holding matters less to you, but you may still want to see it. The 25% and 40% are my guesses.
+
+**15.3 Unclassified news gets a neutral impact of 50%.** Final for now. Who: Me.
+It can never reach the top of the list (the best possible score is 5), but it is not buried either. Why: classification runs after ingestion, so new items briefly have no label.
+
+**15.4 Low-scoring items are collapsed, not hidden.** Final. Who: Me, following the roadmap.
+Anything under 1.0 sits in a "low-relevance items" fold with a count. The description's idea is "less, but more relevant" news, but silently dropping items would hide mistakes in the scoring.
+
+**15.5 Every item can explain itself.** Final. Who: Me.
+"Why am I seeing this?" shows each part, the numbers behind it (for example "90% sure it is about them, 25% of your portfolio"), the classifier's one-sentence reason, and the final arithmetic. The browser tests recompute every score from these parts independently.
+
+**15.6 What counts as "news for this portfolio".** Final. Who: Me.
+Only articles linked to a holding with a link score of at least 0.5 (so ambiguous names like "Target" do not pull in unrelated stories). Syndicated copies appear once. The default window is the last 7 days; you can choose 1, 3, 7, 14 or 30.
+
+**15.7 Filters: by type and by holding.** Final. Who: Me.
+Type includes "Not yet classified". When a filter matches nothing the page says so and offers "Clear filters", rather than showing the empty-portfolio message.
+
+**15.8 Not built: scoring through economic factors (layer 3).** Open. Who: Together.
+The description also wants news that affects you indirectly (for example an oil shock affecting an airline you hold even though the article never names it). That needs the factor data. Today only direct company mentions count.
+
+**15.9 The portfolio "Delete" button shows on every page that selects a portfolio, including News.** Revisit. Who: Me.
+It is guarded by a confirmation but it is out of place on a news page; moving it to a settings spot would be cleaner.
+
+**15.10 The radar needs no price history.** Final. Who: Me.
+Unlike the dashboard, it only needs your holdings and weights, so a brand-new stock with no prices still shows news.
+
+### Mistakes in this slice
+
+- My first expected ranking in a test was wrong (I put a 6-day-old unclassified item above a 1-day-old gossip item). The code was right, and the test arithmetic was mine.
+- Cached explanations were shared across tests whose facts rounded the same, causing a flaky run. I replaced the "unique weights" trick with a counter shared across the whole run.
+- Seeding recent news broke two older tests that assumed the latest day had none; I added a fixed "quiet day" for them.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

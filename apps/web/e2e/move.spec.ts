@@ -3,6 +3,7 @@ import {
   EXAMPLE,
   NEWS_DATE,
   NEWS_TITLE,
+  QUIET_DATE,
   appAlert,
   createPortfolio,
   mock,
@@ -93,8 +94,8 @@ test.describe("move API", () => {
       class: "fundamental",
       eventType: "guidance_cut",
       fundamentalImportance: 8,
-      marketRelevance: 7,
-      expectedPersistence: 8,
+      marketRelevance: 5,
+      expectedPersistence: 5,
     });
     expect(JSON.stringify(m.news)).not.toContain("Target noise");
     // A portfolio that does not hold NVDA sees none of it.
@@ -106,9 +107,11 @@ test.describe("move API", () => {
       ((await (await ctx.get(`/api/portfolios/${other}/move?date=${NEWS_DATE}`)).json()) as Json)
         .news,
     ).toEqual([]);
-    // And another day has none.
-    const latest = (await (await ctx.get(`/api/portfolios/${id}/move`)).json()) as Json;
-    expect(latest.news).toEqual([]);
+    // And a quiet day has none.
+    const quiet = (await (
+      await ctx.get(`/api/portfolios/${id}/move?date=${QUIET_DATE}`)
+    ).json()) as Json;
+    expect(quiet.news).toEqual([]);
   });
 
   test("requires a session and hides other sessions' portfolios", async ({
@@ -195,17 +198,24 @@ test.describe("move explanation (mock OpenAI)", () => {
 
   test("shares the hourly allowance with the portfolio explanation", async ({ playwright }) => {
     const ctx = await newSession(playwright);
+    // Move explanations for the same holdings differ by day, so each date below is a distinct, uncached question.
+    const id = await createPortfolio(ctx, "Allowance", uniqueHoldings());
+    const days = ((await (await ctx.get(`/api/portfolios/${id}/move`)).json()) as Json)
+      .availableDates as string[];
     for (let i = 0; i < 5; i++) {
-      const id = await createPortfolio(ctx, `P${i}`, uniqueHoldings());
-      expect((await ctx.post(`/api/portfolios/${id}/explain`)).status()).toBe(200);
+      const own = await createPortfolio(ctx, `P${i}`, uniqueHoldings());
+      expect((await ctx.post(`/api/portfolios/${own}/explain`)).status()).toBe(200);
     }
-    for (let i = 0; i < 5; i++) {
-      const id = await createPortfolio(ctx, `M${i}`, uniqueHoldings());
-      expect((await ctx.post(`/api/portfolios/${id}/move/explain`)).status()).toBe(200);
-    }
-    const id = await createPortfolio(ctx, "Over", uniqueHoldings());
-    expect((await ctx.post(`/api/portfolios/${id}/move/explain`)).status()).toBe(429);
-    expect((await ctx.post(`/api/portfolios/${id}/explain`)).status()).toBe(429);
+    for (let i = 0; i < 5; i++)
+      expect(
+        (await ctx.post(`/api/portfolios/${id}/move/explain?date=${days[i]}`)).status(),
+        `day ${i}`,
+      ).toBe(200);
+    expect((await ctx.post(`/api/portfolios/${id}/move/explain?date=${days[5]}`)).status()).toBe(
+      429,
+    );
+    const another = await createPortfolio(ctx, "Over", uniqueHoldings());
+    expect((await ctx.post(`/api/portfolios/${another}/explain`)).status()).toBe(429);
   });
 
   test("rejects a bad date before calling the model", async ({ playwright }) => {
@@ -247,6 +257,7 @@ test.describe("move panel", () => {
     const sectors = card.getByRole("table", { name: "Contribution by sector" });
     await expect(sectors.locator("tbody tr")).toHaveCount(api.groups.length);
     await expect(card.locator(".recharts-surface")).toHaveCount(1);
+    await card.getByRole("combobox", { name: "Day" }).selectOption(QUIET_DATE);
     await expect(card.getByText("No linked news found for this day.")).toBeVisible();
     await expect(card.getByText(/may coincide with, not cause, a price move/)).toBeVisible();
   });

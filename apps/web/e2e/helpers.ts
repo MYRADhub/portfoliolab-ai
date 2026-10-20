@@ -1,5 +1,5 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MOCK_PORT, WEB_PORT } from "./env";
 
@@ -41,24 +41,32 @@ export const COVERED: Holding[] = [
   { ticker: "AMZN", weightPct: 10 },
 ];
 
-const usedFirstWeights = new Set<number>();
+const COUNTER_FILE = resolve(__dirname, ".counter");
+
+/** A number never handed out before in this run, shared across spec files (setup resets it). Tests run one at a time. */
+function nextUnique(): number {
+  let n = 0;
+  try {
+    n = Number(readFileSync(COUNTER_FILE, "utf8")) || 0;
+  } catch {
+    n = 0;
+  }
+  writeFileSync(COUNTER_FILE, String(n + 1));
+  return n;
+}
 
 /**
  * Two weights summing to 100 whose largest-holding fact text ("NVDA 54.3%") has not been used before in this
  * run. Explanations are cached by their fact text, so nearby weights that round the same would collide.
  */
 export function uniqueHoldings(): Holding[] {
-  for (let attempt = 0; attempt < 1000; attempt++) {
-    const tenths = 520 + Math.floor(Math.random() * 400); // 52.0 to 91.9, so NVDA is always the larger weight
-    if (usedFirstWeights.has(tenths)) continue;
-    usedFirstWeights.add(tenths);
-    const first = tenths / 10;
-    return [
-      { ticker: "NVDA", weightPct: first },
-      { ticker: "AAPL", weightPct: Math.round((100 - first) * 10) / 10 },
-    ];
-  }
-  throw new Error("ran out of unique weights");
+  const n = nextUnique();
+  if (n >= 400) throw new Error("ran out of unique weights; run the e2e setup again");
+  const first = (520 + n) / 10; // 52.0 to 91.9, so NVDA is always the larger weight
+  return [
+    { ticker: "NVDA", weightPct: first },
+    { ticker: "AAPL", weightPct: Math.round((100 - first) * 10) / 10 },
+  ];
 }
 
 type PlaywrightLike = {
@@ -108,9 +116,13 @@ export const appAlert = (page: Page) =>
   page.locator('[role="alert"]:not(#__next-route-announcer__)');
 
 /** The known past trading day that has seeded news for NVDA (see setup-db.ts). */
-export const NEWS_DATE: string = (
-  JSON.parse(readFileSync(resolve(__dirname, ".fixtures.json"), "utf8")) as { newsDate: string }
-).newsDate;
+const fixtures = JSON.parse(readFileSync(resolve(__dirname, ".fixtures.json"), "utf8")) as {
+  newsDate: string;
+  quietDate: string;
+};
+export const NEWS_DATE: string = fixtures.newsDate;
+/** A trading day with no seeded news at all. */
+export const QUIET_DATE: string = fixtures.quietDate;
 export const NEWS_TITLE = "E2E Acme cuts outlook on weak orders";
 
 /** The dashboard's holdings card, so row counts are not confused by the other tables on the page. */
