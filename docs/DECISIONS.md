@@ -603,6 +603,39 @@ One row per holding (weight, latest price, recent returns, share of risk), downl
 
 ---
 
+## 23. Professional UI, new analysis tools, explanations and onboarding (added 2026-10-22)
+
+**23.1 A brand colour and a real layout system.** Final. Who: Me (you asked for a professional look).
+The grey-only palette became a deep blue on cool neutral surfaces, in light and dark, with matching chart colours. Every page now has the same header (title, one-sentence description, actions). The sidebar has the logo, grouped sections (Overview, Analyze, Market, Help) and icons. Loading states are skeleton placeholders instead of the word "Loading" (screen readers still hear "Loading"). The main equity and price charts use a soft gradient. All text and structure that tests and screen readers rely on is unchanged.
+
+**23.2 Rebalance Lab: compare weightings, never recommend.** Final. Who: Me.
+It compares your weights with equal weights, the lowest-volatility mix (long-only, with a cap on any one holding you choose) and equal-risk weights. The math is a standard convex optimisation checked against closed-form answers. Every number is "in-sample": fitted and measured on the same past three years, so the alternatives look better than anyone could have known in advance, and the page says so. I left out a "best return" optimiser on purpose: it chases noise in past returns.
+
+**23.3 Simulation: possible paths from your own history.** Final. Who: Me.
+Circular block bootstrap (blocks of 10 days, so short streaks survive) over the portfolio's last three years, 2,000 paths, seeded so the same inputs give the same picture. It shows percentile bands, the chance of a loss, and the typical worst drop. It is labelled a projection of the past, not a forecast.
+By default the paths are centred on a typical long-run 7% a year instead of the portfolio's own past average. The first version replayed a mega-cap tech portfolio's +41% a year and reported a 0% chance of loss over three years, which is a boom assumed to repeat, so I re-centre the history (keeping its volatility and shape) and offer a toggle for the past average. The 7% is my judgment, in one place in the code.
+
+**23.4 "In plain English" on every new tool.** Final. Who: Me.
+Stress Lab, Rebalance Lab and Simulation each have a button that writes a short explanation. The server recomputes the tool's figures itself (the browser cannot supply numbers), and the same checks as before apply: every number must come from those figures, citations must exist, no advice wording, otherwise only the figures are shown. Results share the 10-per-hour allowance.
+
+**23.5 A collapsed "How to read this" note on every analysis page.** Final. Who: Me.
+Plain language: what the page shows, how to read it, what to be careful about. Collapsed by default so experienced users are not slowed down.
+
+**23.6 Onboarding: a non-blocking welcome, a checklist, and a guided tour.** Final. Who: Me.
+First-time visitors see a card offering a two-minute tour; it never blocks the page. A checklist ticks itself off as pages are opened and can be hidden. The tour has 8 steps, moves between pages, and spotlights real elements (portfolio picker, key numbers, insight cards, exposure map, Stress Lab controls, assistant, Guide). It works by keyboard (arrows, Escape, focus stays inside), restores focus when it closes, and can be replayed from the sidebar, the Guide or the checklist. Progress is kept only in your own browser; blocked storage just means it is forgotten on reload. I chose a card over a pop-up that appears by itself because an unrequested overlay is the thing people close without reading.
+
+**23.7 Still open.** Open. Who: You.
+Whether to translate the plain-language notes and tour into other languages, and whether the tour should be shown automatically to new users of a deployed version.
+
+### Mistakes in this slice
+
+- My first Simulation, run on the real data, said a tech-heavy portfolio had a 0% chance of losing money over three years. The code did what I wrote; the assumption was wrong. Looking at it on real numbers, not just in tests, is what caught it.
+- Opening the dev server by its numeric address made the browser silently skip the page scripts, so my first screenshots showed only "Loading". Using localhost fixed it; the deployed app is unaffected.
+- A keyboard bug that was already in the exposure map only showed up after the new layout pushed the map lower on the page: focusing a node scrolled the page, a parked mouse "left" the graph, and that cleared the highlight. Mouse and keyboard state are now separate.
+- Several older tests looked up phrases that my new explanatory notes repeated, and two scrollable tables lacked keyboard focus. The notes were reworded and labelled tables are now focusable.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

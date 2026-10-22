@@ -13,6 +13,8 @@ import {
 import { pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { EventStudyReport } from "@/server/events";
+import { HowToRead } from "@/components/ui/how-to-read";
+import { Loading } from "@/components/ui/skeleton";
 
 const SKIP_LABEL: Record<string, string> = {
   not_classified: "not yet classified",
@@ -31,11 +33,24 @@ export function EventsView() {
         {error}
       </p>
     );
-  if (!data) return <p className="text-muted-foreground">Loading</p>;
+  if (!data) return <Loading />;
 
   const skipped = Object.entries(data.skipped);
   return (
     <div className="space-y-6">
+      <HowToRead>
+        <p>
+          When a company reports earnings or files an important notice, its stock moves. But part of
+          any move is just the market going up or down that day. The{" "}
+          <strong>abnormal return</strong> removes that part, leaving the stock&apos;s own reaction.
+        </p>
+        <p>
+          A move is flagged <strong>unusual</strong> when it is more than twice the stock&apos;s
+          normal daily noise. The average across many events can sit near zero because good and bad
+          surprises cancel, so the table also shows the typical size of a move in either direction.
+          Averages from only a few events are labelled as too few to judge.
+        </p>
+      </HowToRead>
       <p className="max-w-3xl text-sm text-muted-foreground">
         For each classified story, this compares what a stock actually did around the news with what
         it would normally do given how the market moved. The difference is the abnormal return. It

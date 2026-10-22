@@ -14,7 +14,10 @@ import { api } from "@/lib/api";
 import { pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { StressCatalog, StressOutcome } from "@/server/stress";
+import { ExplainTool } from "./explain-tool";
 import { WithPortfolio } from "./with-portfolio";
+import { HowToRead } from "@/components/ui/how-to-read";
+import { Loading } from "@/components/ui/skeleton";
 
 export function StressView() {
   return <WithPortfolio>{(id) => <Content key={id} id={id} />}</WithPortfolio>;
@@ -59,7 +62,7 @@ function Content({ id }: { id: string }) {
         {error}
       </p>
     );
-  if (!catalog) return <p className="text-muted-foreground">Loading</p>;
+  if (!catalog) return <Loading />;
   if (!catalog.available)
     return (
       <Card>
@@ -76,6 +79,19 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      <HowToRead>
+        <p>
+          A stress test asks &ldquo;what if this happened?&rdquo; Pick a scenario, such as interest
+          rates jumping, or drag the sliders to push individual economic forces up or down. Each
+          holding is hit in proportion to how exposed it is to those forces.
+        </p>
+        <p>
+          The <strong>vulnerability score</strong> runs from 0 to 10 (10 means a loss of 10% or
+          more). The <strong>reliability</strong> figure shows how confident the underlying exposure
+          estimates are. The result is an illustrative estimate built on a simple rule, not a
+          forecast.
+        </p>
+      </HowToRead>
       <p className="max-w-3xl text-sm text-muted-foreground">
         Pick a scenario or move the sliders to see how this portfolio might react. This is an
         illustrative what-if built from each holding&apos;s hidden exposures, not a forecast.
@@ -98,7 +114,7 @@ function Content({ id }: { id: string }) {
         </div>
       )}
 
-      <Card>
+      <Card data-tour="stress-controls">
         <CardHeader>
           <CardTitle>Custom scenario</CardTitle>
         </CardHeader>
@@ -144,6 +160,9 @@ function Content({ id }: { id: string }) {
       )}
 
       {shown && shown.available && <Result r={shown} />}
+      {shown && shown.available && shown.touched && (
+        <ExplainTool portfolioId={id} tool="stress" params={body} label="Explain this scenario" />
+      )}
     </div>
   );
 }

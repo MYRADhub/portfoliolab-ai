@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useApi } from "@/lib/use-api";
 import type { Radar, RadarItem } from "@/server/radar";
 import { WithPortfolio } from "./with-portfolio";
+import { HowToRead } from "@/components/ui/how-to-read";
+import { Loading } from "@/components/ui/skeleton";
 
 const DAYS = [1, 3, 7, 14, 30];
 const TYPES: NewsClassKey[] = ["fundamental", "narrative", "noise", "unclear", "unclassified"];
@@ -28,6 +30,18 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-4">
+      <HowToRead>
+        <p>
+          Each story gets a score from 0 to 10 for how much it matters to <em>your</em> portfolio.
+          The score multiplies three things: how much of your money the story touches, how
+          economically important the news is (real change counts for more than chatter), and how
+          fresh it is.
+        </p>
+        <p>
+          Open the breakdown on any card to see the three parts. Low-scoring stories are collapsed,
+          not hidden.
+        </p>
+      </HowToRead>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2">
           Period
@@ -79,7 +93,7 @@ function Content({ id }: { id: string }) {
           {error}
         </p>
       )}
-      {!data && !error && <p className="text-muted-foreground">Loading</p>}
+      {!data && !error && <Loading />}
       {data && <Results data={data} type={type} setType={setType} filtered={filtered} />}
     </div>
   );

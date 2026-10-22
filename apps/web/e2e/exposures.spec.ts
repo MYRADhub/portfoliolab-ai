@@ -163,8 +163,7 @@ test.describe("exposures page", () => {
     expect(await nodeOpacity(/^AI infrastructure capex/)).toBe(1);
 
     await map.getByRole("button", { name: /^Interest rates/ }).focus();
-    const rates = await strokeOpacities();
-    expect(rates.filter((o) => o > 0.5)).toHaveLength(4); // every covered holding depends on rates
+    await expect.poll(async () => (await strokeOpacities()).filter((o) => o > 0.5).length).toBe(4); // every covered holding depends on rates
 
     // Leaving the graph and the node restores every line to equal visibility.
     await page.mouse.move(0, 0);

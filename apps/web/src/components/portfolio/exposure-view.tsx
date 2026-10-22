@@ -25,6 +25,8 @@ import type { PortfolioExposures } from "@/server/exposures";
 import { chartColors, axisTick, tooltipStyle } from "@/lib/chart";
 import { ExposureGraph } from "./exposure-graph";
 import { WithPortfolio } from "./with-portfolio";
+import { HowToRead } from "@/components/ui/how-to-read";
+import { Loading } from "@/components/ui/skeleton";
 
 export function ExposureView() {
   return <WithPortfolio>{(id) => <Content id={id} />}</WithPortfolio>;
@@ -46,7 +48,7 @@ function Content({ id }: { id: string }) {
       </p>
     );
   }
-  if (!data) return <p className="text-muted-foreground">Loading</p>;
+  if (!data) return <Loading />;
 
   if (!data.available) {
     return (
@@ -74,6 +76,19 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      <HowToRead>
+        <p>
+          Owning different stocks does not mean owning different risks. Each company depends on
+          economic forces such as interest rates, oil prices or AI spending. This page adds those
+          dependencies up across your holdings.
+        </p>
+        <p>
+          The sector count shows how many groups you look spread across by industry; the force count
+          shows how many independent economic forces you are really exposed to. When the force count
+          is much smaller, your portfolio is less diversified than its sector mix suggests. The map
+          shows which holdings are tied to which forces.
+        </p>
+      </HowToRead>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-1">
@@ -120,7 +135,7 @@ function Content({ id }: { id: string }) {
         confidence, not measurements.
       </p>
 
-      <Card>
+      <Card data-tour="exposure-map">
         <CardHeader>
           <CardTitle>Hidden exposure map</CardTitle>
         </CardHeader>

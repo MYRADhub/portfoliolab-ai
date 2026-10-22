@@ -2,21 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { NewsCard } from "@/components/news/news-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { axisTick, chartColors, tooltipStyle } from "@/lib/chart";
+import { AreaSeries } from "@/components/charts/area-series";
 import { compactUsd, pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { CompanyResearch, WhatIfOutcome } from "@/server/research";
+import { Loading } from "@/components/ui/skeleton";
 
 const tone = (x: number | null) =>
   x === null ? "text-muted-foreground" : x > 0 ? "text-gain" : x < 0 ? "text-loss" : "";
@@ -38,7 +30,7 @@ export function CompanyView({ ticker }: { ticker: string }) {
         {error}
       </p>
     );
-  if (!data) return <p className="text-muted-foreground">Loading</p>;
+  if (!data) return <Loading />;
   const { company, stats } = data;
   const na = (v: number | null, f: (x: number) => string) => (v === null ? "n/a" : f(v));
 
@@ -79,26 +71,7 @@ export function CompanyView({ ticker }: { ticker: string }) {
           {data.prices.length < 2 ? (
             <p className="text-sm text-muted-foreground">Not enough price history to chart.</p>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.prices}>
-                <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" />
-                <XAxis dataKey="date" minTickGap={48} tick={axisTick} />
-                <YAxis
-                  domain={["auto", "auto"]}
-                  tick={axisTick}
-                  width={44}
-                  tickFormatter={(v: number) => v.toFixed(0)}
-                />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v) => Number(v).toFixed(2)} />
-                <Line
-                  type="monotone"
-                  dataKey="close"
-                  dot={false}
-                  strokeWidth={2}
-                  stroke={chartColors.info}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <AreaSeries data={data.prices} xKey="date" yKey="close" />
           )}
         </CardContent>
       </Card>

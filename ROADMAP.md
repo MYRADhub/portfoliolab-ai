@@ -381,3 +381,5 @@ Parallel tracks that shorten this: Phase 3 data authoring can start during Phase
 2. Scaffold monorepo, CI, DB, and migrations (Phase 1).
 3. Start the factor taxonomy document in parallel (non-code, finance lead).
 4. Run the provider spike.
+
+Progress (2026-10-22): UI pass and new tools - brand palette and layout system, grouped sidebar, skeleton loading, Rebalance Lab (`packages/finance/src/optimize.ts`: capped-simplex projection, accelerated projected-gradient minimum variance, risk parity), Simulation (`simulation.ts`: seeded circular block bootstrap, fan bands), grounded "In plain English" explanations for Stress Lab, Rebalance Lab and Simulation, "How to read this" notes, and onboarding (welcome card, checklist, 8-step guided tour). See docs/DECISIONS.md section 23.

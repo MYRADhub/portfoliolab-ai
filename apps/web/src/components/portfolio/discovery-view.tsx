@@ -14,6 +14,8 @@ import { pct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { DiscoveryOutcome } from "@/server/discovery";
 import { WithPortfolio } from "./with-portfolio";
+import { HowToRead } from "@/components/ui/how-to-read";
+import { Loading } from "@/components/ui/skeleton";
 
 const weights = [0.03, 0.05, 0.1];
 
@@ -34,7 +36,7 @@ function Content({ id }: { id: string }) {
         {error}
       </p>
     );
-  if (!data) return <p className="text-muted-foreground">Loading</p>;
+  if (!data) return <Loading />;
   if (!data.available)
     return (
       <Card>
@@ -51,6 +53,19 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      <HowToRead>
+        <p>
+          Discovery looks for companies that would spread your hidden exposures across more
+          independent economic forces. &ldquo;Effective forces&rdquo; is the number of equally
+          important forces your portfolio is really riding; a higher number means less dependence on
+          any single one.
+        </p>
+        <p>
+          A <strong>Hedge</strong> tag means adding the company lowers your total hidden exposure.
+          That can reduce the effective number of forces even though your risk falls, so read the
+          tag alongside the change. These are ideas for research only.
+        </p>
+      </HowToRead>
       <p className="max-w-3xl text-sm text-muted-foreground">
         These are research candidates, ranked by how much adding them would spread your hidden
         exposures across more independent forces. They are a diversification screen, not

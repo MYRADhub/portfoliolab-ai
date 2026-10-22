@@ -1,3 +1,4 @@
+import { TourLauncher } from "@/components/onboarding/tour-launcher";
 import Link from "next/link";
 
 export const metadata = { title: "Guide | PortfolioLab" };
@@ -38,6 +39,7 @@ export default function Page() {
           what happened. This one tries to show you which hidden forces connect your stocks, which
           news actually matters to you, and whether a move was real or just noise.
         </p>
+        <TourLauncher />
         <nav aria-label="On this page" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <a href="#tour" className="underline">
             Quick tour
@@ -152,6 +154,19 @@ export default function Page() {
             forces. The page estimates how each holding and the whole portfolio might react, using
             the hidden exposures. It is a what-if built on a simple assumption, not a forecast, and
             the reliability figure tells you how confident the underlying exposures are.
+          </Item>
+          <Item id="idea-rebalance" term="Rebalance Lab">
+            Compares your weights with three simple alternatives built from each holding&apos;s own
+            price history: equal weights, the mix that would have been smoothest, and a mix where
+            every holding contributes the same share of risk. It shows what concentrates your risk.
+            Everything is measured on the same past period it was fitted on, so the alternatives
+            look better than anyone could have known in advance.
+          </Item>
+          <Item id="idea-simulation" term="Simulation">
+            Reshuffles your portfolio&apos;s own recent daily returns in blocks to draw thousands of
+            possible futures, then shows the range of outcomes. It is a way to feel the size of
+            normal ups and downs, not a forecast: it assumes the next few years resemble the last
+            three.
           </Item>
           <Item id="idea-discovery" term="Discovery">
             Lists companies that would spread your hidden exposures across more independent forces

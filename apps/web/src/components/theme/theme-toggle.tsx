@@ -1,5 +1,6 @@
 "use client";
 
+import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { THEME_KEY } from "./theme";
@@ -36,7 +37,11 @@ export function ThemeToggle() {
       aria-pressed={dark}
       className="w-full justify-start"
     >
-      <span aria-hidden="true">{dark ? "☾" : "☀"}</span>
+      {dark ? (
+        <Moon className="size-3.5" aria-hidden="true" />
+      ) : (
+        <Sun className="size-3.5" aria-hidden="true" />
+      )}
       Dark mode: {dark ? "on" : "off"}
     </Button>
   );

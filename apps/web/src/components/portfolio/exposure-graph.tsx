@@ -32,9 +32,12 @@ export function ExposureGraph({
   cells: GraphCell[];
 }) {
   // Hover and focus preview a node; clicking or pressing Enter pins it until pressed again.
+  // Mouse and keyboard focus are tracked apart: focusing a node can scroll the page, which makes a parked mouse
+  // 'leave' the graph, and that must not cancel the keyboard preview.
   const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
-  const active = pinned ?? hovered;
+  const active = pinned ?? hovered ?? focused;
   const layout = layoutGraph(holdings, factors, cells);
   const byId = new Map(layout.nodes.map((n) => [`${n.side}:${n.id}`, n]));
 
@@ -133,8 +136,8 @@ export function ExposureGraph({
                 opacity={nodeActive(key) ? 1 : 0.3}
                 className="cursor-pointer outline-none focus-visible:[&>rect]:stroke-foreground"
                 onMouseEnter={() => setHovered(key)}
-                onFocus={() => setHovered(key)}
-                onBlur={() => setHovered(null)}
+                onFocus={() => setFocused(key)}
+                onBlur={() => setFocused(null)}
                 onClick={() => setPinned(pinned === key ? null : key)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {

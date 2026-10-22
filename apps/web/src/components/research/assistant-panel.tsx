@@ -71,7 +71,7 @@ export function AssistantPanel({ portfolioId }: { portfolioId: string }) {
 
   const r = current?.result?.result;
   return (
-    <Card>
+    <Card data-tour="assistant">
       <CardHeader>
         <CardTitle>Ask about your portfolio</CardTitle>
       </CardHeader>

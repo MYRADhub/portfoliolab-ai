@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { pct } from "@/lib/format";
 import { CONSENT_POINTS, DEBRIEF_POINTS } from "./consent";
+import { Loading } from "@/components/ui/skeleton";
 
 interface Status {
   enabled: boolean;
@@ -38,7 +39,7 @@ export function ExperimentFlow() {
         {error}
       </p>
     );
-  if (!status) return <p className="text-muted-foreground">Loading</p>;
+  if (!status) return <Loading />;
   if (!status.enabled) return <p>The study is not open right now.</p>;
   if (!status.participant) return <Consent onDone={refresh} />;
   if (status.participant.completed) return <Done onWithdrawn={refresh} />;
@@ -350,7 +351,7 @@ function Task({
         {error}
       </p>
     ) : (
-      <p className="text-muted-foreground">Loading</p>
+      <Loading />
     );
   const nameOf = (t: string) => companies.find((c) => c.ticker === t)?.name ?? t;
   const shownPreview = valid ? preview : null;

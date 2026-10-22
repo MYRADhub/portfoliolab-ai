@@ -13,6 +13,8 @@ import {
 import { useApi } from "@/lib/use-api";
 import type { CorrelationWindow, PortfolioCorrelation } from "@/server/correlation";
 import { WithPortfolio } from "./with-portfolio";
+import { HowToRead } from "@/components/ui/how-to-read";
+import { Loading } from "@/components/ui/skeleton";
 
 const windows: { value: CorrelationWindow; label: string }[] = [
   { value: "6m", label: "6 months" },
@@ -42,6 +44,18 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      <HowToRead>
+        <p>
+          Correlation measures how closely two holdings move together, from -1 (opposite) through 0
+          (unrelated) to +1 (in lockstep). The lower the average, the more your holdings can offset
+          each other.
+        </p>
+        <p>
+          Diversification tends to weaken in sell-offs, when correlations rise. The stress figure
+          shows the average correlation on your portfolio&apos;s worst days: if it is much higher
+          than the usual figure, your protection is weakest when you need it most.
+        </p>
+      </HowToRead>
       <div className="flex gap-2" role="group" aria-label="Window">
         {windows.map((w) => (
           <button
@@ -61,7 +75,7 @@ function Content({ id }: { id: string }) {
           {error}
         </p>
       )}
-      {!data && !error && <p className="text-muted-foreground">Loading</p>}
+      {!data && !error && <Loading />}
 
       {data && (
         <>

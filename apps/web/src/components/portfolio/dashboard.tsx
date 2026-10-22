@@ -1,28 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { NewsCard } from "@/components/news/news-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { axisTick, chartColors, tooltipStyle } from "@/lib/chart";
+import { AreaSeries } from "@/components/charts/area-series";
 import { pct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 import type { Insight } from "@/server/insights";
 import type { Radar } from "@/server/radar";
 import type { Terminal } from "@/server/terminal";
+import { GettingStarted } from "@/components/onboarding/getting-started";
 import { ExplainPanel } from "./explain-panel";
 import { InsightCard } from "./insight-card";
 import { MovePanel } from "./move-panel";
 import { WithPortfolio } from "./with-portfolio";
+import { Loading } from "@/components/ui/skeleton";
 
 const signed = (x: number, d = 1) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
 const tone = (x: number | null) =>
@@ -64,7 +57,7 @@ function PortfolioView({ id }: { id: string }) {
       </p>
     );
   }
-  if (!t) return <p className="text-muted-foreground">Loading</p>;
+  if (!t) return <Loading />;
 
   const perf = (label: string) => t.performance.find((p) => p.label === label)?.value ?? null;
   const ytd = perf("Year to date");
@@ -81,8 +74,11 @@ function PortfolioView({ id }: { id: string }) {
         .
       </p>
 
+      <GettingStarted />
+
       <section
         aria-label="Key figures"
+        data-tour="kpis"
         className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
       >
         <Stat
@@ -106,10 +102,10 @@ function PortfolioView({ id }: { id: string }) {
         <Stat label="Sharpe" value={t.risk.sharpe.toFixed(2)} />
       </section>
 
-      <section aria-label="What to know now" className="space-y-3">
+      <section aria-label="What to know now" data-tour="insights" className="space-y-3">
         <h2 className="text-lg font-semibold">What to know now</h2>
         {!insights ? (
-          <p className="text-muted-foreground">Loading</p>
+          <Loading />
         ) : (
           <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Insights">
             {insights.insights.slice(0, 6).map((i) => (
@@ -127,26 +123,7 @@ function PortfolioView({ id }: { id: string }) {
             <CardTitle>Portfolio index (100 at the start)</CardTitle>
           </CardHeader>
           <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={t.equity}>
-                <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" />
-                <XAxis dataKey="date" minTickGap={48} tick={axisTick} />
-                <YAxis
-                  domain={["auto", "auto"]}
-                  tick={axisTick}
-                  tickFormatter={(v: number) => v.toFixed(0)}
-                  width={36}
-                />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v) => Number(v).toFixed(2)} />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  dot={false}
-                  strokeWidth={2}
-                  stroke={chartColors.info}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <AreaSeries data={t.equity} xKey="date" yKey="value" />
           </CardContent>
         </Card>
 
@@ -191,7 +168,7 @@ function PortfolioView({ id }: { id: string }) {
           </Link>
         </div>
         {!radar ? (
-          <p className="text-muted-foreground">Loading</p>
+          <Loading />
         ) : radar.items.length === 0 ? (
           <p className="text-muted-foreground">No news matched your holdings in the last 7 days.</p>
         ) : (

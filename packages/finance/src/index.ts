@@ -11,3 +11,5 @@ export * from "./discovery";
 export * from "./eventstudy";
 export * from "./experiment";
 export * from "./fundamentals";
+export * from "./optimize";
+export * from "./simulation";

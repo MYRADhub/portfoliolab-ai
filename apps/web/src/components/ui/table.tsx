@@ -4,8 +4,14 @@ import * as React from "react";
 import { cn } from "cn";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  const label = props["aria-label"];
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    // A labelled table can scroll sideways on narrow screens, so keyboard users need to be able to focus it.
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto"
+      {...(label ? { tabIndex: 0, role: "region", "aria-label": `${label} (scrollable)` } : {})}
+    >
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}

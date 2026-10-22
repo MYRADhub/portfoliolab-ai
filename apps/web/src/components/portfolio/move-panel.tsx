@@ -28,6 +28,7 @@ import { useApi } from "@/lib/use-api";
 import type { ExplainResult } from "@/server/explain";
 import type { PortfolioMove } from "@/server/move";
 import { ExplanationBody } from "./explain-panel";
+import { Loading } from "@/components/ui/skeleton";
 
 const pp = (x: number) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(2)}`;
 const move = (x: number) => `${pp(x)}%`;
@@ -75,7 +76,7 @@ export function MovePanel({ portfolioId }: { portfolioId: string }) {
             {error}
           </p>
         )}
-        {!data && !error && <p className="text-muted-foreground">Loading</p>}
+        {!data && !error && <Loading />}
         {data && (
           <>
             <div className="flex flex-wrap items-center gap-3">

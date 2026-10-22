@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import type { Terminal } from "@/server/terminal";
 import type { Radar } from "@/server/radar";
 import { WithPortfolio } from "./with-portfolio";
+import { Loading } from "@/components/ui/skeleton";
 
 const signed = (x: number, d = 2) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
 const tone = (x: number | null) =>
@@ -181,7 +182,7 @@ function Content({ id }: { id: string }) {
       </p>
     );
   }
-  if (!t) return <p className="text-muted-foreground">Loading</p>;
+  if (!t) return <Loading />;
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End")
@@ -651,7 +652,7 @@ function ContextTab({ t, radar }: { t: Terminal; radar: Radar | null }) {
 
       <Panel title="Relevant news" about="terminal-news" className="lg:col-span-12">
         {radar === null ? (
-          <p className="text-muted-foreground">Loading</p>
+          <Loading />
         ) : radar.items.length === 0 ? (
           <p className="text-muted-foreground">No news matched your holdings in the last 7 days.</p>
         ) : (

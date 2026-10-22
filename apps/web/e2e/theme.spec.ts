@@ -170,6 +170,8 @@ test.describe("theme", () => {
     "/portfolios/new",
     "/research",
     "/events",
+    "/rebalance",
+    "/simulation",
   ]) {
     test(`${path} has no accessibility violations in the dark theme`, async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem("pl-theme", "dark"));

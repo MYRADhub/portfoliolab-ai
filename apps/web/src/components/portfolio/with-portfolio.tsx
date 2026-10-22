@@ -1,10 +1,12 @@
 "use client";
 
+import { Download, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { api, ensureSession } from "@/lib/api";
 import { loadSamplePortfolios } from "./sample-picker";
+import { Loading } from "@/components/ui/skeleton";
 
 interface Summary {
   id: string;
@@ -52,18 +54,18 @@ export function WithPortfolio({
       </p>
     );
   }
-  if (!list) return <p className="text-muted-foreground">Loading</p>;
+  if (!list) return <Loading />;
   if (list.length === 0) {
     return <EmptyState onLoaded={() => setVersion((v) => v + 1)} />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3" data-tour="portfolio-toolbar">
         {list.length > 1 && (
           <select
             aria-label="Portfolio"
-            className="rounded-md border bg-background px-2 py-1 text-sm"
+            className="h-8 rounded-lg border bg-background px-2.5 text-sm font-medium shadow-xs"
             value={selected ?? ""}
             onChange={(e) => setSelected(e.target.value)}
           >
@@ -75,6 +77,7 @@ export function WithPortfolio({
           </select>
         )}
         <Link href="/portfolios/new" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Plus aria-hidden="true" />
           New portfolio
         </Link>
         {selected && (
@@ -83,6 +86,7 @@ export function WithPortfolio({
             download
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
+            <Download aria-hidden="true" />
             Export holdings (CSV)
           </a>
         )}
@@ -115,6 +119,7 @@ function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) 
     return (
       <>
         <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
+          <Trash2 aria-hidden="true" />
           Delete
         </Button>
         {error && (
