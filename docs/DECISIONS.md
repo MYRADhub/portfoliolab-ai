@@ -624,7 +624,10 @@ Plain language: what the page shows, how to read it, what to be careful about. C
 **23.6 Onboarding: a non-blocking welcome, a checklist, and a guided tour.** Final. Who: Me.
 First-time visitors see a card offering a two-minute tour; it never blocks the page. A checklist ticks itself off as pages are opened and can be hidden. The tour has 8 steps, moves between pages, and spotlights real elements (portfolio picker, key numbers, insight cards, exposure map, Stress Lab controls, assistant, Guide). It works by keyboard (arrows, Escape, focus stays inside), restores focus when it closes, and can be replayed from the sidebar, the Guide or the checklist. Progress is kept only in your own browser; blocked storage just means it is forgotten on reload. I chose a card over a pop-up that appears by itself because an unrequested overlay is the thing people close without reading.
 
-**23.7 Still open.** Open. Who: You.
+**23.7 On a phone the menu folds behind a button.** Final. Who: Me.
+Checking the redesign on a phone-sized screen showed the whole grouped menu filling the first screen, with the actual page below the fold. Below the tablet breakpoint the menu is now closed behind a button (with expanded/collapsed state announced) and closes when you pick a page. On larger screens nothing changes.
+
+**23.8 Still open.** Open. Who: You.
 Whether to translate the plain-language notes and tour into other languages, and whether the tour should be shown automatically to new users of a deployed version.
 
 ### Mistakes in this slice

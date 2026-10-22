@@ -10,31 +10,62 @@ async function noPageOverflow(page: Page) {
 }
 
 test.describe("mobile layout", () => {
-  test("the navigation is a top bar and every link stays reachable", async ({ page }) => {
+  test("the navigation folds behind a menu button, stays reachable, and closes after a choice", async ({
+    page,
+  }) => {
     await page.goto("/dashboard");
     const nav = page.getByRole("navigation", { name: "Primary" });
-    await expect(nav).toBeVisible();
-    const box = await nav.boundingBox();
+    const menu = page.getByRole("button", { name: "Open menu" });
+    // closed at first, so the page starts on the first screen
+    await expect(nav).toBeHidden();
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
     const main = await page.getByRole("main").boundingBox();
-    expect(box!.y).toBeLessThan(main!.y); // nav sits above the content, not beside it
+    expect(main!.y).toBeLessThan(200);
     expect(main!.width).toBeGreaterThan(300);
-    // All five links are on screen at once, with no horizontal scrolling needed.
+
+    await menu.click();
+    await expect(nav).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    const box = await nav.boundingBox();
+    expect(box!.y).toBeLessThan(main!.y + 400); // opens above the content, not beside it
     const vw = page.viewportSize()!.width;
     for (const name of [
       "Dashboard",
       "Terminal",
       "Exposures",
       "Correlation",
+      "Stress Lab",
+      "Discovery",
+      "Rebalance Lab",
+      "Simulation",
       "News",
+      "Reactions",
       "Research",
       "Guide",
     ]) {
-      const b = await nav.getByRole("link", { name }).boundingBox();
+      const b = await nav.getByRole("link", { name, exact: true }).boundingBox();
       expect(b, name).not.toBeNull();
       expect(b!.x, name).toBeGreaterThanOrEqual(0);
       expect(b!.x + b!.width, `${name} fits in the viewport`).toBeLessThanOrEqual(vw);
     }
     await noPageOverflow(page);
+
+    await nav.getByRole("link", { name: "Terminal", exact: true }).click();
+    await expect(page).toHaveURL(/\/terminal$/);
+    await expect(nav).toBeHidden(); // choosing a page closes the menu
+    await expect(page.getByRole("heading", { name: "Terminal", level: 1 })).toBeVisible();
+  });
+
+  test("the menu button opens and closes the menu", async ({ page }) => {
+    await page.goto("/dashboard");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(nav).toBeVisible();
+    await page.getByRole("button", { name: "Close menu" }).click();
+    await expect(nav).toBeHidden();
   });
 
   test("the form is usable at phone width", async ({ page }) => {

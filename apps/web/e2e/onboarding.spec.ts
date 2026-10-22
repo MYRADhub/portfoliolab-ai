@@ -226,15 +226,9 @@ test.describe("on a phone-sized screen", () => {
   test.use({ viewport: { width: 390, height: 800 } });
   test("the tour popover fits inside the screen", async ({ page }) => {
     await openDashboard(page);
-    await page
-      .getByRole("button", { name: "Take the tour" })
-      .first()
-      .click({ force: true })
-      .catch(() => undefined);
-    if (!(await dialog(page).isVisible()))
-      await page
-        .goto("/guide")
-        .then(() => page.getByRole("button", { name: "Start the guided tour" }).click());
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.getByRole("button", { name: "Take the tour" }).click();
+    await expect(dialog(page)).toBeVisible();
     const box = await dialog(page).boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(390);
