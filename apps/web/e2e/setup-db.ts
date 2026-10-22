@@ -131,8 +131,9 @@ async function main() {
       magnitude,
       direction,
       confidence: 0.8,
-      rationale:
-        ticker === "AMZN" ? "AI-drafted, not reviewed: e2e fixture" : "e2e fixture, not real data",
+      rationale: ["AMZN", "NKE", "SBUX"].includes(ticker)
+        ? "AI-drafted, not reviewed: e2e fixture"
+        : "e2e fixture, not real data",
       source: "manual",
     });
   }

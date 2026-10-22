@@ -15,6 +15,8 @@ export const envSchema = z.object({
   EXPERIMENT_ENABLED: z.enum(["0", "1"]).optional(),
   /** Comma-separated tickers the study universe is limited to. Defaults to every company with exposure data. */
   EXPERIMENT_UNIVERSE: z.string().optional(),
+  /** Secret for the exposure review tool at /review. With none set the tool does not exist. */
+  REVIEW_TOKEN: z.string().min(16).optional(),
   EXPERIMENT_ADMIN_TOKEN: z.string().min(16).optional(),
 });
 

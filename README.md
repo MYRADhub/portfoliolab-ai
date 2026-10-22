@@ -68,4 +68,6 @@ pnpm data:exposures                 # AI-drafted, unreviewed exposure scores for
 pnpm real                           # app on http://localhost:3000 using pl_real
 ```
 
+Set `REVIEW_TOKEN` (16+ characters) in `.env` to turn on `/review`, where AI-drafted exposure scores can be checked, edited and approved with a recorded reviewer.
+
 The price step takes about ten minutes and resumes if interrupted. Yahoo's endpoint is unofficial: use it for research only. The SEC asks for a User-Agent that identifies you.

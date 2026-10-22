@@ -659,6 +659,27 @@ Whether to adopt the 12-force list or the longer draft taxonomy, and who reviews
 
 ---
 
+## 25. Exposure review workflow (added 2026-10-22)
+
+**25.1 A review tool at /review so the AI drafts can be checked, edited and approved.** Final. Who: Me.
+It lists companies by status (AI draft, illustrative, reviewed, no profile) with search. For a company you can change each force's strength and direction, edit the confidence and the reason, remove a force or add one, then save. A summary shows how many drafts remain.
+
+**25.2 Every save is a new version; nothing is erased.** Final. Who: Me.
+Saving closes the current rows and stores the reviewer's as the next version, marked manual, with the reviewer's name and the time. Earlier versions stay in the table. The "AI-drafted" label is removed from the reason when a person approves it, so the app then shows the scores as reviewed everywhere. Strength must be 1 to 3, direction one of two values, each force at most once, and every row needs a reason a reader can check.
+
+**25.3 Access is a secret token, off unless you set one.** Final. Who: Me.
+The tool exists only when `REVIEW_TOKEN` (16+ characters) is set on the server; without it the pages and API do not exist. The token is compared in constant time and kept only for the browser tab. There are no user accounts, so the reviewer's name is typed and recorded, not verified. That is fine for one researcher or a small team on a trusted deployment; it is not an audit-grade identity.
+
+**25.4 Review standard.** Open. Who: You.
+What counts as "reviewed" (checked against the 10-K business description? a second person?) is a research decision. The tool records who and when, not how carefully.
+
+### Mistakes in this slice
+
+- My lint-clean first draft loaded data from a helper that set state directly from an effect, which the project's lint rule rejects; it now uses the same promise-chain pattern as the rest of the app.
+- A test that edits shared fixtures can only run once per seeded database; re-running it alone fails for that reason, which is why the full run reseeds first.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.
