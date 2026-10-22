@@ -460,7 +460,10 @@ test.describe("exposures", () => {
     expect(x.cells).toHaveLength(13);
     expect(
       x.cells.every(
-        (c: Json) => c.rationale === "e2e fixture, not real data" && c.confidence === 0.8,
+        (c: Json) =>
+          ["e2e fixture, not real data", "AI-drafted, not reviewed: e2e fixture"].includes(
+            c.rationale,
+          ) && c.confidence === 0.8,
       ),
     ).toBe(true);
   });

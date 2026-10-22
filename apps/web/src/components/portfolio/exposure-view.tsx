@@ -26,6 +26,7 @@ import { chartColors, axisTick, tooltipStyle } from "@/lib/chart";
 import { ExposureGraph } from "./exposure-graph";
 import { WithPortfolio } from "./with-portfolio";
 import { HowToRead } from "@/components/ui/how-to-read";
+import { exposureProvenance } from "@/lib/provenance";
 import { Loading } from "@/components/ui/skeleton";
 
 export function ExposureView() {
@@ -89,6 +90,25 @@ function Content({ id }: { id: string }) {
           shows which holdings are tied to which forces.
         </p>
       </HowToRead>
+      {(() => {
+        const draft = data.cells.filter((c) => exposureProvenance(c.rationale) === "draft").length;
+        const illustrative = data.cells.filter(
+          (c) => exposureProvenance(c.rationale) === "illustrative",
+        ).length;
+        if (draft + illustrative === 0) return null;
+        return (
+          <p
+            role="note"
+            className="rounded-lg border border-warn/50 bg-warn-soft px-3 py-2 text-sm"
+          >
+            {draft > 0 &&
+              `${draft} of ${data.cells.length} exposure scores here are AI drafts that no person has reviewed. `}
+            {illustrative > 0 &&
+              `${illustrative} of ${data.cells.length} are illustrative placeholders. `}
+            Treat the map as a starting point for questions, not as established fact.
+          </p>
+        );
+      })()}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-1">

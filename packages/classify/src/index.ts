@@ -4,3 +4,4 @@ export * from "./prompt";
 export * from "./classifier";
 export * from "./store";
 export * from "./eval";
+export * from "./exposures";

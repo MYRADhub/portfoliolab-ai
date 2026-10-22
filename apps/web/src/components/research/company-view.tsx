@@ -6,6 +6,7 @@ import { NewsCard } from "@/components/news/news-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaSeries } from "@/components/charts/area-series";
 import { compactUsd, pct, signedPct } from "@/lib/format";
+import { exposureProvenance, PROVENANCE_LABEL } from "@/lib/provenance";
 import { useApi } from "@/lib/use-api";
 import type { CompanyResearch, WhatIfOutcome } from "@/server/research";
 import { Loading } from "@/components/ui/skeleton";
@@ -94,7 +95,14 @@ export function CompanyView({ ticker }: { ticker: string }) {
                     title={e.rationale ?? undefined}
                     className="flex items-center justify-between gap-3"
                   >
-                    <span>{e.name}</span>
+                    <span>
+                      {e.name}
+                      {exposureProvenance(e.rationale) !== "reviewed" && (
+                        <span className="ml-2 rounded border px-1.5 py-0.5 text-[0.68rem] text-muted-foreground">
+                          {PROVENANCE_LABEL[exposureProvenance(e.rationale)]}
+                        </span>
+                      )}
+                    </span>
                     <span className="tabular-nums text-muted-foreground">
                       {e.signed > 0 ? "+" : ""}
                       {e.signed} of 3 | confidence {pct(e.confidence, 0)}

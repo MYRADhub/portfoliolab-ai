@@ -64,6 +64,7 @@ Free, no keys. Needs Postgres up (`pnpm db:up`) and `DATABASE_URL` in `.env`.
 ```
 pnpm real:seed                      # S&P 500 prices (5 years, Yahoo) and illustrative exposures into database pl_real
 SEC_USER_AGENT="Your Name you@school.edu" pnpm data:sec   # 8-K events and annual fundamentals from SEC EDGAR
+pnpm data:exposures                 # AI-drafted, unreviewed exposure scores for companies without any (needs OPENAI_API_KEY; use --eval to measure agreement)
 pnpm real                           # app on http://localhost:3000 using pl_real
 ```
 

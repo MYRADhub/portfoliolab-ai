@@ -31,7 +31,7 @@ Every number comes from a pure, tested function. The language model only explain
 
 - 503 S&P 500 companies, about 622,000 daily prices over five years (Yahoo Finance public endpoint).
 - About 6,150 earnings events from SEC Form 8-K filings, timestamped to the second the SEC accepted them, mapped to event types by fixed rules; annual fundamentals from SEC 10-K filings.
-- The hidden-exposure scores for 24 companies are illustrative and labelled so. Real exposure data needs a reviewed factor taxonomy, which is the main open research task.
+- Hidden-exposure scores: 24 companies have hand-made illustrative profiles and the rest of the index has AI-drafted profiles over 12 forces. Both are labelled as unreviewed wherever they appear. On the 24 companies that have both, the AI drafts agree with the hand-made profiles (average cosine similarity 0.84, direction agreement 94%), but both are AI-written, so this shows consistency, not truth. Reviewed exposure data against company filings is the main open research task.
 
 ## A result worth showing
 

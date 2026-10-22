@@ -639,6 +639,26 @@ Whether to translate the plain-language notes and tour into other languages, and
 
 ---
 
+## 24. AI-drafted exposure profiles for the whole index (added 2026-10-22)
+
+**24.1 Draft hidden-exposure scores for every S&P 500 company, labelled as unreviewed.** Final for now. Who: Me (you said it was my call).
+Only 24 companies had exposure scores, so most real portfolios could not use the main feature. A drafting tool now asks the language model, one company at a time (the real-data database now has drafts for all 479 remaining companies: 1,629 scores, no failures), which of the 12 forces clearly matter to it, how strongly, in which direction, with a one-sentence reason. Each stored row says "AI-drafted, not reviewed" in its reason and is recorded as an AI draft, never as manual. The app shows that label on the Exposures page ("N of M scores are AI drafts that no person has reviewed") and on every company's exposure list.
+
+**24.2 Reviewed data can never be overwritten.** Final. Who: Me.
+The tool skips any company that already has a current profile, hand-made or drafted. Drafted confidence is capped at 0.8 (never higher), unknown forces are discarded, there are at most 6 forces per company, and duplicates keep the strongest. Tests cover each rule.
+
+**24.3 How good are the drafts? Measured, with an honest caveat.** Final. Who: Me.
+I had the model draft the 24 companies that have hand-made profiles and compared them. Averages: cosine similarity 0.84 (1 is identical), direction agrees on 94% of the forces both profiles contain, 94% of the strong forces in the hand-made profile were also found, and 83% of the draft's strong forces appear in the hand-made one. The caveat that matters: the hand-made profiles were also written by an AI (me), so this measures consistency between two drafts, not accuracy against the real world. A human review against company filings is still needed before anyone relies on these.
+
+**24.4 Still your call.** Open. Who: You.
+Whether to adopt the 12-force list or the longer draft taxonomy, and who reviews the drafts. The reviewing workflow (accept, edit, reject per company) is not built yet.
+
+### Mistakes in this slice
+
+- My first agreement test asserted the wrong number against its own comment (a mean error of 0.5 written as 1); the code was right.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

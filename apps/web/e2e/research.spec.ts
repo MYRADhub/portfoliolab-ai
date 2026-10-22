@@ -222,6 +222,16 @@ test.describe("research page", () => {
     await expect(page.getByText(/Source: SEC annual reports/)).toBeVisible();
   });
 
+  test("exposure rows say when a score is an unreviewed AI draft", async ({ page }) => {
+    await page.goto("/research/AMZN");
+    const rows = page.getByRole("list", { name: "Exposures" }).locator("li");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.filter({ hasText: "AI draft, not reviewed" })).toHaveCount(3);
+    await page.goto("/research/NVDA");
+    await expect(page.getByRole("list", { name: "Exposures" }).locator("li").first()).toBeVisible();
+    await expect(page.getByText("AI draft, not reviewed")).toHaveCount(0);
+  });
+
   test("a company without SEC figures says so", async ({ page }) => {
     await page.goto("/research/MSFT");
     await expect(

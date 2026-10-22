@@ -136,6 +136,25 @@ test.describe("exposures page", () => {
     );
   });
 
+  test("says how many scores are AI drafts that no person has reviewed", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Covered", COVERED);
+    await page.goto("/exposures");
+    // AMZN's three scores are labelled as drafts in the fixtures; the other ten are not
+    await expect(page.getByRole("note")).toContainText(
+      "3 of 13 exposure scores here are AI drafts that no person has reviewed.",
+    );
+    await expect(page.getByRole("note")).toContainText("not as established fact");
+    await s.create("No drafts", [
+      { ticker: "NVDA", weightPct: 50 },
+      { ticker: "AAPL", weightPct: 50 },
+    ]);
+    await page.reload();
+    await page.getByLabel("Portfolio", { exact: true }).selectOption({ label: "No drafts" });
+    await expect(page.getByText("Effective sectors")).toBeVisible();
+    await expect(page.getByRole("note")).toHaveCount(0);
+  });
+
   test("hovering or focusing a name isolates its connections and leaving restores them", async ({
     page,
   }) => {
