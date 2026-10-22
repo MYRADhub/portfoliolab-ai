@@ -37,6 +37,20 @@ export function bestWorstDays(
   };
 }
 
+/** The `n` best and `n` worst single days, each ordered from most extreme. `dates` belong to the returns. */
+export function topDays(
+  dates: readonly string[],
+  returns: readonly number[],
+  n = 5,
+): { best: DayExtreme[]; worst: DayExtreme[] } {
+  if (dates.length !== returns.length) throw new Error("dates and returns must match");
+  const days = returns.map((value, i) => ({ date: dates[i]!, value }));
+  const byValue = (a: DayExtreme, b: DayExtreme) =>
+    a.value - b.value || a.date.localeCompare(b.date);
+  const sorted = [...days].sort(byValue);
+  return { worst: sorted.slice(0, n), best: sorted.slice(-n).reverse() };
+}
+
 /**
  * Historical value at risk: the daily return that was only beaten on the worst (1 - level) share of days,
  * returned as a negative return (for example -0.021 means a 2.1% one-day loss).

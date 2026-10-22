@@ -29,6 +29,8 @@ export type PortfolioExposures =
   | {
       available: true;
       portfolio: { id: string; name: string };
+      /** Each holding with its weight, for drawing the exposure graph. */
+      holdings: { ticker: string; weight: number; sector: string }[];
       factors: {
         slug: string;
         name: string;
@@ -136,6 +138,9 @@ export async function getPortfolioExposures(
   return {
     available: true,
     portfolio: { id: p.id, name: p.name },
+    holdings: [...hs]
+      .sort((a, b) => b.weight - a.weight || a.ticker.localeCompare(b.ticker))
+      .map((h) => ({ ticker: h.ticker, weight: h.weight, sector: h.sector ?? "Unclassified" })),
     factors: loadings.map((l) => ({
       slug: l.slug,
       name: meta.get(l.slug)!.name,

@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { appAlert, newSession, startUiSession, waitForDashboard } from "./helpers";
+import {
+  appAlert,
+  holdingsSnapshot,
+  newSession,
+  startUiSession,
+  waitForDashboard,
+} from "./helpers";
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -122,12 +128,11 @@ test.describe("samples in the app", () => {
     await page.getByRole("button", { name: "Load this sample: AI boom bet" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await waitForDashboard(page);
-    const holdings = page
-      .getByText("Holdings (effective")
-      .locator("xpath=ancestor::*[@data-slot='card'][1]");
-    await expect(holdings.getByRole("row")).toHaveCount(6); // header + five holdings
+    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(5);
     for (const t of ["NVDA", "AMD", "AVGO", "MU", "MSFT"])
-      await expect(holdings.getByRole("row", { name: new RegExp(t) })).toBeVisible();
+      await expect(holdingsSnapshot(page).getByRole("listitem").filter({ hasText: t })).toHaveCount(
+        1,
+      );
     const api = (await (await page.request.get("/api/portfolios")).json()) as {
       portfolios: { name: string }[];
     };

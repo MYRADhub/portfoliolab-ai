@@ -10,7 +10,8 @@
     "ingest": "tsx src/cli.ts",
     "sp500": "tsx src/sp500-cli.ts",
     "news": "tsx src/news-cli.ts",
-    "aliases": "tsx src/aliases-cli.ts"
+    "aliases": "tsx src/aliases-cli.ts",
+    "sec": "tsx src/sec-cli.ts"
   },
   "dependencies": {
     "@portfolio-lab/db": "workspace:*",

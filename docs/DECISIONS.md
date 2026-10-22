@@ -365,12 +365,241 @@ Before this, a brand-new visitor's first request failed with a 401 (hidden by an
 **16.13 Accessibility problems the automatic scanner found, now fixed.** Final. Who: Me.
 Sample buttons had a spoken name that did not contain their visible words, and two wide tables could not be scrolled with the keyboard. Both fixed, and the scanner now checks the Terminal in its dark theme as well.
 
+**16.14 In demo mode, an empty session gets the five samples automatically.** Final. Who: Me, because you asked for the mock portfolios to be created "for you".
+Portfolios belong to a browser cookie, so I cannot create them in your browser ahead of time. Instead, when the app is running in demo mode (`pnpm demo`) and it sees a session with no portfolios, it loads the samples itself and shows "Setting up your demo portfolios" for a moment. Outside demo mode nothing changes: you still see "You have no portfolios yet" with buttons. Loading never duplicates, so reloading is safe.
+How I checked: a brand-new browser opened the dashboard and landed on a populated page with five portfolios, and a reload still showed five. This behaviour depends on a build-time switch, so the automatic browser suite (which runs without demo mode) does not cover it.
+
 ### Mistakes in this slice
 
 - The guide page file was not created the first time because I forgot to create its folder; I noticed from the error and wrote it again.
 - Several string replacements silently failed because the code formatter had reflowed the lines. I now check that a replacement actually applied.
 - I assumed the sample "no price history" test ticker would stay unpriced; adding demo prices made it priced, and the test caught it.
 - The first browser run of the empty dashboard showed a console warning that my earlier tests never saw, because they only visited pages with data.
+
+---
+
+## 17. The redesign: shared theme, news cards, Terminal workspace, exposure map, Dashboard (added 2026-10-21)
+
+You asked for these changes after reviewing the app: news that is more than text, a Terminal that does not scroll and is split into sections, one light/dark setting for the whole app with a button in the sidebar, a graph of what influences what, and a Dashboard that stops repeating the other pages.
+
+**17.1 One theme for the whole app, switched in the sidebar.** Final. Who: Me (you asked for it; the details are mine).
+The choice is stored in the browser (key `pl-theme`). With nothing stored, the operating system's preference is followed; a stored choice always wins. A tiny script in the page head applies it before anything is drawn, so there is no flash of the wrong theme. The toggle announces "Dark mode: on/off". The Terminal no longer forces its own dark look: it follows the same setting as every other page.
+If browser storage is blocked, the toggle still works until you close the page.
+
+**17.2 Colors have meanings, and they work in both themes.** Final. Who: Me.
+I added named colors for gain (green), loss (red), caution (amber) and information (blue), each with a darker text version for light mode and a lighter one for dark mode, chosen to pass the contrast check. Charts read their colors from the same names, so they change with the theme too. Color is never the only signal: gains and losses carry a plus or minus, severities and news types carry a word and a shape.
+
+**17.3 News is shown as cards.** Final. Who: Me.
+Each card has a ring that fills with the 0 to 10 relevance score and a word under it (High from 5, Medium from 2, Low below 2: my cut-offs), a type badge with its own symbol (diamond, half circle, empty circle), a ten-block importance meter, chips for the holdings it touches with their weight, a "what it means" line from the classifier, and the "why am I seeing this" breakdown shown as three small bars. The top story spans the page; the rest sit in two columns; low-relevance ones stay folded away. Type filters are buttons with counts (clicking "Narrative 3" shows those three).
+
+**17.4 The Terminal is a workspace of four sections.** Final. Who: Me.
+Overview (index chart, performance, holdings), Risk (risk table, risk versus weight, rolling volatility, drawdowns, distribution), Calendar (monthly returns with a yearly total, plus the five best and five worst days) and Context (hidden exposure, correlation, news). Press 1 to 4, or use the arrow keys, Home and End. The section is kept in the address (`/terminal#risk`), so links, Back and Forward work. On a desktop screen the page never scrolls: each section is laid out to fit the window, and anything that would not fit scrolls inside its own box. On a phone the panels stack normally.
+
+**17.5 On desktop the window itself no longer scrolls.** Final. Who: Me.
+To let the Terminal fill the screen exactly, the sidebar stays put and each page scrolls inside the main area. Every page looks the same as before; the change is where the scrollbar lives.
+
+**17.6 The hidden exposure map is a flow diagram.** Final. Who: Me.
+Holdings on the left, economic forces on the right, one line per dependency. Line thickness is weight times the strength of the exposure (so a big holding with a strong exposure draws a thick line), green means "helped when the force rises", red means "hurt". Each box is as tall as its lines added together, so lines never overlap inside a box. Hover or focus a name to isolate its connections; click or press Enter to pin it. A list below names the forces that touch several holdings, which are the hidden links. The layout is a separate, tested function.
+Trade-off: with many holdings and forces the lines get thin and busy. The heatmap table below remains the precise view.
+
+**17.7 The Dashboard answers "what should I know now?", and other pages own the detail.** Final. Who: Me.
+It now shows: six key figures, up to six insight cards, the index chart next to a compact holdings list, the day-move card (its tables folded away), the top three news cards, and the AI explanation. I removed the sector bar chart, the drawdown chart and the large holdings table from it, because the Terminal and Exposures pages cover them. Cost: there is no longer a sector allocation chart anywhere; sector appears as a column in the Terminal's holdings monitor and in the effective-sectors figure.
+
+**17.8 Insight cards are plain rules, not AI, and these are the thresholds.** Revisit. Who: Me.
+
+- Hidden concentration: "watch" if the effective number of forces is below the effective number of sectors, otherwise "info". Without exposure data, "watch" if the largest holding is 30% or more.
+- Risk driver: "watch" if a holding's share of risk is more than 25% above its weight.
+- Biggest force: shown, as "watch", if one force is 25% or more of exposure.
+- Drawdown: "watch" at 5% below the peak, "alert" at 10%.
+- Latest day: "watch" if the portfolio moved 1.5% or more.
+- Correlation: "watch" at an average of 0.60 or more.
+- News: "watch" if the top story scores 5 or more.
+  Cards are sorted alerts first, then watches, then information. All the numbers in the thresholds are my judgment and sit together in one place in the code.
+
+**17.9 First visits now create exactly one session.** Final. Who: Me, after a test found the bug.
+Two parts of the page both asked for a session at the same instant, so two were created and the later cookie replaced the earlier one, orphaning anything created in between (in the demo, the sample portfolios could land in a session you then lost). All callers now share a single request.
+
+**17.10 Two interaction bugs the new tests found, now fixed.** Final. Who: Me.
+Keyboard users could not pin a node in the exposure map, because focusing it already activated it and Enter then toggled it off; preview (hover and focus) and pin are now separate. And changing the address hash or pressing Back did not change the Terminal section; it now listens for that.
+
+**17.11 Accessibility.** Final. Who: Me.
+The scanner found that the gray "Not yet classified" and "Noise" badges were too faint, and that graph nodes' spoken names did not begin with their visible text. Both are fixed. The scanner now checks the main pages in both themes, and each Terminal section in both themes.
+
+**17.12 Selects have real names.** Final. Who: Me.
+The Period and Holding selectors on the News page now carry an explicit accessible name.
+
+### Mistakes in this slice
+
+- Several of my test edits again silently failed because the code formatter had reflowed the lines; I now confirm each replacement took effect.
+- I miscounted nested lists in the news cards (each card contains a small list of holding chips), which made counts double; tests now count only direct children.
+- One of my tests used a card title as if it were a heading; card titles are not headings, so the test was wrong, not the page.
+- My first version of the Terminal test for the hover effect never actually checked that the highlight is removed afterwards; it does now.
+
+---
+
+## 18. Stress Lab and Discovery (added 2026-10-21)
+
+**18.1 Stress Lab is a simple, labelled what-if, not a forecast.** Revisit. Who: Me.
+You pick a scenario (or drag sliders for individual forces, from "falls a lot" to "rises a lot"). Each stock's estimated move is its exposure to that force times the shock times 3% per exposure point, so a stock with exposure 3 under a full shock moves about 9%. The portfolio estimate is the weighted sum. The 3% is my assumption, not a measurement, so the page says so, and forces are treated as independent. Doing it as plain arithmetic keeps it explainable and testable by hand.
+
+**18.2 Vulnerability score.** Revisit. Who: Me.
+0 to 10, where a portfolio loss of 10% or more scores 10 and a gain scores 0. The 10% anchor is my judgment.
+
+**18.3 Reliability is shown next to every estimate.** Final. Who: Me.
+It is the confidence of the exposures behind the number, weighted by how much each one contributes, so a result built on low-confidence guesses looks different from one built on solid ones.
+
+**18.4 Six preset scenarios.** Revisit. Who: Me.
+Rate jump, oil spike, AI pullback, Taiwan disruption, recession, strong dollar. Each is a mix of forces with sizes I picked. A preset only appears if the portfolio is exposed to at least one of its forces.
+
+**18.5 Both pages need every holding covered.** Final. Who: Me.
+Same rule as the Exposures page: a partial analysis would understate risk, so the pages say what is missing instead.
+
+**18.6 Discovery ranks by the metric we agreed on, and shows the catch.** Final. Who: Me (you said it was my call).
+Candidates are ranked by how much the effective number of hidden forces rises if added at 3, 5 or 10%. Testing found a flaw in that metric for hedges: a stock that cancels out one force lowers your total hidden exposure but can lower the effective-forces count, because the measure rewards spread, not smallness. So every candidate that shrinks total exposure is tagged "Hedge" with a plain explanation, and the code also records the change in total exposure. I did not change the agreed metric; I made its blind spot visible.
+
+**18.7 Discovery is a screen, never advice.** Final. Who: Me.
+Titles say "research candidates", the page says they are not recommendations and say nothing about return, and held stocks are never suggested.
+
+### Mistakes in this slice
+
+- My first test expected hedges to raise the effective-forces count. The math showed the opposite, which is how the blind spot in 18.6 was found.
+- I expected the stress table to list the biggest per-stock move first; it orders by effect on the portfolio, which is what matters.
+
+---
+
+## 19. Research page and assistant (added 2026-10-21)
+
+**19.1 One research page per company, public data only.** Final. Who: Me.
+The page shows the price chart, return and volatility statistics, hidden exposures with confidence, similar companies, recent news cards and a "what if you add it" panel. It needs no portfolio except the last panel. Fundamentals (earnings, valuation) are not shown, and the page says so, because we have no free data source wired up for them and I would rather say that than show invented numbers.
+
+**19.2 "Similar companies" means similar hidden exposures.** Revisit. Who: Me.
+Companies are compared by the angle between their exposure profiles (1 means the same pattern, 0 unrelated, negative opposite). If the company has no exposure profile, the page falls back to companies in the same sector and labels them that way.
+
+**19.3 A company's own news is scored with a neutral position size.** Revisit. Who: Me.
+The News page weights stories by how much of your portfolio they touch. A company page has no portfolio, so every story is scored as if the company were a quarter of a portfolio, which means the score reflects the story itself.
+
+**19.4 The assistant never answers from memory.** Final. Who: Me.
+It can only call six tools (portfolio summary, hidden exposures, company data, news, what-if add, stress scenario). Each returns numbered facts. The answer may only use numbers from those facts and must cite them, using the same checker as the portfolio explanation. A bad answer gets one retry with the problems listed, then is replaced by the figures themselves. An answer given without calling any tool is rejected.
+
+**19.5 Same safety rails as before.** Final. Who: Me.
+Questions are 3 to 500 characters. Each question counts against the same 10-per-hour allowance as the other AI features. Tool calls are limited to four rounds. Tools only see the asking session's own portfolio. The assistant never gives buy or sell advice and says so in its instructions and in the checker.
+
+**19.6 No conversation memory yet.** Revisit. Who: Me.
+Each question stands alone. A back-and-forth chat would need stored history, a length limit and a decision about what to cache, which I would rather agree on with you than guess.
+
+**19.7 Answers are not cached.** Final. Who: Me.
+Unlike the portfolio explanation, questions are free text and rarely repeat, so caching would add storage for little benefit.
+
+### Mistakes in this slice
+
+- The build failed once because the sidebar reads the current address, which needs a loading boundary on pages whose address varies. Fixed by wrapping the sidebar.
+- One of my tests looked for the rejected invented number anywhere in the response; it is deliberately kept in a diagnostic field, never in the answer, so the test now checks the answer.
+- An old test still expected the Research placeholder text and was updated.
+
+---
+
+## 20. Reactions: the event study (added 2026-10-21)
+
+**20.1 Built in TypeScript with the rest of the math, not in the Python service.** Revisit. Who: Me (you said it was my call).
+The roadmap planned this in Python. The method is a simple regression and a t-test, which sit naturally beside our other tested finance code, and keeping one language means the end-to-end tests need no extra service. The Python service stays available for heavier statistics later.
+
+**20.2 The method.** Final. Who: Me.
+For each story and each stock it is linked to, we fit "how this stock normally moves when the market moves" on the 250 to 30 trading days before the story, then compare what actually happened on and after the event day. The difference is the abnormal return. We add it up over 1, 2, 6 and 11 days (event day, 1, 5 and 10 days after) as far as those days have already happened. The model never sees the days after the story, and a test proves a huge shock cannot change the fitted model.
+
+**20.3 The market is the average of the other stocks we have prices for.** Revisit. Who: Me.
+We have no free index price series, so the market proxy is the equal-weighted average of every other stock in our price universe that day (leaving the stock itself out), and at least five others are required. With the full S&P 500 loaded this is a reasonable stand-in; with the 25-stock demo set it is rough, and the page says so. When real index prices are available, they should replace it.
+
+**20.4 Event day is when the price could first react.** Final. Who: Me.
+A story published before the close counts on that day; one published after the close or on a weekend counts on the next trading day. This reuses the earlier market-session logic.
+
+**20.5 Averages by type of news carry a sample-size warning.** Final. Who: Me.
+Each type shows the average, a 95% range from a seeded resampling (so the same data always gives the same range) and a t-statistic. With fewer than 5 events the row says "Too few events to judge". A t of 2 or more is described as "distinguishable from zero", never as proof.
+
+**20.6 Stories not yet classified are skipped, and the page says how many.** Final. Who: Me.
+So are stories with no price on the event day and stocks with less than about three months of earlier prices. Nothing is silently dropped.
+
+**20.7 Not built, on purpose.** Open. Who: Me.
+Dropping or flagging events that overlap earnings releases, the cross-stock test of whether stocks the exposure map says are affected really moved differently, writing results to a stored table, and loading historical events from SEC 8-K filings. The last is the most valuable and free, but it only pays off once real historical prices exist, and the only price source we have without a key is made-up fixtures, so I did not build a pipeline I could not check.
+
+### Mistakes in this slice
+
+- My first flat-market check compared to exactly zero, so a constant market series slipped through because of rounding. A test caught it; it now uses a small tolerance.
+- Two of my test expectations were wrong about the demo data (the size of the stock universe, and which horizons exist for a story six weekdays old). The page was right both times.
+
+---
+
+## 21. The research study module (added 2026-10-21)
+
+**21.1 The study is built, switched off by default, and cannot collect anyone's data until you turn it on.** Final. Who: Me.
+It needs `EXPERIMENT_ENABLED=1`. The full design, analysis plan, sample size and an ethics checklist are in `docs/experiment-design.md`. Running it on real people needs an ethics approval that only you and your school can obtain, so the consent wording in the app is a stand-in that must be replaced.
+
+**21.2 The question.** Final. Who: Me.
+Do people who can see their hidden exposures build portfolios that depend less on any one hidden force? The main measure is the factor HHI from ADR 0004, computed identically for both groups by the server from the submitted portfolio.
+
+**21.3 Two groups, assigned by the server, balanced within experience levels.** Final. Who: Me.
+Each new participant goes to whichever group is smaller for their experience level (new, some, experienced); ties are a coin flip. A database lock makes this safe when two people join at once, and a test checks the groups never differ by more than one per level.
+
+**21.4 The control group is blocked from exposure data by the app itself, not by hiding buttons.** Final. Who: Me.
+Anyone enrolled can only reach the study page and study API. Every other page redirects and every other API returns "forbidden", so no part of the product can leak exposure data to the control group. The study's own responses for the control group contain no exposure fields, and tests check both.
+
+**21.5 What gets recorded.** Final. Who: Me.
+Choices, two short questionnaires before and after, and interaction events (adds, removals, weight edits, page hidden or visible, submit). No names, emails or IP addresses, and the participant id lives only in a cookie. A Withdraw button deletes everything about the participant.
+
+**21.6 The researcher gets a CSV and a ready-made analysis, behind a secret token.** Final. Who: Me.
+The analysis uses a permutation test (no assumptions about the shape of the data), Welch's t and Cohen's d. The CSV defuses spreadsheet formulas. The token must be at least 16 characters, and with no token set the endpoints do not exist.
+
+**21.7 Sample size guidance.** Revisit. Who: Me.
+65 per arm detects a medium effect (d = 0.5) with 80% power; a small effect needs about 393 per arm. A pilot should measure how much factor HHI varies before the target is fixed.
+
+**21.8 The study universe.** Open. Who: You.
+By default participants choose from every company that has exposure data. A real study should fix a list (`EXPERIMENT_UNIVERSE`) of maybe 20 to 40 companies whose exposures have been reviewed. That list is a research decision.
+
+### Mistakes in this slice
+
+- The preview request sent a bare list where the server expects an object, so the portfolio summary never appeared in the browser. The page test caught it; no API test could have, because the API tests sent the right shape.
+- I first wrote an accessible label ("Add AAPL") that stopped matching the button's visible text after clicking ("Added"). The scanner caught it.
+- Two of my tests assumed a clean database and picked up rows from an earlier run; they now identify the participant by their own cookie.
+- To get at least five companies with exposure data into the test database I added six extra ones, which changed the counts expected by two earlier tests. I updated those tests.
+
+---
+
+## 22. Real data (added 2026-10-21)
+
+**22.1 We found free real data that needs no key, so the app can now run on real numbers.** Final. Who: Me (you said no paid data).
+Prices come from Yahoo Finance's public chart service and filings and company financials from the SEC's EDGAR service. Both are free and need no account. Real S&P 500 prices for five years (about 622,000 daily rows, all 503 companies) loaded without a single failure.
+
+**22.2 Yahoo is unofficial, so it is treated as research-grade.** Revisit. Who: Me.
+Yahoo has no published terms or limits for this use and can change or block it at any time. The code is behind the same provider interface as the paid option (Tiingo), so swapping later is one line. It requests slowly (about three per second), drops today's unfinished bar, and has tests for the awkward cases (holidays, share-class tickers, missing adjusted close). Before anything public or commercial, replace it with a licensed source.
+
+**22.3 The real data lives in its own database, `pl_real`, never mixed with the fake data.** Final. Who: Me.
+Fake and real prices in one table would be silently confusing (the loader skips days it already has). Build it with `pnpm real:seed` (prices and exposures) and `pnpm data:sec` (filings and fundamentals), then run it with `pnpm real`. The demo and test databases are unchanged.
+
+**22.4 The hidden exposures in the real database are still the illustrative ones.** Open. Who: You.
+Only 24 companies have them, labelled "illustrative only, not reviewed". Real hidden-exposure data needs the reviewed factor taxonomy and curated exposures, which is your decision and work.
+
+**22.5 SEC 8-K filings become events by fixed rules, not by the language model.** Final. Who: Me.
+Each Form 8-K lists numbered items (for example item 2.02 is an earnings release, 5.02 is an executive change). A fixed table maps items to our event types and importance. The event time is the exact moment the SEC accepted the filing, so there is no guessing about when the market could first react. The importance numbers are my judgment. One extra event type, "Earnings release", was added because an 8-K does not say whether results beat expectations; the language-model list is untouched.
+
+**22.6 Fundamentals come straight from SEC annual reports.** Final. Who: Me.
+Revenue, operating and net income, diluted EPS, operating cash flow, assets and equity for the last five fiscal years, with restated figures replacing originals. Ratios (growth, margins, return on equity, price to earnings) are computed by tested code and labelled with how they are defined. Spot checks against known figures matched (Apple FY2025 revenue $416.2B, diluted EPS $7.46).
+
+**22.7 The Reactions page on real data gives sensible answers.** Final. Who: Me.
+About 5,000 real earnings events, studied in about 2.5 seconds. The average earnings reaction is about zero (+0.06%, t 0.6), as expected when good and bad surprises cancel, so the page now also shows the typical size of a move regardless of direction. The largest reactions are real and recognizable (for example Centene, July 2025, about -40%), which is a good sign the machinery lines up dates and prices correctly.
+
+**22.8 More study details.** Final. Who: Me.
+News within a week of an earnings or guidance event for the same stock is left out of that news type's average and labelled, since the two cannot be separated. The study also reports 30-day cumulative reactions. The study participant cookie is now signed, so an edited or invented id is refused; a debrief screen explains the two groups after submission. Discovery can be filtered by sector.
+
+**22.9 The assistant remembers the last few turns, as context only.** Final. Who: Me.
+Up to the last 4 verified answers are sent along with a new question so follow-ups like "and which news matters most?" make sense. Numbers in earlier turns are not facts: the assistant is told to call the tools again for any figure, so the grounding check still applies to every number in a new answer. Answers that fell back to figures only are not carried forward. Nothing is stored on the server; the conversation lives in the page and resets when you switch portfolios.
+
+**22.10 Holdings can be exported as a CSV.** Final. Who: Me.
+One row per holding (weight, latest price, recent returns, share of risk), downloadable from the toolbar on any portfolio page, for the owner only.
+
+### Mistakes in this slice
+
+- I started the big price download twice by backgrounding a command that was already in the background, so the first attempt silently died; I noticed because the log had no summary line.
+- A test fixture used a Saturday date, and the app correctly labelled it a closed-market day.
+- An accessibility test failed about one run in four because the scanner measured a button in the middle of a colour transition; the scan now waits for animations to finish.
 
 ---
 

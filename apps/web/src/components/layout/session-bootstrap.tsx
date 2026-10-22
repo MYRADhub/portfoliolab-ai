@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import { ensureSession } from "@/lib/api";
 
-/** Ensures an anonymous session cookie exists. Safe to call on every load. */
+/** Ensures an anonymous session cookie exists. Shares one request with every other caller on the page. */
 export function SessionBootstrap() {
   useEffect(() => {
-    void fetch("/api/session", { method: "POST" }).catch(() => undefined);
+    void ensureSession();
   }, []);
   return null;
 }

@@ -1,37 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { formatAge, pct } from "@/lib/format";
+import { CLASS_STYLE, type NewsClassKey } from "@/components/news/class-badge";
+import { NewsCard } from "@/components/news/news-card";
+import { cn } from "@/lib/utils";
 import { useApi } from "@/lib/use-api";
 import type { Radar, RadarItem } from "@/server/radar";
 import { WithPortfolio } from "./with-portfolio";
 
 const DAYS = [1, 3, 7, 14, 30];
-const CLASSES = [
-  { value: "", label: "All types" },
-  { value: "fundamental", label: "Fundamental" },
-  { value: "narrative", label: "Narrative" },
-  { value: "noise", label: "Noise" },
-  { value: "unclear", label: "Unclear" },
-  { value: "unclassified", label: "Not yet classified" },
-];
+const TYPES: NewsClassKey[] = ["fundamental", "narrative", "noise", "unclear", "unclassified"];
 
 export function RadarView() {
   return <WithPortfolio>{(id) => <Content id={id} />}</WithPortfolio>;
 }
 
+const keyOf = (i: RadarItem): NewsClassKey =>
+  i.classification ? ((i.classification.class as NewsClassKey) ?? "unclassified") : "unclassified";
+
 function Content({ id }: { id: string }) {
   const [days, setDays] = useState(7);
-  const [cls, setCls] = useState("");
+  const [type, setType] = useState<NewsClassKey | "">("");
   const [ticker, setTicker] = useState("");
-  const query = new URLSearchParams({
-    days: String(days),
-    ...(cls ? { class: cls } : {}),
-    ...(ticker ? { ticker } : {}),
-  });
+  const query = new URLSearchParams({ days: String(days), ...(ticker ? { ticker } : {}) });
   const { data, error } = useApi<Radar>(`/api/portfolios/${id}/radar?${query}`);
-  const filtered = cls !== "" || ticker !== "";
+  const filtered = type !== "" || ticker !== "";
 
   return (
     <div className="space-y-4">
@@ -39,6 +32,7 @@ function Content({ id }: { id: string }) {
         <label className="flex items-center gap-2">
           Period
           <select
+            aria-label="Period"
             className="rounded-md border bg-background px-2 py-1"
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
@@ -51,22 +45,9 @@ function Content({ id }: { id: string }) {
           </select>
         </label>
         <label className="flex items-center gap-2">
-          Type
-          <select
-            className="rounded-md border bg-background px-2 py-1"
-            value={cls}
-            onChange={(e) => setCls(e.target.value)}
-          >
-            {CLASSES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2">
           Holding
           <select
+            aria-label="Holding"
             className="rounded-md border bg-background px-2 py-1"
             value={ticker}
             onChange={(e) => setTicker(e.target.value)}
@@ -84,7 +65,7 @@ function Content({ id }: { id: string }) {
             type="button"
             className="underline"
             onClick={() => {
-              setCls("");
+              setType("");
               setTicker("");
             }}
           >
@@ -99,15 +80,25 @@ function Content({ id }: { id: string }) {
         </p>
       )}
       {!data && !error && <p className="text-muted-foreground">Loading</p>}
-
-      {data && <Results data={data} filtered={filtered} />}
+      {data && <Results data={data} type={type} setType={setType} filtered={filtered} />}
     </div>
   );
 }
 
-function Results({ data, filtered }: { data: Radar; filtered: boolean }) {
-  const shown = data.items.filter((i) => i.relevance.score >= data.threshold);
-  const collapsed = data.items.filter((i) => i.relevance.score < data.threshold);
+function Results({
+  data,
+  type,
+  setType,
+  filtered,
+}: {
+  data: Radar;
+  type: NewsClassKey | "";
+  setType: (t: NewsClassKey | "") => void;
+  filtered: boolean;
+}) {
+  const byType = type === "" ? data.items : data.items.filter((i) => keyOf(i) === type);
+  const shown = byType.filter((i) => i.relevance.score >= data.threshold);
+  const collapsed = byType.filter((i) => i.relevance.score < data.threshold);
 
   if (data.counts.total === 0) {
     return (
@@ -120,26 +111,64 @@ function Results({ data, filtered }: { data: Radar; filtered: boolean }) {
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {data.counts.total} {data.counts.total === 1 ? "item" : "items"}: {data.counts.shown} shown,{" "}
-        {data.counts.collapsed} collapsed as low relevance. Relevance is a 0 to 10 score for this
-        portfolio based on which holdings an article is about, how much it could change their
-        economics, and how fresh it is.
-      </p>
-      <ul className="space-y-3" aria-label="Ranked news">
-        {shown.map((item) => (
-          <Item key={item.url} item={item} />
+    <div className="space-y-5">
+      <div role="group" aria-label="Type" className="flex flex-wrap gap-2">
+        <TypeChip
+          active={type === ""}
+          onClick={() => setType("")}
+          icon=""
+          label="All types"
+          count={data.counts.total}
+        />
+        {TYPES.map((t) => (
+          <TypeChip
+            key={t}
+            active={type === t}
+            onClick={() => setType(t)}
+            icon={CLASS_STYLE[t].icon}
+            label={CLASS_STYLE[t].label}
+            count={data.counts.byClass[t] ?? 0}
+            tone={CLASS_STYLE[t].tone}
+            title={CLASS_STYLE[t].meaning}
+          />
         ))}
-      </ul>
+      </div>
+
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {byType.length} {byType.length === 1 ? "story" : "stories"}: {shown.length} relevant,{" "}
+        {collapsed.length} collapsed as low relevance. Each card shows a 0 to 10 relevance score for
+        this portfolio.
+      </p>
+
+      {byType.length === 0 && (
+        <p className="text-muted-foreground">No items match these filters.</p>
+      )}
+
+      {shown.length > 0 && (
+        <ul className="grid gap-3 lg:grid-cols-2" aria-label="Ranked news">
+          {shown.map((item, idx) => (
+            <li key={item.url} className={cn(idx === 0 && "lg:col-span-2")}>
+              {idx === 0 && (
+                <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Most relevant right now
+                </p>
+              )}
+              <NewsCard item={item} />
+            </li>
+          ))}
+        </ul>
+      )}
+
       {collapsed.length > 0 && (
         <details>
           <summary className="cursor-pointer text-sm text-muted-foreground">
             {collapsed.length} low-relevance {collapsed.length === 1 ? "item" : "items"}
           </summary>
-          <ul className="mt-3 space-y-3" aria-label="Low-relevance news">
+          <ul className="mt-3 grid gap-3 lg:grid-cols-2" aria-label="Low-relevance news">
             {collapsed.map((item) => (
-              <Item key={item.url} item={item} />
+              <li key={item.url}>
+                <NewsCard item={item} />
+              </li>
             ))}
           </ul>
         </details>
@@ -148,67 +177,45 @@ function Results({ data, filtered }: { data: Radar; filtered: boolean }) {
   );
 }
 
-function Item({ item }: { item: RadarItem }) {
-  const r = item.relevance;
-  const c = item.classification;
+function TypeChip({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+  tone,
+  title,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: string;
+  label: string;
+  count: number;
+  tone?: string;
+  title?: string;
+}) {
   return (
-    <li>
-      <Card>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex items-start gap-3">
-            <div
-              className="shrink-0 rounded-md border px-2 py-1 text-center"
-              aria-label={`Relevance ${r.score.toFixed(1)} out of 10`}
-            >
-              <div className="text-lg font-semibold tabular-nums">{r.score.toFixed(1)}</div>
-              <div className="text-xs text-muted-foreground">of 10</div>
-            </div>
-            <div className="min-w-0 space-y-1">
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium underline"
-              >
-                {item.title}
-              </a>
-              <div className="text-muted-foreground">
-                {r.matched.map((m) => `${m.ticker} (${pct(m.weight, 0)} of portfolio)`).join(", ")}
-                {item.source ? ` | ${item.source}` : ""} | {formatAge(item.ageDays)}
-                {item.copies > 0 ? ` | ${item.copies} similar` : ""}
-              </div>
-              <div className="text-muted-foreground">
-                {c
-                  ? `${c.class}, importance ${c.fundamentalImportance} of 10`
-                  : "Not yet classified"}
-              </div>
-            </div>
-          </div>
-          <details>
-            <summary className="cursor-pointer text-muted-foreground">
-              Why am I seeing this?
-            </summary>
-            <ul className="mt-2 space-y-1">
-              <li>
-                Holdings touched: {pct(r.exposureMatch, 0)} (
-                {r.matched
-                  .map(
-                    (m) =>
-                      `${m.ticker}: ${pct(m.linkScore, 0)} sure it is about them, ${pct(m.weight, 0)} of your portfolio`,
-                  )
-                  .join("; ")}
-                )
-              </li>
-              <li>
-                Economic impact: {pct(r.impact, 0)}
-                {c ? ` (${c.mechanism})` : " (not yet classified, so a neutral 50%)"}
-              </li>
-              <li>Freshness: {pct(r.recency, 0)} (half the relevance is lost every 3 days)</li>
-              <li>Score = 10 x holdings touched x impact x freshness = {r.score.toFixed(1)}</li>
-            </ul>
-          </details>
-        </CardContent>
-      </Card>
-    </li>
+    <button
+      type="button"
+      aria-pressed={active}
+      title={title}
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors",
+        active ? "border-foreground bg-foreground text-background" : "hover:bg-muted",
+        !active && tone,
+      )}
+    >
+      {icon && <span aria-hidden="true">{icon}</span>}
+      {label}
+      <span
+        className={cn(
+          "rounded-full px-1.5 text-xs tabular-nums",
+          active ? "bg-background/20" : "bg-background/60",
+        )}
+      >
+        {count}
+      </span>
+    </button>
   );
 }

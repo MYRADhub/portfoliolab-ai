@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { COVERED, EXAMPLE, holdingsCard, startUiSession, waitForDashboard } from "./helpers";
+import { COVERED, EXAMPLE, holdingsSnapshot, startUiSession, waitForDashboard } from "./helpers";
 
 async function noPageOverflow(page: Page) {
   const { scrollWidth, innerWidth } = await page.evaluate(() => ({
@@ -71,21 +71,28 @@ test.describe("mobile layout", () => {
     }
   });
 
-  test("tables show their key columns on a phone without clipping", async ({ page }) => {
+  test("the dashboard, holdings snapshot and wide tables fit a phone without clipping", async ({
+    page,
+  }) => {
     const s = await startUiSession(page);
     await s.create("Tables", COVERED);
     const vw = page.viewportSize()!.width;
     await page.goto("/dashboard");
     await waitForDashboard(page);
-    const weight = holdingsCard(page).getByRole("columnheader", { name: "Weight" });
-    await expect(weight).toBeVisible();
-    const wb = await weight.boundingBox();
-    expect(
-      wb!.x + wb!.width,
-      "Weight column header is fully inside the viewport",
-    ).toBeLessThanOrEqual(vw);
-    await expect(holdingsCard(page).getByRole("columnheader", { name: "Name" })).toBeHidden(); // dropped on phones to make room
-    await expect(holdingsCard(page).getByRole("cell", { name: "40.0%" })).toBeVisible();
+    const snapshot = holdingsSnapshot(page);
+    await expect(snapshot.getByRole("listitem")).toHaveCount(4);
+    for (const item of await snapshot.getByRole("listitem").all()) {
+      const b = await item.boundingBox();
+      expect(b!.x + b!.width, "snapshot rows fit the viewport").toBeLessThanOrEqual(vw);
+    }
+    await expect(snapshot.getByRole("listitem").filter({ hasText: "NVDA" })).toContainText("40%");
+    for (const card of await page
+      .getByRole("list", { name: "Insights" })
+      .getByRole("listitem")
+      .all()) {
+      const b = await card.boundingBox();
+      expect(b!.x + b!.width, "insight cards fit the viewport").toBeLessThanOrEqual(vw);
+    }
 
     await page.goto("/exposures");
     const shared = page

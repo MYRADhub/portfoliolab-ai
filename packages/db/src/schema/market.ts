@@ -22,6 +22,8 @@ export const companies = pgTable(
     sector: text("sector"),
     industry: text("industry"),
     country: text("country"),
+    /** SEC Central Index Key, zero-padded to 10 digits. Used to look up filings and fundamentals. */
+    cik: text("cik"),
     marketCap: doublePrecision("market_cap"),
     activeFrom: date("active_from"),
     activeTo: date("active_to"),

@@ -5,6 +5,8 @@ export interface FetchJsonOptions {
   fetchImpl?: typeof fetch;
   retries?: number;
   baseDelayMs?: number;
+  /** Extra request headers, for example a User-Agent. */
+  headers?: Record<string, string>;
   sleep?: (ms: number) => Promise<void>;
 }
 
@@ -17,10 +19,11 @@ export async function fetchJson(url: string, opts: FetchJsonOptions): Promise<un
     fetchImpl = fetch,
     retries = 3,
     baseDelayMs = 500,
+    headers,
     sleep = defaultSleep,
   } = opts;
   for (let attempt = 0; ; attempt++) {
-    const res = await fetchImpl(url);
+    const res = await fetchImpl(url, headers ? { headers } : undefined);
     if (res.ok) {
       try {
         return await res.json();

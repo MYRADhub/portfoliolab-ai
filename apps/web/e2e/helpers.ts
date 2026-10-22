@@ -125,9 +125,9 @@ export const NEWS_DATE: string = fixtures.newsDate;
 export const QUIET_DATE: string = fixtures.quietDate;
 export const NEWS_TITLE = "E2E Acme cuts outlook on weak orders";
 
-/** The dashboard's holdings card, so row counts are not confused by the other tables on the page. */
-export const holdingsCard = (page: Page) =>
-  page.getByText("Holdings (effective").locator("xpath=ancestor::*[@data-slot='card'][1]");
+/** The dashboard's compact holdings list. */
+export const holdingsSnapshot = (page: Page) =>
+  page.getByRole("list", { name: "Holdings snapshot" });
 /** The "Why did my portfolio move?" card. */
 export const moveCard = (page: Page) =>
   page.getByText("Why did my portfolio move?").locator("xpath=ancestor::*[@data-slot='card'][1]");

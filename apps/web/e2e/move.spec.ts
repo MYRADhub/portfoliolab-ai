@@ -249,6 +249,9 @@ test.describe("move panel", () => {
     );
     await expect(card.getByText(api.headline)).toBeVisible();
 
+    // The detailed tables are folded away by default; open them to read the rows.
+    await expect(card.getByRole("table", { name: "Contribution by holding" })).toHaveCount(0);
+    await card.getByText("Contribution tables by holding and by sector").click();
     const holdings = card.getByRole("table", { name: "Contribution by holding" });
     await expect(holdings.locator("tbody tr")).toHaveCount(5);
     const first = api.holdings[0];

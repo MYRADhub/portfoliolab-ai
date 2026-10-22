@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { api, ensureSession } from "@/lib/api";
 import { loadSamplePortfolios } from "./sample-picker";
@@ -78,6 +78,15 @@ export function WithPortfolio({
           New portfolio
         </Link>
         {selected && (
+          <a
+            href={`/api/portfolios/${selected}/export`}
+            download
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Export holdings (CSV)
+          </a>
+        )}
+        {selected && (
           <DeleteButton key={selected} id={selected} onDeleted={() => void reload(selected)} />
         )}
       </div>
@@ -129,9 +138,13 @@ function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) 
   );
 }
 
+/** In demo mode an empty session gets the sample portfolios automatically, so there is something to look at. */
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "1";
+
 function EmptyState({ onLoaded }: { onLoaded: () => void }) {
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(DEMO_MODE);
   const [error, setError] = useState<string | null>(null);
+  const autoStarted = useRef(false);
 
   async function load() {
     setBusy(true);
@@ -147,6 +160,16 @@ function EmptyState({ onLoaded }: { onLoaded: () => void }) {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!DEMO_MODE || autoStarted.current) return;
+    autoStarted.current = true;
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (DEMO_MODE && busy && !error)
+    return <p className="text-muted-foreground">Setting up your demo portfolios</p>;
 
   return (
     <div className="max-w-xl space-y-4">

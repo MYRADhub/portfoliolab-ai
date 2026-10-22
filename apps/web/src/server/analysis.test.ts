@@ -169,6 +169,11 @@ describe("getPortfolioExposures", () => {
     expect(bySlug.rates!.net).toBeCloseTo(-0.5 - 0.3 + 0.4, 12);
     expect(full.concentration.factorHhi).toBeCloseTo((1.5 / 1.9) ** 2 + (0.4 / 1.9) ** 2, 12);
     expect(full.concentration.sectorHhi).toBeCloseTo(0.8 ** 2 + 0.2 ** 2, 12);
+    expect(full.holdings.map((h) => [h.ticker, h.weight])).toEqual([
+      ["NVDA", 0.5],
+      ["AAPL", 0.3],
+      ["JPM", 0.2],
+    ]);
     expect(full.pairs[0]).toMatchObject({ a: "NVDA", b: "AAPL", shared: ["rates"] });
     expect(full.cells.find((c) => c.ticker === "JPM")).toMatchObject({
       factor: "rates",

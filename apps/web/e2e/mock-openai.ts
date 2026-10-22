@@ -84,6 +84,72 @@ function responseBody(model: string, payload: object | null, extra: object = {})
   };
 }
 
+// Tool-calling flow for the research assistant: first turn asks for the portfolio summary, then answers from the
+// tool output (grounded), or with an invented number (ungrounded), or fails, depending on the mode.
+type Item = { role?: string; content?: string; type?: string; output?: string };
+function assistantTurn(
+  body: { model: string; instructions: string; input: string | Item[] },
+  send: (status: number, body: unknown) => void,
+) {
+  const items = body.input as Item[];
+  requests.push({
+    path: "/v1/responses",
+    auth: undefined,
+    model: body.model,
+    instructions: body.instructions,
+    input: JSON.stringify(items),
+    mode,
+  });
+  if (mode === "error")
+    return send(400, {
+      error: {
+        message: "mock upstream failure",
+        type: "invalid_request_error",
+        param: null,
+        code: null,
+      },
+    });
+  const outputs = items.filter((i) => i.type === "function_call_output").map((i) => i.output ?? "");
+  const question = items.find((i) => i.role === "user")?.content ?? "";
+  if (outputs.length === 0) {
+    const wantsCompany = /\bNVDA\b/.test(question);
+    return send(
+      200,
+      responseBody(body.model, null, {
+        output: [
+          {
+            type: "function_call",
+            id: "fc_mock",
+            call_id: "call_mock",
+            name: wantsCompany ? "get_company" : "get_portfolio_summary",
+            arguments: wantsCompany ? JSON.stringify({ ticker: "NVDA" }) : "{}",
+            status: "completed",
+          },
+        ],
+      }),
+    );
+  }
+  const retried = question.includes("rejected for");
+  if (mode === "ungrounded" || (mode === "retry" && !retried))
+    return send(200, responseBody(body.model, { answer: "The portfolio returned 99.99% [F1]." }));
+  const facts = outputs
+    .join("\n")
+    .split("\n")
+    .flatMap((line) => {
+      const m = /^(F\d+) \| ([^:]+): (.*)$/.exec(line);
+      return m ? [{ id: m[1]!, label: m[2]!, text: m[3]! }] : [];
+    });
+  return send(
+    200,
+    responseBody(body.model, {
+      answer: facts
+        .slice(0, 2)
+        .map((f) => `${f.label}: ${f.text} [${f.id}].`)
+        .join(" "),
+    }),
+  );
+}
+
 createServer(async (req, res) => {
   const send = (status: number, body: unknown) => {
     res.writeHead(status, { "content-type": "application/json" });
@@ -109,8 +175,9 @@ createServer(async (req, res) => {
     const body = JSON.parse(await readBody(req)) as {
       model: string;
       instructions: string;
-      input: string;
+      input: string | { role?: string; content?: string; type?: string; output?: string }[];
     };
+    if (Array.isArray(body.input)) return assistantTurn(body, send);
     requests.push({
       path: url.pathname,
       auth: req.headers.authorization,

@@ -16,7 +16,9 @@ import {
   riskContributions,
   rollingVolatility,
   sharpeRatio,
+  topDays,
   upDayShare,
+  type DayExtreme,
   type DrawdownEpisode,
   type HistogramBin,
   type MonthReturn,
@@ -65,6 +67,8 @@ export interface Terminal {
     worst: { date: string; value: number };
     upDayShare: number;
   };
+  /** The five best and worst single days. */
+  extremes: { best: DayExtreme[]; worst: DayExtreme[] };
   rollingVolatility: { date: string; value: number }[];
   histogram: HistogramBin[];
   monthly: MonthReturn[];
@@ -184,6 +188,7 @@ export async function getTerminal(
       worst,
       upDayShare: upDayShare(returns),
     },
+    extremes: topDays(returnDates, returns, 5),
     rollingVolatility: rv.map((value, i) => ({
       date: returnDates[i + ROLLING_VOL_WINDOW - 1]!,
       value,

@@ -32,10 +32,14 @@ test.describe("explain panel", () => {
     await panel.getByText("Figures used").click();
     await expect(panel.getByText(/F1 Analysis window:/)).toBeVisible();
     await expect(panel.getByText(/F6 Total return:/)).toBeVisible();
-    const total = await page
-      .getByText(/^[+-]\d+\.\d%$/)
-      .first()
-      .textContent();
+    // The figure the AI was given equals the one the API reports for the whole window.
+    const pid = (
+      (await (await page.request.get("/api/portfolios")).json()) as { portfolios: { id: string }[] }
+    ).portfolios[0]!.id;
+    const a = (await (
+      await page.request.get(`/api/portfolios/${pid}/analytics?years=1`)
+    ).json()) as { stats: { totalReturn: number } };
+    const total = `${a.stats.totalReturn >= 0 ? "+" : ""}${(a.stats.totalReturn * 100).toFixed(1)}%`;
     await expect(panel.getByText(`Total return: ${total}`)).toBeVisible();
   });
 

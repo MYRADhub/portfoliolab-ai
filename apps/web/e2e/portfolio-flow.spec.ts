@@ -3,7 +3,7 @@ import {
   COVERED,
   EXAMPLE,
   appAlert,
-  holdingsCard,
+  holdingsSnapshot,
   startUiSession,
   waitForDashboard,
 } from "./helpers";
@@ -135,8 +135,12 @@ test.describe("portfolio form", () => {
     await page.getByRole("button", { name: "Create portfolio" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await waitForDashboard(page);
-    await expect(holdingsCard(page).getByRole("row", { name: /AAPL.*75\.0%/ })).toBeVisible();
-    await expect(holdingsCard(page).getByRole("row", { name: /NVDA.*25\.0%/ })).toBeVisible();
+    await expect(
+      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "AAPL" }),
+    ).toContainText("75%");
+    await expect(
+      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "NVDA" }),
+    ).toContainText("25%");
   });
 
   test("pressing Enter in a weight field submits the form", async ({ page }) => {
@@ -166,6 +170,25 @@ test.describe("portfolio form", () => {
 });
 
 test.describe("session recovery", () => {
+  test("a first visit asks for exactly one session, so no portfolio can end up in an orphaned one", async ({
+    page,
+  }) => {
+    const sessionPosts: string[] = [];
+    page.on(
+      "request",
+      (r) =>
+        r.url().endsWith("/api/session") && r.method() === "POST" && sessionPosts.push(r.url()),
+    );
+    await page.goto("/dashboard");
+    await expect(page.getByText("You have no portfolios yet.")).toBeVisible();
+    expect(sessionPosts).toHaveLength(1);
+    await page.getByRole("link", { name: "Guide", exact: true }).first().click();
+    await page.getByRole("link", { name: "Dashboard", exact: true }).first().click();
+    await expect(page.getByText("You have no portfolios yet.")).toBeVisible();
+    // Moving around inside the app reuses the same session; the cookie is not replaced.
+    expect(sessionPosts.length).toBeLessThanOrEqual(1);
+  });
+
   test("submitting after the session cookie is lost creates a new session and still succeeds", async ({
     page,
     context,
@@ -203,7 +226,7 @@ test.describe("session recovery", () => {
 });
 
 test.describe("dashboard", () => {
-  test("shows KPIs, three charts and the holdings table for the example portfolio", async ({
+  test("shows the key figures, insight cards, index chart, holdings snapshot, day move and news", async ({
     page,
   }) => {
     const s = await startUiSession(page);
@@ -211,62 +234,70 @@ test.describe("dashboard", () => {
     await page.reload();
     await waitForDashboard(page);
 
+    const kpis = page.getByRole("region", { name: "Key figures" });
     for (const label of [
-      "Total return",
-      "Annualized return",
+      "Portfolio index",
+      "1 month",
       "Volatility (ann.)",
       "Max drawdown",
       "Sharpe",
     ]) {
-      await expect(page.getByText(label, { exact: true })).toBeVisible();
+      await expect(kpis.getByText(label, { exact: true })).toBeVisible();
     }
-    await expect(page.getByText(/^[+-]\d+\.\d%$/).first()).toBeVisible();
+    await expect(kpis.getByText(/^(Year to date|Whole window)$/)).toBeVisible();
     await expect(
       page.getByText(
         /trading days\)\. Constant target weights, rebalanced daily\. Risk-free rate 0\.0%\./,
       ),
     ).toBeVisible();
-    await expect(page.locator(".recharts-surface")).toHaveCount(4);
-    await expect(page.getByText("Growth of 1.00")).toBeVisible();
-    await expect(page.getByText("Drawdown", { exact: true })).toBeVisible();
-    await expect(page.getByText("Sector allocation")).toBeVisible();
-    await expect(
-      page.getByText("Holdings (effective number of positions 4.9, largest 25%)"),
-    ).toBeVisible();
 
-    const rows = holdingsCard(page).getByRole("row");
-    await expect(rows).toHaveCount(6); // header + five holdings
+    await expect(page.getByRole("heading", { name: "What to know now" })).toBeVisible();
+    const cards = page.getByRole("list", { name: "Insights" }).getByRole("listitem");
+    expect(await cards.count()).toBeGreaterThanOrEqual(4);
+    expect(await cards.count()).toBeLessThanOrEqual(6);
+
+    await expect(page.getByText("Portfolio index (100 at the start)")).toBeVisible();
+    const snapshot = holdingsSnapshot(page).getByRole("listitem");
+    await expect(snapshot).toHaveCount(5);
     for (const [t, w] of [
-      ["AAPL", "20.0%"],
-      ["AMZN", "15.0%"],
-      ["JPM", "20.0%"],
-      ["MSFT", "20.0%"],
-      ["NVDA", "25.0%"],
+      ["NVDA", "25%"],
+      ["AAPL", "20%"],
+      ["MSFT", "20%"],
+      ["AMZN", "15%"],
+      ["JPM", "20%"],
     ] as const) {
-      await expect(
-        holdingsCard(page).getByRole("row", { name: new RegExp(`${t}.*${w}`) }),
-      ).toBeVisible();
+      await expect(snapshot.filter({ hasText: t })).toContainText(w);
     }
+    await expect(page.getByText("Why did my portfolio move?")).toBeVisible();
+    await expect(page.getByRole("list", { name: "Top news" }).locator(":scope > li")).toHaveCount(
+      3,
+    );
+    await expect(page.getByText("Explain this portfolio")).toBeVisible();
+    // The detail that used to repeat here now lives on its own pages.
+    await expect(page.getByText("Sector allocation")).toHaveCount(0);
+    await expect(page.getByText(/^Holdings \(effective/)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Terminal", exact: true }).first()).toBeVisible();
   });
 
-  test("KPI values on screen match the API", async ({ page }) => {
+  test("key figures on screen match the API", async ({ page }) => {
     const s = await startUiSession(page);
     const id = await s.create("Match", EXAMPLE);
     await page.reload();
     await waitForDashboard(page);
-    const a = (await (await page.request.get(`/api/portfolios/${id}/analytics`)).json()) as {
-      stats: Record<string, number>;
+    const t = (await (await page.request.get(`/api/portfolios/${id}/terminal`)).json()) as {
+      index: { value: number; dayChange: number };
+      performance: { label: string; value: number | null }[];
+      risk: Record<string, number>;
     };
-    const signed = (x: number) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}%`;
-    await expect(page.getByText(signed(a.stats.totalReturn!), { exact: true })).toBeVisible();
-    await expect(page.getByText(signed(a.stats.annualizedReturn!), { exact: true })).toBeVisible();
-    await expect(
-      page.getByText(`${(a.stats.annualizedVolatility! * 100).toFixed(1)}%`, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(`${(a.stats.maxDrawdown! * 100).toFixed(1)}%`, { exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText(a.stats.sharpe!.toFixed(2), { exact: true })).toBeVisible();
+    const signed = (x: number, d = 1) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
+    const kpis = page.getByRole("region", { name: "Key figures" });
+    await expect(kpis).toContainText(t.index.value.toFixed(1));
+    await expect(kpis).toContainText(`${signed(t.index.dayChange, 2)} today`);
+    const month = t.performance.find((p) => p.label === "1 month")!.value!;
+    await expect(kpis).toContainText(signed(month));
+    await expect(kpis).toContainText(`${(t.risk.volatility! * 100).toFixed(1)}%`);
+    await expect(kpis).toContainText(signed(t.risk.maxDrawdown!));
+    await expect(kpis).toContainText(t.risk.sharpe!.toFixed(2));
   });
 
   test("with several portfolios a selector switches between them", async ({ page }) => {
@@ -278,12 +309,16 @@ test.describe("dashboard", () => {
     const select = page.getByLabel("Portfolio", { exact: true });
     await expect(select).toBeVisible();
     await expect(select.locator("option")).toHaveText(["Covered four", "Mega caps"]);
-    await expect(holdingsCard(page).getByRole("row")).toHaveCount(5); // newest first: four holdings
+    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(4); // newest first: four holdings
     await select.selectOption({ label: "Mega caps" });
-    await expect(holdingsCard(page).getByRole("row")).toHaveCount(6);
-    await expect(holdingsCard(page).getByRole("row", { name: /JPM/ })).toBeVisible();
+    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(5);
+    await expect(
+      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "JPM" }),
+    ).toHaveCount(1);
     await select.selectOption({ label: "Covered four" });
-    await expect(holdingsCard(page).getByRole("row", { name: /JPM/ })).toHaveCount(0);
+    await expect(
+      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "JPM" }),
+    ).toHaveCount(0);
   });
 
   test("explains why a portfolio cannot be analyzed instead of failing silently", async ({
@@ -338,8 +373,10 @@ test.describe("deleting a portfolio", () => {
 
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await page.getByRole("button", { name: "Confirm delete" }).click();
-    await expect(holdingsCard(page).getByRole("row", { name: /NVDA/ })).toBeVisible(); // falls back to the remaining portfolio
-    await expect(holdingsCard(page).getByRole("row")).toHaveCount(6);
+    await expect(
+      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "JPM" }),
+    ).toHaveCount(1); // falls back to the remaining portfolio
+    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(5);
     await expect(page.getByLabel("Portfolio", { exact: true })).toHaveCount(0); // a single portfolio needs no selector
     const list = (await (await page.request.get("/api/portfolios")).json()) as {
       portfolios: { name: string }[];

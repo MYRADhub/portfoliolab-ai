@@ -8,6 +8,9 @@ const pages = [
   { path: "/exposures", heading: "Exposures", nav: "Exposures" },
   { path: "/correlation", heading: "Correlation", nav: "Correlation" },
   { path: "/news", heading: "News", nav: "News" },
+  { path: "/events", heading: "Reactions", nav: "Reactions" },
+  { path: "/stress", heading: "Stress Lab", nav: "Stress Lab" },
+  { path: "/discovery", heading: "Discovery", nav: "Discovery" },
   { path: "/research", heading: "Research", nav: "Research" },
   { path: "/guide", heading: "Guide", nav: "Guide" },
 ];
@@ -38,11 +41,9 @@ test.describe("navigation", () => {
     expect(errors).toEqual([]);
   });
 
-  test("the Research placeholder says what is coming, and News describes itself", async ({
-    page,
-  }) => {
+  test("Research offers company lookup, and News describes itself", async ({ page }) => {
     await page.goto("/research");
-    await expect(page.getByText(/research terminal arrives in Phase 13/)).toBeVisible();
+    await expect(page.getByLabel("Look up a company")).toBeVisible();
     await page.goto("/news");
     await expect(page.getByText(/Fewer, more relevant stories/)).toBeVisible();
   });

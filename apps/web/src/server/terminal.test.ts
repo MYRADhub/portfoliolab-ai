@@ -136,6 +136,17 @@ describe("getTerminal", () => {
     );
   });
 
+  it("lists five best and worst days that agree with the risk panel", async () => {
+    const t = await getTerminal(ctx.db, sid, pid, { now });
+    expect(t.extremes.best).toHaveLength(5);
+    expect(t.extremes.worst).toHaveLength(5);
+    expect(t.extremes.best[0]).toEqual(t.risk.best);
+    expect(t.extremes.worst[0]).toEqual(t.risk.worst);
+    const b = t.extremes.best.map((d) => d.value);
+    expect(b).toEqual([...b].sort((x, y) => y - x));
+    expect(new Set([...t.extremes.best, ...t.extremes.worst].map((d) => d.date)).size).toBe(10);
+  });
+
   it("reports correlation, empty news, and unavailable exposures when there is no such data", async () => {
     const t = await getTerminal(ctx.db, sid, pid, { now });
     expect(t.correlation!.topPairs).toHaveLength(3);

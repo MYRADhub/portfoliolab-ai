@@ -26,8 +26,8 @@ The analytics service: `cd services/analytics && uv sync && uv run uvicorn analy
 ## Try the app with demo data
 
 `pnpm demo` builds a separate `pl_demo` database (the S&P 500 list, prices for 24 companies, 12 economic factors with
-exposures, and 30 labelled news items) and starts the app on http://localhost:3000 with a "demo mode" banner. Then
-open **Guide** for a five-minute tour, or go to **New portfolio** and press **Load all samples**. Everything in the demo
+exposures, and 30 labelled news items) and starts the app on http://localhost:3000 with a "demo mode" banner. The five sample portfolios are
+loaded for you automatically on your first visit. Open **Guide** for a five-minute tour. Everything in the demo
 is made up and clearly marked; it never touches your real dev database.
 
 ## End-to-end tests
@@ -44,3 +44,19 @@ Google Chrome and a running Postgres (`pnpm db:up`).
 - `packages/db` Drizzle schema, migrations, seed
 - `packages/shared` shared types and env validation
 - `services/analytics` Python FastAPI service
+
+## Research study module
+
+Off by default. Set `EXPERIMENT_ENABLED=1`, `EXPERIMENT_ADMIN_TOKEN` (16+ characters) and optionally `EXPERIMENT_UNIVERSE` (comma-separated tickers) to open `/experiment`. Enrolled participants are confined to the study. Do not enable it for real participants before ethics approval; see `docs/experiment-design.md`. Researcher endpoints: `GET /api/experiment/export` (CSV) and `GET /api/experiment/results` (analysis), with the token in an `x-admin-token` header.
+
+## Real data
+
+Free, no keys. Needs Postgres up (`pnpm db:up`) and `DATABASE_URL` in `.env`.
+
+```
+pnpm real:seed                      # S&P 500 prices (5 years, Yahoo) and illustrative exposures into database pl_real
+SEC_USER_AGENT="Your Name you@school.edu" pnpm data:sec   # 8-K events and annual fundamentals from SEC EDGAR
+pnpm real                           # app on http://localhost:3000 using pl_real
+```
+
+The price step takes about ten minutes and resumes if interrupted. Yahoo's endpoint is unofficial: use it for research only. The SEC asks for a User-Agent that identifies you.

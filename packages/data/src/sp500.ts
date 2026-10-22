@@ -64,6 +64,7 @@ export async function loadConstituents(db: Db, items: readonly Constituent[]): P
       name: c.name,
       sector: c.sector,
       industry: c.industry,
+      cik: c.cik,
     }));
     const rows = await db
       .insert(companies)
@@ -74,6 +75,7 @@ export async function loadConstituents(db: Db, items: readonly Constituent[]): P
           name: sql`excluded.name`,
           sector: sql`excluded.sector`,
           industry: sql`excluded.industry`,
+          cik: sql`excluded.cik`,
         },
       })
       .returning({ id: companies.id });

@@ -10,6 +10,7 @@ import {
   riskContributions,
   rollingVolatility,
   stdev,
+  topDays,
   upDayShare,
 } from "./index";
 
@@ -140,5 +141,21 @@ describe("riskContributions", () => {
     expect(() => riskContributions([0.5, 0.5], [x, x.map((v) => -v)])).toThrow(
       /zero portfolio variance/,
     );
+  });
+});
+
+describe("topDays", () => {
+  it("lists the most extreme days first on each side and never repeats a day", () => {
+    const dates = ["a", "b", "c", "d", "e", "f"];
+    const t = topDays(dates, [0.01, -0.03, 0.05, -0.01, 0.02, -0.04], 2);
+    expect(t.best.map((d) => d.date)).toEqual(["c", "e"]);
+    expect(t.worst.map((d) => d.date)).toEqual(["f", "b"]);
+    expect(topDays(dates, [0.01, -0.03, 0.05, -0.01, 0.02, -0.04], 6).best).toHaveLength(6);
+  });
+
+  it("handles fewer days than requested, ties, and mismatched input", () => {
+    expect(topDays(["a", "b"], [0.01, 0.01], 5).best.map((d) => d.date)).toEqual(["b", "a"]);
+    expect(topDays([], [], 3)).toEqual({ best: [], worst: [] });
+    expect(() => topDays(["a"], [])).toThrow();
   });
 });

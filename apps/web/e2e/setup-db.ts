@@ -9,6 +9,7 @@ import {
   companies,
   companyFactorExposures,
   createDb,
+  fundamentals,
   eventTypes,
   factors,
   newsArticles,
@@ -35,6 +36,8 @@ function nthWeekdayBack(n: number): string {
   }
   return d.toISOString().slice(0, 10);
 }
+
+const STUDY_EXTRA = ["COST", "MCD", "NKE", "SBUX", "LOW", "TJX"];
 
 async function main() {
   const admin = postgres(adminDatabaseUrl(), { max: 1, onnotice: () => undefined });
@@ -63,6 +66,9 @@ async function main() {
   }
   // Prices for the 24 companies used by the sample portfolios (no demo news or exposures: tests assert on their own fixtures).
   await seedDemoPrices(db);
+  // Six more companies used only by the research study tests; each has a consumer-spending exposure and nothing else.
+  for (const t of STUDY_EXTRA)
+    await ingestPrices(db, provider, t, { backfillFrom: threeYearsAgo, to: today });
   // TGT has only about ten days of history; GOOGL has none. Both exist to exercise the error paths.
   await ingestPrices(db, provider, "TGT", { backfillFrom: twoWeeksAgo, to: today });
 
@@ -93,7 +99,16 @@ async function main() {
     ])
     .returning();
   const fid = Object.fromEntries(factorRows.map((f) => [f.slug, f.id]));
+  const STUDY_EXTRA_EXPOSURES: [string, string, number, number][] = [
+    ["COST", "consumer", 3, 1],
+    ["MCD", "consumer", 2, 1],
+    ["NKE", "consumer", 3, -1],
+    ["SBUX", "consumer", 1, 1],
+    ["LOW", "consumer", 2, -1],
+    ["TJX", "consumer", 1, -1],
+  ];
   const exposures: [string, string, number, number][] = [
+    ...STUDY_EXTRA_EXPOSURES,
     ["NVDA", "ai_capex", 3, 1],
     ["NVDA", "taiwan", 3, -1],
     ["NVDA", "china", 2, 1],
@@ -120,6 +135,30 @@ async function main() {
       source: "manual",
     });
   }
+
+  // Annual figures for NVDA so the fundamentals panel has something to show.
+  const [nvda] = await db.select().from(companies).where(eq(companies.ticker, "NVDA"));
+  const fy = (year: number, metric: string, value: number, unit = "USD") => ({
+    companyId: nvda!.id,
+    metric,
+    fiscalYear: year,
+    periodEnd: `${year}-01-31`,
+    value,
+    unit,
+    filedAt: `${year}-02-20`,
+    accession: `e2e-${year}`,
+  });
+  await db
+    .insert(fundamentals)
+    .values([
+      fy(2025, "revenue", 130_000_000_000),
+      fy(2025, "net_income", 72_000_000_000),
+      fy(2025, "operating_income", 82_000_000_000),
+      fy(2025, "eps_diluted", 2.94, "USD/shares"),
+      fy(2025, "equity", 80_000_000_000),
+      fy(2024, "revenue", 100_000_000_000),
+      fy(2024, "net_income", 30_000_000_000),
+    ]);
 
   // News on a known past trading day, so move tests can assert on exact titles and classifications.
   const newsDate = nthWeekdayBack(6);

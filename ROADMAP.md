@@ -274,14 +274,22 @@ Progress (2026-10-20): built and tested. Relevance score (`packages/finance/src/
 **Phase 12 - Stress Lab (2 wk)**
 Scenario library (rates +2%, oil +50%, AI capex down, China demand down, Taiwan disruption) as `scenario_factor_shocks`. V1 method: linear `shock * signed_exposure * beta_scale` with per-factor sensitivity calibrated from history (regress holding returns on factor proxies: DGS10 changes, WTI returns, DXY, SOX, etc.) so "magnitude 2" maps to an estimated percent impact rather than an arbitrary number. Show a range, not a point. Custom scenario builder (choose factors and shocks). Second-order propagation via `factor_relationships` with damping. Clearly label as scenario analysis, not prediction.
 
+Progress (2026-10-21): built and tested. `packages/finance/src/stress.ts` (linear scenario impact per holding, factor and portfolio, reliability, vulnerability score), six preset scenarios, `POST /api/portfolios/[id]/stress`, Stress Lab page with sliders. Labelled as illustrative. Not built: user-saved scenarios, factor covariance (no interactions between factors), news-driven scenarios. See docs/DECISIONS.md section 18.
+
 **Phase 13 - Research Terminal and Assistant (2.5 wk)**
 Search routing (ticker -> company research page; question -> assistant). Company page: fundamentals, recent news classified, exposures, price behavior, related companies (from `company_relations` and exposure similarity), portfolio consequences ("what if I add this": delta in factor profile, concentration, correlation). Assistant: tool-calling LLM over internal tools (`get_portfolio_exposures`, `get_news`, `compute_contribution`, `whatif_add_holding`, `stress`), so answers come from computed tools, not free recall. Conversation storage, citations, rate limits.
+
+Progress (2026-10-21): built and tested. Company research page (price chart, statistics, exposures, peers by exposure similarity or sector, linked news cards, what-if add) and a tool-grounded assistant (`packages/explain/src/assistant.ts`: tool loop with six tools, every answer checked against the numbers the tools returned, one retry, deterministic fallback, shared rate limit, mock-tested tool calling). Not built: fundamentals (no free data source wired), conversation history, streaming, quick routing of a ticker typed into the question box. See docs/DECISIONS.md section 19.
 
 **Phase 14 - Discovery (1 wk)**
 Optimizer-lite: rank candidates by reduction in hidden concentration metric when added at k% weight, subject to sector/market-cap filters; "positively exposed to falling rates / rising oil" queries via the exposure table. Output labeled "research candidates" with the factor deltas shown.
 
+Progress (2026-10-21): built and tested. Candidates ranked by the gain in effective hidden forces when added at 3, 5 or 10%, with the change in total exposure and a Hedge tag (`packages/finance/src/discovery.ts`, `GET /api/portfolios/[id]/discovery`, Discovery page). Not built: sector and market-cap filters, multi-stock optimization.
+
 **Phase 15 - Event-study engine and reaction analyzer (3 wk)**
 Python service. Abnormal return = actual - market-model prediction (estimation window e.g. [-250,-30], benchmark SPY or Fama-French). Compute CAR at d0/d1/d5/d10/d30. Event-day alignment using the market-hours flag. Handle clustering (drop or flag windows overlapping earnings), minimum n per event type, bootstrap confidence intervals. Populate `event_type_stats`. Feed the persistence prior back into Phase 8 outputs; show "realized persistence" after the fact. Cross-stock impact: detect abnormal-return clusters across the universe on an event day and test consistency with the exposure graph (do exposed stocks have significantly different abnormal returns than non-exposed? simple t-test / permutation).
+
+Progress (2026-10-21): engine and Reactions page built and tested, in TypeScript rather than Python (docs/DECISIONS.md section 20). `packages/finance/src/eventstudy.ts`: market-model fit, abnormal returns, CAR at event day, +1, +5, +10 with t-statistics, no look-ahead, seeded bootstrap intervals, minimum sample flag. `apps/web/src/server/events.ts` and `GET /api/events`: per-story reactions and per-event-type averages. Not built: real index benchmark (equal-weight proxy of the price universe is used), earnings-overlap handling, `event_type_stats` table, persistence feedback into classification, cross-stock exposure-graph test, SEC 8-K event source, CAR at 30 days. Update (2026-10-21, later): now runs on real data (Yahoo prices, SEC 8-K events; docs/DECISIONS.md section 22), 30-day horizon added, news within a week of earnings is flagged and left out of averages, typical move size shown. Still not built: `event_type_stats` table, persistence feedback, cross-stock exposure-graph test.
 
 **Phase 16 - Research experiment module (2-3 wk, design starts earlier)**
 
@@ -290,9 +298,13 @@ Python service. Abnormal return = actual - market-model prediction (estimation w
 - Engineering: feature flag per arm, server-side randomization (stratified by experience), the control arm must be technically unable to load exposure endpoints, event logging (every edit, view, dwell time), export pipeline (CSV) and analysis notebooks, pre/post questionnaire (confidence, perceived diversification).
 - Confound controls: same data window, same loading speed, same layout where possible.
 
+Progress (2026-10-21): engineering built and tested; study not approved or run. Design, pre-registered outcome, analysis plan, power and ethics checklist: `docs/experiment-design.md`. Server-side stratified randomization (minimization), consent and pre/post questionnaires, fixed-universe task, arm-specific information, a confinement proxy that keeps participants inside the study surface (control arm cannot reach any exposure route), event logging, withdrawal, researcher-only CSV export and results endpoint (permutation test, Welch t, Cohen's d), off unless `EXPERIMENT_ENABLED=1`. Not built: approved consent text, debrief screen, signed participant cookie, notebooks beyond the built-in analysis endpoint, robustness outcome from return covariance.
+
 ---
 
 ## 5. Cross-cutting engineering
+
+Progress (2026-10-21): UI redesign shipped (docs/DECISIONS.md section 17): shared light and dark theme with a sidebar toggle, news story cards, a four-section no-scroll Terminal, an interactive hidden exposure map, and an insight-driven Dashboard. End-to-end suite is 201 tests, including accessibility scans in both themes.
 
 Progress (2026-10-20): Terminal page (12 panels, `apps/web/src/server/terminal.ts`, new analytics in `packages/finance/src/terminal.ts`: period returns, historical VaR and expected shortfall, rolling volatility, histogram, monthly returns, drawdown episodes, risk contributions), five sample portfolios with one-click loading, a Guide page with glossary and a link from every Terminal panel, a labelled demo database and `pnpm demo` launcher (`packages/demo`). End-to-end suite now 153 tests. Not built: benchmark-relative measures (needs an index price series), user-editable Terminal layout, export.
 

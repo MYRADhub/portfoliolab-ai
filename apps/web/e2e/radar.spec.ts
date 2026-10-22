@@ -145,36 +145,96 @@ test.describe("News page", () => {
       .evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")!));
     return labels.map((l) => Number(/Relevance ([\d.]+) out of 10/.exec(l)![1]));
   };
+  const ranked = (page: import("@playwright/test").Page) =>
+    page.getByRole("list", { name: "Ranked news" });
+  const rankedItems = (page: import("@playwright/test").Page) =>
+    ranked(page).locator(":scope > li");
 
-  test("shows ranked items with scores, holdings, types and age, with low-relevance items collapsed", async ({
+  test("shows ranked story cards with a relevance ring, type badge, importance meter and holding chips", async ({
     page,
   }) => {
     const s = await startUiSession(page);
     await s.create("Radar", EXAMPLE);
     await page.goto("/news");
     await expect(page.getByRole("heading", { name: "News", level: 1 })).toBeVisible();
-    const ranked = page.getByRole("list", { name: "Ranked news" });
-    await expect(ranked).toBeVisible();
-    await expect(ranked.getByRole("listitem")).toHaveCount(3);
-    await expect(ranked.getByRole("listitem").first()).toContainText(R.nvda);
-    await expect(ranked.getByRole("listitem").first()).toContainText("NVDA (25% of portfolio)");
-    await expect(ranked.getByRole("listitem").first()).toContainText(
-      "fundamental, importance 9 of 10",
-    );
-    await expect(ranked.getByRole("listitem").first()).toContainText("1 similar");
-    await expect(ranked.getByRole("listitem").first()).toContainText(/\d+ hours? ago/);
+    await expect(rankedItems(page)).toHaveCount(3);
+
+    const top = rankedItems(page).first();
+    await expect(top).toContainText("Most relevant right now");
+    await expect(top).toContainText(R.nvda);
+    await expect(top.locator("span[title]").filter({ hasText: "Fundamental" })).toBeVisible();
+    await expect(
+      top.getByRole("img", { name: /^Relevance [\d.]+ out of 10, high$/ }),
+    ).toBeVisible();
+    await expect(top.getByRole("img", { name: "Importance 9 out of 10" })).toBeVisible();
+    await expect(
+      top.getByRole("list", { name: "Holdings touched" }).getByRole("listitem"),
+    ).toHaveText(["NVDA 25% of portfolio"]);
+    await expect(top).toContainText("What it means: E2E mechanism r1");
+    await expect(top).toContainText("1 similar");
+    await expect(top).toContainText(/\d+ hours? ago/);
+
     const scores = await scoresOnPage(page);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
-
     await expect(
-      page.getByText("5 items: 3 shown, 2 collapsed as low relevance.", { exact: false }),
+      page.getByText("5 stories: 3 relevant, 2 collapsed as low relevance.", { exact: false }),
     ).toBeVisible();
-    const low = page.getByRole("list", { name: "Low-relevance news" });
-    await expect(low).toBeHidden(); // collapsed by default
+  });
+
+  test("relevance words follow the score bands, so color is never the only signal", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Radar", EXAMPLE);
+    await page.goto("/news");
     await page.getByText("2 low-relevance items").click();
-    await expect(low.getByRole("listitem")).toHaveCount(2);
-    await expect(low).toContainText(R.jpm);
-    await expect(low).toContainText(R.msft);
+    const words = await page.locator("[aria-label^='Relevance ']").evaluateAll((els) =>
+      els.map((e) => ({
+        score: Number(/Relevance ([\d.]+)/.exec(e.getAttribute("aria-label")!)![1]),
+        word: /, (\w+)$/.exec(e.getAttribute("aria-label")!)![1],
+      })),
+    );
+    expect(words.length).toBe(5);
+    for (const { score, word } of words)
+      expect(word).toBe(score >= 5 ? "high" : score >= 2 ? "medium" : "low");
+    expect(words.some((w) => w.word === "high")).toBe(true);
+    expect(words.some((w) => w.word === "low")).toBe(true);
+  });
+
+  test("type chips show counts, announce their state, and use a distinct symbol for each type", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Radar", EXAMPLE);
+    await page.goto("/news");
+    const group = page.getByRole("group", { name: "Type" });
+    await expect(group.getByRole("button")).toHaveText([
+      /All types\s*5/,
+      /Fundamental\s*1/,
+      /Narrative\s*1/,
+      /Noise\s*1/,
+      /Unclear\s*0/,
+      /Not yet classified\s*2/,
+    ]);
+    await expect(group.getByRole("button", { name: /^All types/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await group.getByRole("button", { name: /^Narrative/ }).click();
+    await expect(group.getByRole("button", { name: /^Narrative/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(group.getByRole("button", { name: /^All types/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    const symbols = await group
+      .getByRole("button")
+      .evaluateAll((els) =>
+        els.map((e) => e.querySelector("[aria-hidden='true']")?.textContent ?? ""),
+      );
+    expect(new Set(symbols.slice(1)).size).toBe(5);
   });
 
   test("links open in a new tab safely", async ({ page }) => {
@@ -187,36 +247,52 @@ test.describe("News page", () => {
     await expect(link).toHaveAttribute("href", /^https:\/\/news\.example\.com\//);
   });
 
+  test("low-relevance stories are collapsed, not hidden", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Radar", EXAMPLE);
+    await page.goto("/news");
+    const low = page.getByRole("list", { name: "Low-relevance news" });
+    await expect(low).toBeHidden();
+    await page.getByText("2 low-relevance items").click();
+    await expect(low.locator(":scope > li")).toHaveCount(2);
+    await expect(low).toContainText(R.jpm);
+    await expect(low).toContainText(R.msft);
+  });
+
   test("explains each ranking with the parts of its score", async ({ page }) => {
     const s = await startUiSession(page);
     await s.create("Radar", EXAMPLE);
     await page.goto("/news");
-    const first = page.getByRole("list", { name: "Ranked news" }).getByRole("listitem").first();
+    const first = rankedItems(page).first();
     await first.getByText("Why am I seeing this?").click();
-    await expect(first).toContainText("Holdings touched:");
+    await expect(first).toContainText("Holdings touched");
     await expect(first).toContainText("NVDA: 90% sure it is about them, 25% of your portfolio");
-    await expect(first).toContainText("Economic impact: 90%");
+    await expect(first).toContainText("Economic impact");
+    await expect(first).toContainText("90%");
     await expect(first).toContainText("E2E mechanism r1");
-    await expect(first).toContainText("half the relevance is lost every 3 days");
+    await expect(first).toContainText("Half the relevance is lost every 3 days");
     const shown = (await scoresOnPage(page))[0]!;
     await expect(first).toContainText(`= ${shown.toFixed(1)}`);
   });
 
-  test("unclassified items say so and use a neutral impact", async ({ page }) => {
+  test("unclassified stories say so and use a neutral impact", async ({ page }) => {
     const s = await startUiSession(page);
     await s.create("Radar", EXAMPLE);
     await page.goto("/news");
-    const item = page.getByRole("listitem").filter({ hasText: R.amzn });
-    await expect(item).toContainText("Not yet classified");
+    const item = rankedItems(page).filter({ hasText: R.amzn });
+    await expect(
+      item.locator("span[title]").filter({ hasText: "Not yet classified" }),
+    ).toBeVisible();
+    await expect(item.getByRole("img", { name: /^Importance/ })).toHaveCount(0);
     await item.getByText("Why am I seeing this?").click();
-    await expect(item).toContainText("not yet classified, so a neutral 50%");
+    await expect(item).toContainText("Not yet classified, so a neutral 50%");
   });
 
   test("filters narrow the list and can be cleared", async ({ page }) => {
     const s = await startUiSession(page);
     await s.create("Radar", EXAMPLE);
     await page.goto("/news");
-    await expect(page.getByLabel("Holding").locator("option")).toHaveText([
+    await expect(page.getByLabel("Holding", { exact: true }).locator("option")).toHaveText([
       "All holdings",
       "AAPL",
       "AMZN",
@@ -224,23 +300,29 @@ test.describe("News page", () => {
       "MSFT",
       "NVDA",
     ]);
+    const group = page.getByRole("group", { name: "Type" });
 
-    await page.getByLabel("Type").selectOption("noise");
+    await group.getByRole("button", { name: /^Noise/ }).click();
     await expect(
-      page.getByText("1 item: 0 shown, 1 collapsed as low relevance.", { exact: false }),
+      page.getByText("1 story: 0 relevant, 1 collapsed as low relevance.", { exact: false }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
-    await page.getByLabel("Type").selectOption("");
-    await page.getByLabel("Holding").selectOption("NVDA");
-    await expect(page.getByRole("listitem")).toHaveCount(1);
-    await expect(page.getByRole("listitem").first()).toContainText(R.nvda);
+    await group.getByRole("button", { name: /^All types/ }).click();
+    await page.getByLabel("Holding", { exact: true }).selectOption("NVDA");
+    await expect(rankedItems(page)).toHaveCount(1);
+    await expect(rankedItems(page).first()).toContainText(R.nvda);
 
-    await page.getByLabel("Type").selectOption("noise");
-    await expect(page.getByText("No items match these filters.")).toBeVisible();
+    await page
+      .getByRole("group", { name: "Type" })
+      .getByRole("button", { name: /^Noise/ })
+      .click();
+    await expect(page.getByText("No items match these filters.").first()).toBeVisible();
     await page.getByRole("button", { name: "Clear filters" }).click();
-    await expect(page.getByLabel("Type")).toHaveValue("");
-    await expect(page.getByLabel("Holding")).toHaveValue("");
-    await expect(page.getByRole("list", { name: "Ranked news" })).toBeVisible();
+    await expect(page.getByLabel("Holding", { exact: true })).toHaveValue("");
+    await expect(
+      page.getByRole("group", { name: "Type" }).getByRole("button", { name: /^All types/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(ranked(page)).toBeVisible();
   });
 
   test("the period selector changes what is listed", async ({ page }) => {
@@ -271,19 +353,22 @@ test.describe("News page", () => {
     await expect(appAlert(page)).toHaveCount(0);
   });
 
-  test("has no accessibility violations", async ({ page }) => {
-    const s = await startUiSession(page);
-    await s.create("Radar", EXAMPLE);
-    await page.goto("/news");
-    await expect(page.getByRole("list", { name: "Ranked news" })).toBeVisible();
-    await page.getByText("2 low-relevance items").click();
-    await page.getByText("Why am I seeing this?").first().click();
-    const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    const summary = results.violations.map(
-      (v) => `${v.id} (${v.impact}): ${v.nodes[0]?.html.slice(0, 120)}`,
-    );
-    expect(summary, summary.join("\n")).toEqual([]);
-  });
+  for (const theme of ["light", "dark"] as const) {
+    test(`has no accessibility violations in the ${theme} theme`, async ({ page }) => {
+      await page.addInitScript((t) => localStorage.setItem("pl-theme", t), theme);
+      const s = await startUiSession(page);
+      await s.create("Radar", EXAMPLE);
+      await page.goto("/news");
+      await expect(ranked(page)).toBeVisible();
+      await page.getByText("2 low-relevance items").click();
+      await page.getByText("Why am I seeing this?").first().click();
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      const summary = results.violations.map(
+        (v) => `${v.id} (${v.impact}): ${v.nodes[0]?.html.slice(0, 120)}`,
+      );
+      expect(summary, summary.join("\n")).toEqual([]);
+    });
+  }
 });

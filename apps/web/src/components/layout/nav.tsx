@@ -10,6 +10,9 @@ const items = [
   { href: "/exposures", label: "Exposures" },
   { href: "/correlation", label: "Correlation" },
   { href: "/news", label: "News" },
+  { href: "/events", label: "Reactions" },
+  { href: "/stress", label: "Stress Lab" },
+  { href: "/discovery", label: "Discovery" },
   { href: "/research", label: "Research" },
   { href: "/guide", label: "Guide" },
 ];

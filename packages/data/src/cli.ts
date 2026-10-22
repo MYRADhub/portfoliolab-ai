@@ -1,8 +1,9 @@
-// Usage: tsx src/cli.ts --provider fixture|tiingo [--tickers NVDA,AAPL] [--years 5] [--limit N] [--delay-ms N]
+// Usage: tsx src/cli.ts --provider fixture|tiingo|yahoo [--tickers NVDA,AAPL] [--years 5] [--limit N] [--delay-ms N]
 import { parseArgs } from "node:util";
 import { createDb } from "@portfolio-lab/db";
 import { FixtureProvider } from "./providers/fixture";
 import { TiingoProvider } from "./providers/tiingo";
+import { YahooProvider } from "./providers/yahoo";
 import { runUpdate } from "./ingest";
 import type { PriceProvider } from "./providers/types";
 
@@ -26,6 +27,8 @@ if (values.provider === "fixture") {
   const key = process.env.TIINGO_API_KEY;
   if (!key) throw new Error("TIINGO_API_KEY is required for --provider tiingo");
   provider = new TiingoProvider(key);
+} else if (values.provider === "yahoo") {
+  provider = new YahooProvider();
 } else {
   throw new Error(`unknown provider ${values.provider}`);
 }

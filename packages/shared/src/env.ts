@@ -11,6 +11,11 @@ export const envSchema = z.object({
   MARKETAUX_API_KEY: optionalKey,
   ALPHAVANTAGE_API_KEY: optionalKey,
   FRED_API_KEY: optionalKey,
+  /** "1" turns the research study on. Off by default: no data is collected from participants unless set. */
+  EXPERIMENT_ENABLED: z.enum(["0", "1"]).optional(),
+  /** Comma-separated tickers the study universe is limited to. Defaults to every company with exposure data. */
+  EXPERIMENT_UNIVERSE: z.string().optional(),
+  EXPERIMENT_ADMIN_TOKEN: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

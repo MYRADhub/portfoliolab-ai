@@ -83,7 +83,8 @@ export default function Page() {
             <Link href="/terminal" className="underline">
               Terminal
             </Link>{" "}
-            for the dense, all-in-one view: performance, risk, distribution, drawdowns and more.
+            for the dense data view. It has four sections (Overview, Risk, Calendar, Context); press
+            the keys 1 to 4 to switch.
           </li>
           <li>
             Open{" "}
@@ -96,6 +97,10 @@ export default function Page() {
               hidden risk
             </a>{" "}
             below).
+          </li>
+          <li>
+            Use <strong>Dark mode</strong> at the bottom of the sidebar to switch the whole app
+            between light and dark. Your choice is remembered.
           </li>
           <li>
             Open{" "}
@@ -122,6 +127,43 @@ export default function Page() {
             be the same: they all depend on AI spending, cloud budgets and interest rates.
             PortfolioLab gives every company a profile of the forces it depends on and adds them up,
             so you can see the forces your whole portfolio leans on.
+          </Item>
+          <Item id="idea-exposure-map" term="The hidden exposure map">
+            On the Exposures page, holdings are on the left and economic forces on the right, with a
+            line for every dependency. Green lines mean the holding is helped when the force rises,
+            red lines mean it is hurt, and thicker lines mean more of your money rides on it. When
+            several holdings connect to the same force, that force is a hidden link between them.
+            Hover or focus a name to see only its connections.
+          </Item>
+          <Item id="idea-insights" term="The insight cards">
+            The cards on the Dashboard are written by ordinary code, not the AI, from the same
+            numbers you can see elsewhere. They are sorted so that alerts come before things to
+            watch, and both come before general information. Each shows its severity as a word and a
+            shape, and links to where the detail lives.
+          </Item>
+          <Item id="idea-reactions" term="Reactions">
+            Shows how stocks actually moved around classified news, after removing the part of the
+            move explained by the market as a whole. A reaction of +2% means the stock did 2% better
+            than its usual relationship with the market would predict. Averages by type of news need
+            enough events before they mean anything, and the page says when there are too few.
+          </Item>
+          <Item id="idea-stress" term="Stress Lab">
+            Pick a scenario, such as an interest rate jump, or move the sliders for individual
+            forces. The page estimates how each holding and the whole portfolio might react, using
+            the hidden exposures. It is a what-if built on a simple assumption, not a forecast, and
+            the reliability figure tells you how confident the underlying exposures are.
+          </Item>
+          <Item id="idea-discovery" term="Discovery">
+            Lists companies that would spread your hidden exposures across more independent forces
+            if added at a small size. A Hedge tag means adding it lowers your total hidden exposure.
+            These are research candidates, not recommendations, and say nothing about expected
+            return.
+          </Item>
+          <Item id="idea-assistant" term="The research assistant">
+            On the Research page you can ask a question about your portfolio. The assistant looks
+            things up with the same calculations the rest of the app uses and may only quote numbers
+            those calculations returned. Every sentence cites its figures, and an answer that cannot
+            be checked is replaced by the figures themselves.
           </Item>
           <Item id="idea-sector-vs-factor" term="Sectors versus factors">
             A sector is a label (&ldquo;Technology&rdquo;). A factor is a real-world force
@@ -209,6 +251,10 @@ export default function Page() {
           <Item id="terminal-exposure" term="Hidden exposure">
             The effective number of sectors versus effective factors, and the largest economic
             forces your portfolio depends on.
+          </Item>
+          <Item id="terminal-extremes" term="Best and worst days">
+            The five best and five worst single days in the window, with their dates. Compare them
+            with the news on those dates to see what moved you.
           </Item>
           <Item id="terminal-news" term="Relevant news">
             The top stories for this portfolio, with their relevance score out of 10.

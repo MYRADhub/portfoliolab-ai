@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { COVERED, EXAMPLE, startUiSession } from "./helpers";
 
+type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 test.describe("exposures page", () => {
   test("says no exposure data exists when nothing is loaded for the holdings", async ({ page }) => {
     const s = await startUiSession(page);
@@ -88,5 +90,114 @@ test.describe("exposures page", () => {
   test("shows the empty state without portfolios", async ({ page }) => {
     await page.goto("/exposures");
     await expect(page.getByText("You have no portfolios yet.")).toBeVisible();
+  });
+
+  test("draws the hidden exposure map: one node per holding and force, one line per dependency", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    const id = await s.create("Graph", COVERED);
+    await page.goto("/exposures");
+    const x = (await (await page.request.get(`/api/portfolios/${id}/exposures`)).json()) as Json;
+    const map = page.getByRole("group", { name: "Hidden exposure map" });
+    await expect(map).toBeVisible();
+    await expect(map.getByRole("button")).toHaveCount(4 + x.factors.length); // four holdings plus the forces they touch
+    await expect(map.locator("path")).toHaveCount(x.cells.length);
+    await expect(
+      page.getByText(/Green.*means the holding is helped when that force rises/),
+    ).toBeVisible();
+    // Helped dependencies are green and hurt ones red.
+    const colors = await map
+      .locator("path")
+      .evaluateAll((els) => els.map((e) => e.getAttribute("stroke")));
+    expect(colors.filter((c) => c === "var(--gain)")).toHaveLength(
+      x.cells.filter((c: Json) => c.signed > 0).length,
+    );
+    expect(colors.filter((c) => c === "var(--loss)")).toHaveLength(
+      x.cells.filter((c: Json) => c.signed < 0).length,
+    );
+  });
+
+  test("every node has an accessible name that starts with its visible label and describes its connections", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Graph", COVERED);
+    await page.goto("/exposures");
+    const map = page.getByRole("group", { name: "Hidden exposure map" });
+    for (const node of await map.getByRole("button").all()) {
+      const name = (await node.getAttribute("aria-label"))!;
+      const visible = (await node.locator("text").textContent())!.replace(/\s+/g, " ").trim();
+      expect(name.startsWith(visible), `"${name}" should start with "${visible}"`).toBe(true);
+    }
+    await expect(map.getByRole("button", { name: /^NVDA 40%\./ })).toHaveAttribute(
+      "aria-label",
+      /AI infrastructure capex \(helped strongly\).*Taiwan supply chain risk \(hurt strongly\)/,
+    );
+  });
+
+  test("hovering or focusing a name isolates its connections and leaving restores them", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Graph", COVERED);
+    await page.goto("/exposures");
+    const map = page.getByRole("group", { name: "Hidden exposure map" });
+    await expect(map.getByRole("button").first()).toBeVisible();
+    const strokeOpacities = () =>
+      map
+        .locator("path")
+        .evaluateAll((els) => els.map((e) => Number(e.getAttribute("stroke-opacity"))));
+    const nodeOpacity = (name: RegExp) =>
+      map.getByRole("button", { name }).evaluate((e) => Number(e.getAttribute("opacity")));
+
+    const all = await strokeOpacities();
+    expect(new Set(all).size).toBe(1); // everything equally visible at rest
+
+    await map.getByRole("button", { name: /^NVDA/ }).hover();
+    const nvda = await strokeOpacities();
+    expect(nvda.filter((o) => o > 0.5)).toHaveLength(4); // NVDA has four dependencies
+    expect(nvda.filter((o) => o < 0.2).length).toBe(9);
+    expect(await nodeOpacity(/^NVDA/)).toBe(1);
+    expect(await nodeOpacity(/^MSFT/)).toBeLessThan(1); // MSFT's own lines are not NVDA's, so it fades
+    expect(await nodeOpacity(/^AI infrastructure capex/)).toBe(1);
+
+    await map.getByRole("button", { name: /^Interest rates/ }).focus();
+    const rates = await strokeOpacities();
+    expect(rates.filter((o) => o > 0.5)).toHaveLength(4); // every covered holding depends on rates
+
+    // Leaving the graph and the node restores every line to equal visibility.
+    await page.mouse.move(0, 0);
+    await map.getByRole("button", { name: /^Interest rates/ }).blur();
+    await expect.poll(async () => new Set(await strokeOpacities()).size).toBe(1);
+    expect(await nodeOpacity(/^MSFT/)).toBe(1);
+  });
+
+  test("a node can be pinned with the keyboard and unpinned again", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Graph", COVERED);
+    await page.goto("/exposures");
+    const node = page
+      .getByRole("group", { name: "Hidden exposure map" })
+      .getByRole("button", { name: /^China demand/ });
+    await node.focus();
+    await page.keyboard.press("Enter");
+    await expect(node).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Space");
+    await expect(node).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("lists the forces shared by several holdings, which are the hidden links", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Graph", COVERED);
+    await page.goto("/exposures");
+    const shared = page.getByRole("list", { name: "Shared forces" });
+    await expect(shared).toContainText("Interest rates");
+    await expect(shared).toContainText("touches");
+    const items = await shared.getByRole("listitem").allTextContents();
+    expect(items.length).toBeGreaterThanOrEqual(3);
+    for (const t of items) expect((t.match(/[A-Z]{2,5}/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 });

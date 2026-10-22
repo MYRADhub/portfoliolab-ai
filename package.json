@@ -21,7 +21,10 @@
     "data:news": "pnpm --filter @portfolio-lab/data news",
     "data:aliases": "pnpm --filter @portfolio-lab/data aliases",
     "demo:seed": "pnpm --filter @portfolio-lab/demo seed",
-    "demo": "node scripts/run-demo.mjs"
+    "demo": "node scripts/run-demo.mjs",
+    "real:seed": "pnpm --filter @portfolio-lab/demo real",
+    "data:sec": "pnpm --filter @portfolio-lab/data sec",
+    "real": "node scripts/run-real.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

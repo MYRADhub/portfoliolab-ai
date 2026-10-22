@@ -36,6 +36,57 @@ export async function seedDemoPrices(
  * Fills a database that already has migrations and the S&P 500 companies with demo prices, factors, exposures and
  * news. Safe to run again: existing rows are left alone and news is only added when none of the demo news exists.
  */
+export async function seedDemoExposures(db: Db): Promise<{ factors: number; exposures: number }> {
+  const out = await seedFactorsAndExposures(db);
+  return out;
+}
+
+async function seedFactorsAndExposures(db: Db): Promise<{ factors: number; exposures: number }> {
+  await db.insert(factors).values(DEMO_FACTORS).onConflictDoNothing({ target: factors.slug });
+  const factorRows = await db
+    .select()
+    .from(factors)
+    .where(
+      inArray(
+        factors.slug,
+        DEMO_FACTORS.map((f) => f.slug),
+      ),
+    );
+  const factorId = new Map(factorRows.map((f) => [f.slug, f.id]));
+  const companyRows = await db
+    .select({ id: companies.id, ticker: companies.ticker })
+    .from(companies)
+    .where(inArray(companies.ticker, [...DEMO_TICKERS]));
+  const companyId = new Map(companyRows.map((c) => [c.ticker, c.id]));
+  const missing = DEMO_TICKERS.filter((t) => !companyId.has(t));
+  if (missing.length)
+    throw new Error(`companies not loaded: ${missing.join(", ")}; load the S&P 500 first`);
+  const haveExposure = await db
+    .select({ id: companyFactorExposures.id })
+    .from(companyFactorExposures)
+    .where(inArray(companyFactorExposures.companyId, [...companyId.values()]))
+    .limit(1);
+  let exposures = 0;
+  if (haveExposure.length === 0) {
+    const rows = DEMO_EXPOSURES.map(([ticker, slug, magnitude, direction, confidence]) => ({
+      companyId: companyId.get(ticker)!,
+      factorId: factorId.get(slug)!,
+      magnitude,
+      direction,
+      confidence,
+      rationale: "Demo data: illustrative only, not reviewed.",
+      source: "manual" as const,
+    }));
+    exposures = (
+      await db
+        .insert(companyFactorExposures)
+        .values(rows)
+        .returning({ id: companyFactorExposures.id })
+    ).length;
+  }
+  return { factors: factorRows.length, exposures };
+}
+
 export async function seedDemoData(
   db: Db,
   opts: { now?: Date; years?: number } = {},

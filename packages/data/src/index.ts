@@ -1,6 +1,7 @@
 export * from "./providers/types";
 export * from "./providers/fixture";
 export * from "./providers/tiingo";
+export * from "./providers/yahoo";
 export * from "./http";
 export * from "./ingest";
 export * from "./sp500";
@@ -14,3 +15,8 @@ export * from "./matching/alias";
 export * from "./matching/matcher";
 export * from "./matching/store";
 export * from "./news/calendar";
+export * from "./sec/edgar";
+export * from "./sec/items";
+export * from "./sec/filings";
+export * from "./sec/fundamentals";
+export * from "./sec/ingest";

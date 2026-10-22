@@ -11,8 +11,8 @@ export class ApiError extends Error {
 let sessionReady: Promise<void> | null = null;
 
 /**
- * Makes sure the anonymous session cookie exists before the first data request, so a first visit does not begin
- * with a 401. Shared across callers so it runs once per page load.
+ * Asks the server for the anonymous session cookie. Every caller on the page shares one request: two simultaneous
+ * requests on a first visit would create two sessions, and whichever cookie arrived last would orphan the other's data.
  */
 export function ensureSession(): Promise<void> {
   sessionReady ??= fetch("/api/session", { method: "POST" })
@@ -23,15 +23,21 @@ export function ensureSession(): Promise<void> {
   return sessionReady;
 }
 
+/** Used after a 401, when the cookie was lost or expired: forget the cached request and make a fresh one. */
+function renewSession(): Promise<void> {
+  sessionReady = null;
+  return ensureSession();
+}
+
 /**
  * Fetches JSON. A 401 usually means the anonymous session cookie has not been issued yet (first visit) or has
- * expired, so create a session and retry once before giving up.
+ * expired, so renew the session and retry once before giving up.
  */
 export async function api<T>(url: string, init?: RequestInit): Promise<T> {
   let res = await fetch(url, init);
   if (res.status === 401 && url !== "/api/session") {
-    const session = await fetch("/api/session", { method: "POST" });
-    if (session.ok) res = await fetch(url, init);
+    await renewSession();
+    res = await fetch(url, init);
   }
   const body = (await res.json().catch(() => null)) as
     { error?: { code: string; message: string } } | T | null;

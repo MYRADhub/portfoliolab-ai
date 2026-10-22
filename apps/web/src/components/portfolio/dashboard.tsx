@@ -1,10 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -13,30 +10,41 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { NewsCard } from "@/components/news/news-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { axisTick, chartColors, tooltipStyle } from "@/lib/chart";
+import { pct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
+import { cn } from "@/lib/utils";
+import type { Insight } from "@/server/insights";
+import type { Radar } from "@/server/radar";
+import type { Terminal } from "@/server/terminal";
 import { ExplainPanel } from "./explain-panel";
+import { InsightCard } from "./insight-card";
 import { MovePanel } from "./move-panel";
 import { WithPortfolio } from "./with-portfolio";
-import { pct, signedPct } from "@/lib/format";
-import type { PortfolioAnalytics } from "@/server/portfolios";
 
-function Stat({ label, value }: { label: string; value: string }) {
+const signed = (x: number, d = 1) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
+const tone = (x: number | null) =>
+  x === null ? "text-muted-foreground" : x > 0 ? "text-gain" : x < 0 ? "text-loss" : "";
+
+function Stat({
+  label,
+  value,
+  sub,
+  valueClass = "",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  valueClass?: string;
+}) {
   return (
-    <Card>
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-2xl font-semibold">{value}</CardContent>
-    </Card>
+    <div className="rounded-xl border bg-card p-3 text-card-foreground shadow-xs">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 text-xl font-semibold tabular-nums", valueClass)}>{value}</div>
+      {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
+    </div>
   );
 }
 
@@ -45,137 +53,159 @@ export function Dashboard() {
 }
 
 function PortfolioView({ id }: { id: string }) {
-  const { data, error } = useApi<PortfolioAnalytics>(`/api/portfolios/${id}/analytics`);
+  const { data: t, error } = useApi<Terminal>(`/api/portfolios/${id}/terminal`);
+  const { data: insights } = useApi<{ insights: Insight[] }>(`/api/portfolios/${id}/insights`);
+  const { data: radar } = useApi<Radar>(`/api/portfolios/${id}/radar?days=7`);
+
+  if (error) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {error}
+      </p>
+    );
+  }
+  if (!t) return <p className="text-muted-foreground">Loading</p>;
+
+  const perf = (label: string) => t.performance.find((p) => p.label === label)?.value ?? null;
+  const ytd = perf("Year to date");
+  const month = perf("1 month");
 
   return (
     <div className="space-y-6">
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      {!data && !error && <p className="text-muted-foreground">Loading</p>}
-      {data && (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {data.window.from} to {data.window.to} ({data.window.tradingDays} trading days)
-            {data.window.limitedBy && `, limited by ${data.window.limitedBy} price history`}.
-            Constant target weights, rebalanced daily. Risk-free rate{" "}
-            {pct(data.stats.riskFreeAnnual)}.
-          </p>
+      <p className="text-sm text-muted-foreground">
+        {t.window.from} to {t.window.to} ({t.window.tradingDays} trading days). Constant target
+        weights, rebalanced daily. Risk-free rate 0.0%. For every chart and table, open the{" "}
+        <Link href="/terminal" className="underline">
+          Terminal
+        </Link>
+        .
+      </p>
 
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <Stat label="Total return" value={signedPct(data.stats.totalReturn)} />
-            <Stat label="Annualized return" value={signedPct(data.stats.annualizedReturn)} />
-            <Stat label="Volatility (ann.)" value={pct(data.stats.annualizedVolatility)} />
-            <Stat label="Max drawdown" value={pct(data.stats.maxDrawdown)} />
-            <Stat label="Sharpe" value={data.stats.sharpe.toFixed(2)} />
-          </div>
+      <section
+        aria-label="Key figures"
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
+      >
+        <Stat
+          label="Portfolio index"
+          value={t.index.value.toFixed(1)}
+          sub={`${signed(t.index.dayChange, 2)} today`}
+          valueClass=""
+        />
+        <Stat
+          label="1 month"
+          value={month === null ? "n/a" : signed(month)}
+          valueClass={tone(month)}
+        />
+        <Stat
+          label={ytd === null ? "Whole window" : "Year to date"}
+          value={signed(ytd ?? perf("Whole window") ?? 0)}
+          valueClass={tone(ytd ?? perf("Whole window"))}
+        />
+        <Stat label="Volatility (ann.)" value={pct(t.risk.volatility)} />
+        <Stat label="Max drawdown" value={signed(t.risk.maxDrawdown)} valueClass="text-loss" />
+        <Stat label="Sharpe" value={t.risk.sharpe.toFixed(2)} />
+      </section>
 
-          <ExplainPanel portfolioId={id} />
+      <section aria-label="What to know now" className="space-y-3">
+        <h2 className="text-lg font-semibold">What to know now</h2>
+        {!insights ? (
+          <p className="text-muted-foreground">Loading</p>
+        ) : (
+          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Insights">
+            {insights.insights.slice(0, 6).map((i) => (
+              <li key={i.id}>
+                <InsightCard insight={i} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-          <MovePanel portfolioId={id} />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Portfolio index (100 at the start)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={t.equity}>
+                <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" />
+                <XAxis dataKey="date" minTickGap={48} tick={axisTick} />
+                <YAxis
+                  domain={["auto", "auto"]}
+                  tick={axisTick}
+                  tickFormatter={(v: number) => v.toFixed(0)}
+                  width={36}
+                />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v) => Number(v).toFixed(2)} />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  dot={false}
+                  strokeWidth={2}
+                  stroke={chartColors.info}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Growth of 1.00</CardTitle>
-            </CardHeader>
-            <CardContent className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.equityCurve}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" minTickGap={48} fontSize={12} />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    fontSize={12}
-                    tickFormatter={(v: number) => v.toFixed(2)}
-                  />
-                  <Tooltip formatter={(v) => Number(v).toFixed(3)} />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    dot={false}
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Drawdown</CardTitle>
-              </CardHeader>
-              <CardContent className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.drawdown}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" minTickGap={48} fontSize={12} />
-                    <YAxis fontSize={12} tickFormatter={(v: number) => pct(v, 0)} />
-                    <Tooltip formatter={(v) => pct(Number(v), 2)} />
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="currentColor"
-                      fill="currentColor"
-                      fillOpacity={0.15}
+        <Card>
+          <CardHeader>
+            <CardTitle>Your holdings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2.5 text-sm" aria-label="Holdings snapshot">
+              {t.holdings.map((h) => (
+                <li key={h.ticker}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-medium">{h.ticker}</span>
+                    <span className="tabular-nums text-muted-foreground">{pct(h.weight, 0)}</span>
+                    <span className={cn("w-16 text-right tabular-nums", tone(h.d1))}>
+                      {h.d1 === null ? "n/a" : signed(h.d1, 2)}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded bg-muted" aria-hidden="true">
+                    <div
+                      className="h-1.5 rounded bg-info"
+                      style={{ width: `${Math.max(2, Math.min(100, h.weight * 100))}%` }}
                     />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Sector allocation</CardTitle>
-              </CardHeader>
-              <CardContent className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.sectors} layout="vertical" margin={{ left: 80 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" fontSize={12} tickFormatter={(v: number) => pct(v, 0)} />
-                    <YAxis type="category" dataKey="sector" fontSize={12} width={120} />
-                    <Tooltip formatter={(v) => pct(Number(v))} />
-                    <Bar dataKey="weight" fill="currentColor" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Weight, then today&rsquo;s move. Full detail on the Terminal&rsquo;s Overview.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Holdings (effective number of positions {data.concentration.effectiveN.toFixed(1)},
-                largest {pct(data.concentration.topWeight, 0)})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ticker</TableHead>
-                    <TableHead className="hidden sm:table-cell">Name</TableHead>
-                    <TableHead>Sector</TableHead>
-                    <TableHead className="text-right">Weight</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.holdings.map((h) => (
-                    <TableRow key={h.ticker}>
-                      <TableCell className="font-medium">{h.ticker}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{h.name}</TableCell>
-                      <TableCell>{h.sector ?? "Unclassified"}</TableCell>
-                      <TableCell className="text-right">{pct(h.weight)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </>
-      )}
+      <MovePanel portfolioId={id} />
+
+      <section aria-label="Top news" className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Top news for this portfolio</h2>
+          <Link href="/news" className="text-sm underline">
+            All news
+          </Link>
+        </div>
+        {!radar ? (
+          <p className="text-muted-foreground">Loading</p>
+        ) : radar.items.length === 0 ? (
+          <p className="text-muted-foreground">No news matched your holdings in the last 7 days.</p>
+        ) : (
+          <ul className="grid gap-3 lg:grid-cols-3" aria-label="Top news">
+            {radar.items.slice(0, 3).map((n) => (
+              <li key={n.url}>
+                <NewsCard item={n} compact />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <ExplainPanel portfolioId={id} />
     </div>
   );
 }

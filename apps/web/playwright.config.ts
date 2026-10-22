@@ -1,5 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-import { e2eDatabaseUrl, MOCK_PORT, WEB_PORT } from "./e2e/env";
+import { e2eDatabaseUrl, EXPERIMENT_TOKEN, MOCK_PORT, WEB_PORT } from "./e2e/env";
 
 const baseURL = `http://127.0.0.1:${WEB_PORT}`;
 
@@ -49,6 +49,8 @@ export default defineConfig({
         OPENAI_API_KEY: "test-key",
         OPENAI_BASE_URL: `http://127.0.0.1:${MOCK_PORT}/v1`,
         LOG_LEVEL: "warn",
+        EXPERIMENT_ENABLED: "1",
+        EXPERIMENT_ADMIN_TOKEN: EXPERIMENT_TOKEN,
       },
     },
   ],

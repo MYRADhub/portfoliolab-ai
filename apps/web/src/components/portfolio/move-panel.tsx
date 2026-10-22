@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { chartColors, axisTick, tooltipStyle } from "@/lib/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -30,7 +31,7 @@ import { ExplanationBody } from "./explain-panel";
 
 const pp = (x: number) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(2)}`;
 const move = (x: number) => `${pp(x)}%`;
-const barColor = (x: number) => (x >= 0 ? "hsl(215 80% 50% / 0.7)" : "hsl(0 80% 50% / 0.7)");
+const barColor = (x: number) => (x >= 0 ? chartColors.gain : chartColors.loss);
 
 export function MovePanel({ portfolioId }: { portfolioId: string }) {
   const [chosen, setChosen] = useState<{ portfolioId: string; date: string } | null>(null);
@@ -64,7 +65,7 @@ export function MovePanel({ portfolioId }: { portfolioId: string }) {
   }
 
   return (
-    <Card>
+    <Card id="move" className="scroll-mt-4">
       <CardHeader>
         <CardTitle>Why did my portfolio move?</CardTitle>
       </CardHeader>
@@ -106,14 +107,17 @@ export function MovePanel({ portfolioId }: { portfolioId: string }) {
                   layout="vertical"
                   margin={{ left: 8 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" />
                   <XAxis
                     type="number"
                     fontSize={12}
                     tickFormatter={(v: number) => `${v.toFixed(2)}`}
                   />
-                  <YAxis type="category" dataKey="ticker" fontSize={12} width={56} />
-                  <Tooltip formatter={(v) => `${Number(v).toFixed(2)} percentage points`} />
+                  <YAxis type="category" dataKey="ticker" tick={axisTick} width={56} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(v) => `${Number(v).toFixed(2)} percentage points`}
+                  />
                   <Bar dataKey="pp">
                     {data.holdings.map((h) => (
                       <Cell key={h.ticker} fill={barColor(h.contribution)} />
@@ -123,52 +127,65 @@ export function MovePanel({ portfolioId }: { portfolioId: string }) {
               </ResponsiveContainer>
             </div>
 
-            <Table aria-label="Contribution by holding">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Holding</TableHead>
-                  <TableHead className="text-right">Weight</TableHead>
-                  <TableHead className="text-right">Stock return</TableHead>
-                  <TableHead className="text-right">Contribution (pp)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.holdings.map((h) => (
-                  <TableRow key={h.ticker}>
-                    <TableCell className="font-medium">{h.ticker}</TableCell>
-                    <TableCell className="text-right tabular-nums">{pct(h.weight)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{move(h.assetReturn)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{pp(h.contribution)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <details>
+              <summary className="cursor-pointer text-muted-foreground">
+                Contribution tables by holding and by sector
+              </summary>
+              <div className="mt-3 space-y-4">
+                <Table aria-label="Contribution by holding">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Holding</TableHead>
+                      <TableHead className="text-right">Weight</TableHead>
+                      <TableHead className="text-right">Stock return</TableHead>
+                      <TableHead className="text-right">Contribution (pp)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.holdings.map((h) => (
+                      <TableRow key={h.ticker}>
+                        <TableCell className="font-medium">{h.ticker}</TableCell>
+                        <TableCell className="text-right tabular-nums">{pct(h.weight)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {move(h.assetReturn)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {pp(h.contribution)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-            <Table aria-label="Contribution by sector">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sector</TableHead>
-                  <TableHead className="text-right">Contribution (pp)</TableHead>
-                  <TableHead className="text-right">Share of the move</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.groups.map((g) => (
-                  <TableRow key={g.group}>
-                    <TableCell className="font-medium whitespace-normal">{g.group}</TableCell>
-                    <TableCell className="text-right tabular-nums">{pp(g.contribution)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {g.share === null ? "n/a" : `${Math.round(g.share * 100)}%`}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                <Table aria-label="Contribution by sector">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sector</TableHead>
+                      <TableHead className="text-right">Contribution (pp)</TableHead>
+                      <TableHead className="text-right">Share of the move</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.groups.map((g) => (
+                      <TableRow key={g.group}>
+                        <TableCell className="font-medium whitespace-normal">{g.group}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {pp(g.contribution)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {g.share === null ? "n/a" : `${Math.round(g.share * 100)}%`}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-            <p className="text-xs text-muted-foreground">
-              A share can be above 100% or negative when sectors moved in opposite directions: the
-              shares always add up to 100%.
-            </p>
+                <p className="text-xs text-muted-foreground">
+                  A share can be above 100% or negative when sectors moved in opposite directions:
+                  the shares always add up to 100%.
+                </p>
+              </div>
+            </details>
 
             <div>
               <h3 className="font-medium">News linked to your holdings</h3>

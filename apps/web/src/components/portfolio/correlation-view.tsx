@@ -24,9 +24,10 @@ const fmt = (x: number) => x.toFixed(2);
 
 /** Diverging cell colour; the number is always printed so colour is never the only signal. */
 function cellStyle(rho: number, diagonal: boolean): React.CSSProperties {
-  if (diagonal) return { backgroundColor: "color-mix(in srgb, currentColor 8%, transparent)" };
-  const hue = rho >= 0 ? 215 : 0;
-  return { backgroundColor: `hsl(${hue} 80% 50% / ${Math.min(1, Math.abs(rho)) * 0.6})` };
+  if (diagonal) return { backgroundColor: "var(--muted)" };
+  return {
+    backgroundColor: `color-mix(in oklab, var(${rho >= 0 ? "--info" : "--loss"}) ${Math.round(Math.min(1, Math.abs(rho)) * 55)}%, transparent)`,
+  };
 }
 
 export function CorrelationView() {

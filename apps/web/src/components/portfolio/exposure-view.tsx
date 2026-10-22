@@ -22,6 +22,8 @@ import {
 import { useApi } from "@/lib/use-api";
 import { pct } from "@/lib/format";
 import type { PortfolioExposures } from "@/server/exposures";
+import { chartColors, axisTick, tooltipStyle } from "@/lib/chart";
+import { ExposureGraph } from "./exposure-graph";
 import { WithPortfolio } from "./with-portfolio";
 
 export function ExposureView() {
@@ -29,8 +31,9 @@ export function ExposureView() {
 }
 
 function cellStyle(signed: number): React.CSSProperties {
-  const hue = signed >= 0 ? 215 : 0;
-  return { backgroundColor: `hsl(${hue} 80% 50% / ${(Math.abs(signed) / 3) * 0.6})` };
+  return {
+    backgroundColor: `color-mix(in oklab, var(${signed >= 0 ? "--gain" : "--loss"}) ${Math.round((Math.abs(signed) / 3) * 55)}%, transparent)`,
+  };
 }
 
 function Content({ id }: { id: string }) {
@@ -119,21 +122,35 @@ function Content({ id }: { id: string }) {
 
       <Card>
         <CardHeader>
+          <CardTitle>Hidden exposure map</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ExposureGraph
+            holdings={data.holdings.map((h) => ({ ticker: h.ticker, weight: h.weight }))}
+            factors={data.factors.map((f) => ({ slug: f.slug, name: f.name, net: f.net }))}
+            cells={data.cells.map((c) => ({
+              ticker: c.ticker,
+              factor: c.factor,
+              signed: c.signed,
+            }))}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Portfolio factor loadings (net)</CardTitle>
         </CardHeader>
         <CardContent style={{ height: Math.max(220, data.factors.length * 28) }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.factors} layout="vertical" margin={{ left: 120 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" fontSize={12} />
-              <YAxis type="category" dataKey="name" fontSize={12} width={160} />
-              <Tooltip formatter={(v) => Number(v).toFixed(2)} />
+              <CartesianGrid stroke={chartColors.grid} strokeDasharray="3 3" />
+              <XAxis type="number" tick={axisTick} />
+              <YAxis type="category" dataKey="name" tick={axisTick} width={160} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v) => Number(v).toFixed(2)} />
               <Bar dataKey="net">
                 {data.factors.map((f) => (
-                  <Cell
-                    key={f.slug}
-                    fill={f.net >= 0 ? "hsl(215 80% 50% / 0.7)" : "hsl(0 80% 50% / 0.7)"}
-                  />
+                  <Cell key={f.slug} fill={f.net >= 0 ? chartColors.gain : chartColors.loss} />
                 ))}
               </Bar>
             </BarChart>
