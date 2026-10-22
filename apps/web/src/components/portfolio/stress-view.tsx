@@ -133,6 +133,7 @@ function Content({ id }: { id: string }) {
                 </span>
                 <input
                   type="range"
+                  className="accent-primary"
                   min={-1}
                   max={1}
                   step={0.1}

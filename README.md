@@ -1,6 +1,14 @@
 # PortfolioLab AI
 
-Product description: `description.md`. Plan: `ROADMAP.md`. Decisions in plain language: `docs/DECISIONS.md` (short technical notes in `docs/adr`).
+A research terminal built around one idea: owning different stocks does not mean owning different risks. PortfolioLab connects a portfolio to the hidden economic forces behind its holdings, ranks the news that matters to it, measures how stocks really reacted to events, and explains results in plain language with every number traceable to a computed figure.
+
+|                                                |                                                        |
+| ---------------------------------------------- | ------------------------------------------------------ |
+| ![Dashboard](docs/screenshots/dashboard.png)   | ![Hidden exposure map](docs/screenshots/exposures.png) |
+| ![Stress Lab](docs/screenshots/stress.png)     | ![Rebalance Lab](docs/screenshots/rebalance.png)       |
+| ![Simulation](docs/screenshots/simulation.png) | ![Reactions](docs/screenshots/reactions.png)           |
+
+Start with `docs/OVERVIEW.md` for what it does, how it works and how it was checked. Product description: `description.md`. Plan: `ROADMAP.md`. Decisions in plain language: `docs/DECISIONS.md` (short technical notes in `docs/adr`).
 
 ## Local setup
 
