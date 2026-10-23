@@ -177,7 +177,7 @@ Tests that need the database require `pnpm db:up`.
 - Rebalance results look backwards and were fitted on the same period they describe. Simulations assume the future is as bumpy as the last three years.
 - Event studies use an equal-weighted average of other S&P 500 stocks as "the market", not an official index.
 - The research study has no ethics approval yet.
-- The CI workflow in `.github/workflows` has never run, because this project had no remote until now.
+- The CI workflow in `.github/workflows` is set up, but its first run (October 2026) was refused by GitHub because of an account billing or spending-limit issue, so every check so far was run locally. Fix the billing setting, then re-run it.
 
 ## More to read
 
