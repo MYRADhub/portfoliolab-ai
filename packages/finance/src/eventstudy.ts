@@ -154,3 +154,93 @@ export function aggregate(values: readonly number[], seed = 1, resamples = 2000)
   ];
   return { n, mean: m, sd, t, ci, sufficient: n >= MIN_EVENTS };
 }
+
+/** Comparable stocks needed in one event before its cross-stock figures are reported. */
+export const MIN_SPILLOVER_STOCKS = 30;
+
+export interface SpilloverFigures {
+  n: number;
+  /** Pearson correlation between exposure similarity and the signed move. Null when too few stocks or no variation. */
+  correlation: number | null;
+  /** The same, after removing what "is in the same sector as the event company" explains. Null without sector data. */
+  partialCorrelation: number | null;
+  /** Correlation between being in the same sector and the signed move, for comparison. */
+  sectorCorrelation: number | null;
+  /** Average signed move of the fifth of stocks most similar to the event company; null when too few stocks. */
+  similarMean: number | null;
+  /** Average signed move of the fifth least similar. */
+  dissimilarMean: number | null;
+}
+
+const corr = (a: readonly number[], b: readonly number[]): number | null => {
+  const n = a.length;
+  const ma = a.reduce((x, y) => x + y, 0) / n;
+  const mb = b.reduce((x, y) => x + y, 0) / n;
+  let sab = 0;
+  let saa = 0;
+  let sbb = 0;
+  for (let i = 0; i < n; i++) {
+    sab += (a[i]! - ma) * (b[i]! - mb);
+    saa += (a[i]! - ma) ** 2;
+    sbb += (b[i]! - mb) ** 2;
+  }
+  return saa > 1e-18 && sbb > 1e-18 ? sab / Math.sqrt(saa * sbb) : null;
+};
+
+/**
+ * Do stocks that resemble the event company move with it? `similarity[i]` is how alike stock i's hidden exposures are to
+ * the event company's; `signedMove[i]` is stock i's abnormal return on the event day multiplied by the sign of the
+ * event company's own abnormal return, so that moving the same way counts as positive. When `sameSector` (1 or 0 per
+ * stock) is given, the partial correlation shows whether similarity explains moves beyond sector membership.
+ */
+export function spilloverFigures(
+  similarity: readonly number[],
+  signedMove: readonly number[],
+  opts: { sameSector?: readonly number[]; minStocks?: number } = {},
+): SpilloverFigures {
+  const { sameSector, minStocks = MIN_SPILLOVER_STOCKS } = opts;
+  if (
+    similarity.length !== signedMove.length ||
+    (sameSector && sameSector.length !== similarity.length)
+  )
+    throw new Error("series length mismatch");
+  const n = similarity.length;
+  const none: SpilloverFigures = {
+    n,
+    correlation: null,
+    partialCorrelation: null,
+    sectorCorrelation: null,
+    similarMean: null,
+    dissimilarMean: null,
+  };
+  if (n < Math.max(5, minStocks)) return none;
+  const rxy = corr(similarity, signedMove);
+  let partial: number | null = null;
+  let sectorR: number | null = null;
+  if (sameSector) {
+    sectorR = corr(sameSector, signedMove);
+    const rxz = corr(similarity, sameSector);
+    if (
+      rxy !== null &&
+      sectorR !== null &&
+      rxz !== null &&
+      Math.abs(rxz) < 1 - 1e-9 &&
+      Math.abs(sectorR) < 1 - 1e-9
+    )
+      partial = (rxy - rxz * sectorR) / Math.sqrt((1 - rxz ** 2) * (1 - sectorR ** 2));
+  }
+  const order = similarity
+    .map((s, i) => [s, i] as const)
+    .sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+  const k = Math.max(1, Math.floor(n * 0.2));
+  const avg = (idx: readonly (readonly [number, number])[]) =>
+    idx.reduce((a, [, i]) => a + signedMove[i]!, 0) / idx.length;
+  return {
+    n,
+    correlation: rxy,
+    partialCorrelation: partial,
+    sectorCorrelation: sectorR,
+    similarMean: avg(order.slice(0, k)),
+    dissimilarMean: avg(order.slice(-k)),
+  };
+}

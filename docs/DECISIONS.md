@@ -680,6 +680,30 @@ What counts as "reviewed" (checked against the 10-K business description? a seco
 
 ---
 
+## 26. Do similar hidden exposures move together? A test on real events (added 2026-10-22)
+
+**26.1 A test of the product's central claim, run on real data.** Final. Who: Me.
+When a large company reports earnings, we take every other stock's abnormal return that day, flip its sign so that "moved the same way as the company" is positive, and correlate it with how similar the stock's hidden exposures are to the company's. One correlation per earnings day. The pooled average answers: do exposure scores capture real shared economic drivers? It is a page section on Reactions, for any large company with at least four earnings events.
+
+**26.2 The sector control.** Final. Who: Me.
+The obvious objection is that similar exposures just means "same sector". So every day also gets a sector-adjusted (partial) correlation that removes what sharing the company's sector explains. Positive after that adjustment would mean exposures add something the sector label does not.
+
+**26.3 Result.** Final, with caveats. Who: Me.
+Pooling 121 earnings days across 11 bellwethers (NVDA, AAPL, MSFT, AMZN, GOOGL, META, JPM, TSLA, AVGO, WMT, UNH), the average correlation is +0.055 (t 4.15, 95% range +0.029 to +0.081, positive on 65% of days). After the sector adjustment it is +0.041 (t 3.84, range +0.020 to +0.062). The fifth of stocks most similar to the reporting company moved about 0.27 percentage points more in its direction than the least similar fifth. It varies a lot by company: strongest for the chip companies (AVGO +0.12 and NVDA +0.09 sector-adjusted), none for AAPL, AMZN and UNH. So: a small but statistically distinguishable effect, most of which survives the sector control.
+
+**26.4 Caveats that matter.** Final. Who: Me.
+Earnings days are not fully independent (several companies report in the same weeks, and market-wide moves repeat), so the t-statistics are likely too generous. The exposure scores are AI drafts, and a language model may carry knowledge of how companies are related that is not in the 12-force list. The effect is small in absolute terms: one company's earnings are a faint signal for another. This is evidence that the exposure map reflects something real, not proof, and not a trading signal. The numbers were computed once from the live API; the page recomputes them from the current data.
+
+**26.5 Not built.** Open. Who: Me.
+A version that clusters standard errors by calendar week to fix the independence issue, a placebo test with shuffled exposure profiles, and an automatic pooled view across all bellwethers in the app (it takes about a minute, so I kept the one-company view and reported the pooled result here).
+
+### Mistakes in this slice
+
+- A constant series looked like it had a tiny variance because of rounding, so a correlation of exactly zero was reported instead of "not defined"; a tolerance fixed it (same class of bug as in the event study).
+- My first version of this test had no sector control. The obvious objection would have been fatal, so I added it before reporting anything.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

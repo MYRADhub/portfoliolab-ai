@@ -14,6 +14,7 @@ import { pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { EventStudyReport } from "@/server/events";
 import { HowToRead } from "@/components/ui/how-to-read";
+import { SpilloverCard } from "./spillover-card";
 import { Loading } from "@/components/ui/skeleton";
 
 const SKIP_LABEL: Record<string, string> = {
@@ -188,6 +189,8 @@ export function EventsView() {
           )}
         </CardContent>
       </Card>
+
+      <SpilloverCard />
 
       <p className="max-w-3xl text-xs text-muted-foreground">
         Method: market model fitted on the 250 to 30 trading days before each event, with the

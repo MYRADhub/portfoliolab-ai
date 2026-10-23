@@ -94,3 +94,52 @@ test.describe("reactions page", () => {
     await expect(row).toContainText(pct);
   });
 });
+
+test.describe("spillover test", () => {
+  test("lists only companies with enough earnings history", async ({ page }) => {
+    const r = (await (await page.request.get("/api/events/spillover")).json()) as Json;
+    expect(Array.isArray(r.eligible)).toBe(true);
+    // the fixtures give NVDA two earnings-type events, fewer than the four needed to be offered
+    expect(r.eligible).not.toContain("NVDA");
+  });
+
+  test("runs for any profiled company but withholds figures when too few stocks can be compared", async ({
+    page,
+  }) => {
+    const b = (await (
+      await page.request.get("/api/events/spillover?ticker=nvda&events=12")
+    ).json()) as Json;
+    expect(b).toMatchObject({ ticker: "NVDA", minStocks: 30, summary: null, partialSummary: null });
+    expect(b.events.length).toBeGreaterThanOrEqual(1);
+    for (const e of b.events) {
+      expect(e.ar0).not.toBe(0);
+      expect(e.stocks).toBeLessThanOrEqual(9); // only nine other profiled stocks exist in the fixtures
+      expect(e.correlation).toBeNull();
+      expect(e.partialCorrelation).toBeNull();
+    }
+  });
+
+  test("validates the request", async ({ page }) => {
+    const get = (q: string) => page.request.get(`/api/events/spillover?${q}`);
+    expect((await get("ticker=ZZZZ")).status()).toBe(404);
+    expect((await get("ticker=XOM")).status()).toBe(400); // no exposure profile
+    expect((await get("ticker=bad%20ticker!")).status()).toBe(400);
+    expect((await get("ticker=NVDA&events=0")).status()).toBe(400);
+    expect((await get("ticker=NVDA&events=99")).status()).toBe(400);
+  });
+
+  test("the Reactions page explains the test and says when nothing can be run yet", async ({
+    page,
+  }) => {
+    await page.goto("/events");
+    await expect(
+      page.getByText("Do stocks with similar hidden exposures move together?"),
+    ).toBeVisible();
+    await expect(
+      page.getByText("No large company has enough earnings history to run this test yet."),
+    ).toBeVisible();
+    const note = page.locator("details").filter({ hasText: "How this test works" });
+    await expect(note).toBeVisible();
+    await expect(note).not.toHaveAttribute("open", "");
+  });
+});

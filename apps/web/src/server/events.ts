@@ -103,14 +103,14 @@ export interface EventStudyReport {
   byType: EventTypeStudy[];
 }
 
-interface Market {
+export interface Market {
   /** Per-ticker returns by date. */
   returns: Map<string, Map<string, number>>;
   sum: Map<string, number>;
   count: Map<string, number>;
 }
 
-async function loadMarket(db: Db, from: string, to: string): Promise<Market> {
+export async function loadMarket(db: Db, from: string, to: string): Promise<Market> {
   const rows = await db
     .select({ ticker: companies.ticker, date: pricesDaily.date, adjClose: pricesDaily.adjClose })
     .from(pricesDaily)
@@ -136,7 +136,7 @@ async function loadMarket(db: Db, from: string, to: string): Promise<Market> {
 }
 
 /** Aligned dates, stock returns and leave-one-out market returns for one ticker. */
-function seriesFor(market: Market, ticker: string) {
+export function seriesFor(market: Market, ticker: string) {
   const own = market.returns.get(ticker);
   const dates: string[] = [];
   const stock: number[] = [];

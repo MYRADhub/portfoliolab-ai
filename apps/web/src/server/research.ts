@@ -84,7 +84,7 @@ async function findCompany(db: Db, ticker: string) {
   return c;
 }
 
-async function exposureMap(db: Db): Promise<Map<number, Record<string, number>>> {
+export async function exposureMap(db: Db): Promise<Map<number, Record<string, number>>> {
   const rows = await db
     .select({
       companyId: companyFactorExposures.companyId,

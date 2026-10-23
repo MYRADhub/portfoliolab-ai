@@ -37,10 +37,14 @@ Every number comes from a pure, tested function. The language model only explain
 
 On about 6,150 real earnings events the average abnormal return over the first two days is close to zero (about +0.1%, t about 1.0), as expected when good and bad surprises cancel. The typical move in either direction is about 4.9%, and 55% of events move a stock by more than twice its normal daily noise. The largest reactions are real and recognisable, for example Centene in July 2025 (about -40%), which is a useful sign that dates, prices and the market model line up.
 
+## Does the exposure map capture anything real?
+
+A direct test on real data: when a large company reports earnings, do stocks with similar hidden exposures move the same way, more than dissimilar stocks do? Pooled over 121 earnings days for 11 bellwethers, the average correlation is +0.055 (t about 4.2), and +0.041 (t about 3.8, 95% range +0.020 to +0.062) after removing what sharing a sector explains. The effect is small, varies by company and is strongest among chip companies. Caveats: events are not fully independent and the exposure scores are AI drafts, so this is suggestive evidence that the map reflects real shared drivers, not proof. Details in `docs/DECISIONS.md` section 26.
+
 ## How it was checked
 
-- About 375 unit tests, including hand-computed expectations (regressions, optimiser closed forms, relevance scores, concentration measures) and invariants (portfolio contributions sum to the portfolio return; the minimum-variance mix is never riskier than any feasible alternative; the event-study model never uses days after the event).
-- About 285 end-to-end browser tests in desktop and phone layouts, including accessibility scans in light and dark themes, a mock language-model server (grounded, ungrounded, retry, refusal, error), session isolation, and independent recomputation of displayed numbers.
+- About 390 unit tests, including hand-computed expectations (regressions, optimiser closed forms, relevance scores, concentration measures) and invariants (portfolio contributions sum to the portfolio return; the minimum-variance mix is never riskier than any feasible alternative; the event-study model never uses days after the event).
+- About 300 end-to-end browser tests in desktop and phone layouts, including accessibility scans in light and dark themes, a mock language-model server (grounded, ungrounded, retry, refusal, error), session isolation, and independent recomputation of displayed numbers.
 - Mutation checks: the suite fails when grounding or session ownership is deliberately broken.
 - Bugs the tests and real data caught are listed honestly in `docs/DECISIONS.md` (section 13 and the "Mistakes" part of each slice), for example a simulation that reported a 0% chance of loss because it replayed a boom.
 

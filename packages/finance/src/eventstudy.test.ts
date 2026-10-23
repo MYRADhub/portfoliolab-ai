@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { aggregate, fitMarketModel, reactionZ, studyEvent, type EventStudyInput } from "./index";
+import {
+  aggregate,
+  fitMarketModel,
+  reactionZ,
+  spilloverFigures,
+  studyEvent,
+  type EventStudyInput,
+} from "./index";
 
 const close = (a: number, b: number, tol = 1e-12) => expect(Math.abs(a - b)).toBeLessThan(tol);
 
@@ -150,5 +157,77 @@ describe("aggregate", () => {
     expect(a.sufficient).toBe(false);
     expect(aggregate([0.02]).sd).toBeNull();
     expect(() => aggregate([])).toThrow();
+  });
+});
+
+describe("spilloverFigures", () => {
+  it("is a perfect correlation when the move rises with similarity, with fifth-by-fifth means", () => {
+    const x = Array.from({ length: 10 }, (_, i) => i + 1);
+    const r = spilloverFigures(x, x, { minStocks: 10 });
+    expect(r.n).toBe(10);
+    close(r.correlation!, 1);
+    close(r.similarMean!, 9.5); // the two most similar: 9 and 10
+    close(r.dissimilarMean!, 1.5); // the two least similar: 1 and 2
+    expect(r.partialCorrelation).toBeNull(); // no sector data given
+  });
+
+  it("is negative when similar stocks move against the event company", () => {
+    const x = Array.from({ length: 10 }, (_, i) => i + 1);
+    const r = spilloverFigures(
+      x,
+      x.map((v) => -v),
+      { minStocks: 10 },
+    );
+    close(r.correlation!, -1);
+    expect(r.similarMean!).toBeLessThan(r.dissimilarMean!);
+  });
+
+  it("matches a hand-computed correlation", () => {
+    // x = 1..5, y = 2, 1, 4, 3, 5: cov = 8/4 = 2, sd_x = sqrt(2.5), sd_y = sqrt(2.5) so r = 0.8
+    const r = spilloverFigures([1, 2, 3, 4, 5], [2, 1, 4, 3, 5], { minStocks: 5 });
+    close(r.correlation!, 0.8);
+  });
+
+  it("separates exposure from sector: the partial correlation is zero when sector explains everything", () => {
+    // Stocks 1-5 are in the sector and move +1; stocks 6-10 are not and move 0. Similarity just tracks the sector.
+    const sector = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0];
+    const move = sector.map((s) => s * 0.01);
+    const sim = [0.9, 0.8, 0.85, 0.95, 0.7, 0.1, 0.2, 0.15, 0.05, 0.3];
+    const r = spilloverFigures(sim, move, { sameSector: sector, minStocks: 10 });
+    expect(r.correlation!).toBeGreaterThan(0.9);
+    close(r.sectorCorrelation!, 1);
+    expect(r.partialCorrelation).toBeNull(); // the sector fully determines the move, so nothing is left to attribute
+  });
+
+  it("matches a hand-computed partial correlation", () => {
+    // r_xy = 0.6, r_xz = 0.5, r_yz = 0.4 would give (0.6 - 0.5*0.4) / sqrt((1-0.25)(1-0.16)) = 0.4 / sqrt(0.63).
+    // Build data with exactly those correlations is awkward, so check the identity on a small dataset instead:
+    const x = [1, 2, 3, 4, 5, 6, 7, 8];
+    const z = [0, 0, 1, 0, 1, 1, 0, 1];
+    const y = [0.5, 1.2, 2.5, 2.9, 4.2, 5.5, 5.9, 8.1];
+    const r = spilloverFigures(x, y, { sameSector: z, minStocks: 8 });
+    const rxy = r.correlation!;
+    const rxz = spilloverFigures(x, z, { minStocks: 8 }).correlation!;
+    const ryz = r.sectorCorrelation!;
+    close(r.partialCorrelation!, (rxy - rxz * ryz) / Math.sqrt((1 - rxz ** 2) * (1 - ryz ** 2)));
+  });
+
+  it("reports nothing with too few stocks or no variation, and rejects mismatched input", () => {
+    expect(spilloverFigures([1, 2, 3], [1, 2, 3])).toEqual({
+      n: 3,
+      correlation: null,
+      partialCorrelation: null,
+      sectorCorrelation: null,
+      similarMean: null,
+      dissimilarMean: null,
+    });
+    const flat = spilloverFigures(
+      Array.from({ length: 40 }, (_, i) => i),
+      Array(40).fill(0.01),
+    );
+    expect(flat.correlation).toBeNull();
+    expect(flat.similarMean).toBeCloseTo(0.01, 12);
+    expect(() => spilloverFigures([1, 2], [1])).toThrow();
+    expect(() => spilloverFigures([1, 2], [1, 2], { sameSector: [1] })).toThrow();
   });
 });
