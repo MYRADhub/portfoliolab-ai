@@ -87,7 +87,7 @@ Compare            GET /api/compare?a=&b=  (two session-owned portfolios)
 Per portfolio      analytics  correlation  exposures  forces  terminal  insights  radar  export
                    move  move/explain  explain  explain-tool  assistant
                    stress (GET catalog, POST run)  discovery  whatif  rebalance  simulation  benchmark
-Research           GET /api/research/:ticker
+Research           GET /api/research/:ticker   GET /api/evidence
 Reactions          GET /api/events   GET /api/events/spillover  (?ticker= single company, ?pooled=1 all)
 Review (token)     GET /api/review/summary|companies   GET|PUT /api/review/companies/:ticker
 Study              /api/experiment, enroll, universe, preview, submit, events, participant,
@@ -113,6 +113,7 @@ All handlers go through `route()` (`server/errors.ts`) which assigns a request i
 | How is news scored?              | `finance/relevance.ts` (10 x exposure match x impact x recency)                                               |
 | What is an abnormal return?      | `finance/eventstudy.ts` (market model on days -250 to -30, no look-ahead)                                     |
 | Force returns, attribution       | `finance/factorreturns.ts` (daily cross-sectional ridge, exact split), `server/forces.ts`                     |
+| Evidence verdicts                | `server/evidence.ts` (pure `judge*` bars, tested)                                                             |
 | Spillover test                   | `finance/eventstudy.ts` `spilloverFigures`, `pooledSpillover` (week clusters, placebo), `server/spillover.ts` |
 | Stress impact                    | `finance/stress.ts` (linear, 3% per exposure point under a full shock)                                        |
 | Lowest-volatility mix            | `finance/optimize.ts` (accelerated projected gradient on a capped simplex)                                    |

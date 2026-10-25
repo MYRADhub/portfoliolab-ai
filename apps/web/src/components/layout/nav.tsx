@@ -4,6 +4,7 @@ import {
   Activity,
   BookOpen,
   Compass,
+  FlaskConical,
   Gauge,
   FileText,
   GitCompare,
@@ -58,6 +59,7 @@ const groups: { label: string; items: Item[] }[] = [
       { href: "/news", label: "News", icon: Newspaper, tour: "nav-news" },
       { href: "/events", label: "Reactions", icon: Activity, tour: "nav-events" },
       { href: "/research", label: "Research", icon: Search, tour: "nav-research" },
+      { href: "/evidence", label: "Evidence", icon: FlaskConical, tour: "nav-evidence" },
     ],
   },
   {

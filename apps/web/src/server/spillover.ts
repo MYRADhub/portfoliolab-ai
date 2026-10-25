@@ -275,3 +275,16 @@ export async function getPooledSpillover(
     minStocks: MIN_SPILLOVER_STOCKS,
   };
 }
+
+let pooledCache: { key: string; at: number; value: PooledReport } | null = null;
+const POOLED_CACHE_MS = 10 * 60_000;
+
+/** The pooled test reads every bellwether's earnings days, so one result is shared for a few minutes. */
+export async function getPooledSpilloverCached(db: Db, events?: number): Promise<PooledReport> {
+  const key = String(events ?? "");
+  if (pooledCache && pooledCache.key === key && Date.now() - pooledCache.at < POOLED_CACHE_MS)
+    return pooledCache.value;
+  const value = await getPooledSpillover(db, { events });
+  pooledCache = { key, at: Date.now(), value };
+  return value;
+}

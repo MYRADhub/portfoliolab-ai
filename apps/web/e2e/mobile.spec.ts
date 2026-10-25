@@ -47,6 +47,7 @@ test.describe("mobile layout", () => {
       "News",
       "Reactions",
       "Research",
+      "Evidence",
       "Report",
       "Guide",
     ]) {

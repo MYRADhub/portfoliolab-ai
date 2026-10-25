@@ -17,6 +17,7 @@ const pages = [
   { path: "/news", heading: "News", nav: "News" },
   { path: "/events", heading: "Reactions", nav: "Reactions" },
   { path: "/research", heading: "Research", nav: "Research" },
+  { path: "/evidence", heading: "Evidence", nav: "Evidence" },
   { path: "/report", heading: "Report", nav: "Report" },
   { path: "/guide", heading: "Guide", nav: "Guide" },
 ];

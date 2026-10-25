@@ -43,6 +43,101 @@ export type ForceReturns =
       attribution: Pick<FactorAttribution, "market" | "residual" | "total"> & { forces: number };
     };
 
+export interface ForceEstimate {
+  slugs: string[];
+  /** Dates actually fitted, and for each the forces' coefficients. */
+  dates: string[];
+  series: number[][];
+  /** One entry per fitted day in which every `held` ticker had a return. */
+  daily: { intercept: number; coefficients: number[]; holdingReturns: number[] }[];
+  loadingOf: (companyId: number) => number[];
+  universe: { stocks: number };
+  fit: { exposures: number; sectors: number; daysExposuresBetter: number };
+}
+
+/**
+ * The daily cross-sectional regressions behind the page, independent of any portfolio: `held` only chooses whose
+ * returns are carried along for the attribution. Null when too few companies are profiled or too few days can be fitted.
+ */
+export async function estimateForces(
+  db: Db,
+  opts: { now: Date; days: number; held: string[] },
+): Promise<ForceEstimate | null> {
+  const { now, days, held } = opts;
+  const profiles = await exposureMap(db);
+  const all = await db.select().from(companies);
+  const universe = all.filter((c) => profiles.has(c.id));
+  if (universe.length < MIN_UNIVERSE) return null;
+
+  const slugs = [...new Set(universe.flatMap((c) => Object.keys(profiles.get(c.id)!)))].sort();
+  const loadingOf = (id: number) => slugs.map((s) => profiles.get(id)?.[s] ?? 0);
+  const sectors = [...new Set(universe.map((c) => c.sector ?? "Unclassified"))].sort().slice(1);
+  const sectorOf = (c: (typeof universe)[number]) =>
+    sectors.map((s) => ((c.sector ?? "Unclassified") === s ? 1 : 0));
+
+  const to = now.toISOString().slice(0, 10);
+  const from = new Date(now.getTime() - Math.ceil(days * 1.5 + 10) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const market = await loadMarket(db, from, to);
+  const candidates = [...market.count.entries()]
+    .filter(([, c]) => c >= MIN_UNIVERSE)
+    .map(([d]) => d)
+    .sort()
+    .slice(-days);
+
+  const series: number[][] = slugs.map(() => []);
+  const daily: ForceEstimate["daily"] = [];
+  const dates: string[] = [];
+  const r2Exposure: number[] = [];
+  const r2Sector: number[] = [];
+  const sizes: number[] = [];
+  let better = 0;
+  for (const date of candidates) {
+    const X: number[][] = [];
+    const S: number[][] = [];
+    const y: number[] = [];
+    for (const c of universe) {
+      const r = market.returns.get(c.ticker)?.get(date);
+      if (r === undefined) continue;
+      X.push(loadingOf(c.id));
+      S.push(sectorOf(c));
+      y.push(r);
+    }
+    const fit = crossSectionFit(X, y, RIDGE);
+    const hr = held.map((t) => market.returns.get(t)?.get(date));
+    if (!fit || hr.some((r) => r === undefined)) continue;
+    const sector = crossSectionFit(S, y, 1e-6);
+    daily.push({
+      intercept: fit.intercept,
+      coefficients: fit.coefficients,
+      holdingReturns: hr as number[],
+    });
+    dates.push(date);
+    fit.coefficients.forEach((c, j) => series[j]!.push(c));
+    r2Exposure.push(fit.adjustedR2);
+    if (sector) {
+      r2Sector.push(sector.adjustedR2);
+      if (fit.adjustedR2 > sector.adjustedR2) better++;
+    }
+    sizes.push(fit.n);
+  }
+  if (daily.length < 20) return null;
+  return {
+    slugs,
+    dates,
+    series,
+    daily,
+    loadingOf,
+    universe: { stocks: Math.round(mean(sizes)) },
+    fit: {
+      exposures: mean(r2Exposure),
+      sectors: r2Sector.length ? mean(r2Sector) : 0,
+      daysExposuresBetter: r2Sector.length ? better / r2Sector.length : 0,
+    },
+  };
+}
+
 /**
  * Estimates what each hidden force did, from real prices: every day, regress all profiled stocks' returns on their
  * exposure scores; the coefficients are the forces' daily returns. The same regression with sector labels instead of
@@ -72,65 +167,11 @@ export async function getForceReturns(
   if (missingTickers.length)
     return { available: false, reason: "missing_exposures", missingTickers };
 
-  const all = await db.select().from(companies);
-  const universe = all.filter((c) => profiles.has(c.id));
-  if (universe.length < MIN_UNIVERSE)
-    return { available: false, reason: "thin_universe", missingTickers: [] };
-
-  const slugs = [...new Set(universe.flatMap((c) => Object.keys(profiles.get(c.id)!)))].sort();
-  const forceNames = new Map((await db.select().from(factors)).map((f) => [f.slug, f.name]));
-  const loadingOf = (id: number) => slugs.map((s) => profiles.get(id)![s] ?? 0);
-  const sectors = [...new Set(universe.map((c) => c.sector ?? "Unclassified"))].sort().slice(1);
-  const sectorOf = (c: (typeof universe)[number]) =>
-    sectors.map((s) => ((c.sector ?? "Unclassified") === s ? 1 : 0));
-
-  const to = now.toISOString().slice(0, 10);
-  const from = new Date(now.getTime() - Math.ceil(days * 1.5 + 10) * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-  const market = await loadMarket(db, from, to);
-  const dates = [...market.count.entries()]
-    .filter(([, c]) => c >= MIN_UNIVERSE)
-    .map(([d]) => d)
-    .sort()
-    .slice(-days);
-
+  const est = await estimateForces(db, { now, days, held: held.map((h) => h.ticker) });
+  if (!est) return { available: false, reason: "thin_universe", missingTickers: [] };
+  const { slugs, series, daily, loadingOf, fit: fitStats, universe: uni, dates } = est;
   const heldLoadings = held.map((h) => loadingOf(h.id));
-  const series: number[][] = slugs.map(() => []);
-  const daily: { intercept: number; coefficients: number[]; holdingReturns: number[] }[] = [];
-  const r2Exposure: number[] = [];
-  const r2Sector: number[] = [];
-  let better = 0;
-  const sizes: number[] = [];
-  for (const date of dates) {
-    const X: number[][] = [];
-    const S: number[][] = [];
-    const y: number[] = [];
-    for (const c of universe) {
-      const r = market.returns.get(c.ticker)?.get(date);
-      if (r === undefined) continue;
-      X.push(loadingOf(c.id));
-      S.push(sectorOf(c));
-      y.push(r);
-    }
-    const fit = crossSectionFit(X, y, RIDGE);
-    const hr = held.map((h) => market.returns.get(h.ticker)?.get(date));
-    if (!fit || hr.some((r) => r === undefined)) continue;
-    const sector = crossSectionFit(S, y, 1e-6);
-    daily.push({
-      intercept: fit.intercept,
-      coefficients: fit.coefficients,
-      holdingReturns: hr as number[],
-    });
-    fit.coefficients.forEach((c, j) => series[j]!.push(c));
-    r2Exposure.push(fit.adjustedR2);
-    if (sector) {
-      r2Sector.push(sector.adjustedR2);
-      if (fit.adjustedR2 > sector.adjustedR2) better++;
-    }
-    sizes.push(fit.n);
-  }
-  if (daily.length < 20) return { available: false, reason: "thin_universe", missingTickers: [] };
+  const forceNames = new Map((await db.select().from(factors)).map((f) => [f.slug, f.name]));
 
   const att = attributeToFactors(
     held.map((h) => h.weight),
@@ -153,12 +194,8 @@ export async function getForceReturns(
     available: true,
     portfolio: { id: p.id, name: p.name },
     window: { from: dates[0]!, to: dates.at(-1)!, days: daily.length },
-    universe: { stocks: Math.round(mean(sizes)), forces: slugs.length },
-    fit: {
-      exposures: mean(r2Exposure),
-      sectors: r2Sector.length ? mean(r2Sector) : 0,
-      daysExposuresBetter: r2Sector.length ? better / r2Sector.length : 0,
-    },
+    universe: { stocks: uni.stocks, forces: slugs.length },
+    fit: fitStats,
     forces: rows.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)),
     attribution: {
       forces: att.byFactor.reduce((a, b) => a + b, 0),

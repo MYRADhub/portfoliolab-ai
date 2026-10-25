@@ -816,6 +816,26 @@ With fewer than 60, a day's cross-section is too thin to estimate 12 forces, so 
 
 ---
 
+## 32. Evidence page (added 2026-10-25)
+
+**32.1 A page that tests the product's own claims.** Final. Who: Me.
+Because the aim is to show the idea holds up, the "Evidence" page runs three tests on the loaded data and states each with a verdict, the figures and what it does not show: (1) do stocks with similar hidden exposures move together on earnings days (the pooled test, section 30); (2) do exposure scores describe stocks better than sector labels (section 31); (3) do earnings days move stocks by more than an ordinary day (the event study). Nothing on the page is written in advance; every sentence and number comes from the same calculations the other pages use, so changing the data can change the verdicts.
+
+**32.2 The bars are written down and tested.** Final. Who: Me.
+"Supported" means a stated bar was cleared, not that the idea is proven. Spillover: clustered sector-adjusted t at least 2 and placebo p below 0.05. Sectors: exposures explain more than sector labels and do better on at least 60% of days. Earnings: at least 15% of days move more than twice normal noise (about 5% would by chance), over at least 30 events. Below the thresholds the verdict is "Inconclusive" or "Not supported"; with too little data it says "Not enough data" rather than guessing. The bars are judgment calls; they are separate pure functions with unit tests so they can be changed in one place.
+
+**32.3 Real result today.** Final. Who: Me.
+All three are "Supported" on the real data (119 earnings days and 70 weeks, exposures 17.4% versus sectors 13.1%, a majority of earnings days unusual). The effect sizes are small and the exposure scores are AI drafts, which the caveats on the page say.
+
+**32.4 Shared and cached.** Final. Who: Me.
+It needs no session and no portfolio. It re-runs three studies, so the result is cached for 10 minutes; the cache for the pooled test moved into the spillover service so both pages share it. The force estimate was split out of the page service (`estimateForces`) so the same regressions serve both pages.
+
+### Mistakes in this slice
+
+- My navigation test lists had Evidence in a different position than the sidebar, and my first page test counted nested list items (the caveat bullets) as findings. Both were test mistakes, fixed.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

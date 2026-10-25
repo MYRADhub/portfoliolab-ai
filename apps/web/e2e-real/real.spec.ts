@@ -207,6 +207,22 @@ test.describe("real data through the API", () => {
     expect(net(fe, "oil_price")).toBeGreaterThan(net(ft, "oil_price"));
   });
 
+  test("the evidence page reaches the verdicts the other pages' numbers imply", async ({
+    request,
+  }) => {
+    const b = (await (await request.get("/api/evidence")).json()) as Json;
+    const by = Object.fromEntries((b.findings as Json[]).map((f) => [f.id, f]));
+    expect(by.spillover.verdict).toBe("supported");
+    expect(by.sectors.verdict).toBe("supported");
+    expect(by.earnings.verdict).toBe("supported");
+    // the figures shown match the underlying endpoints
+    const pooled = (await (await request.get("/api/events/spillover?pooled=1")).json()) as Json;
+    expect(
+      by.spillover.figures.find((x: Json) => x.label === "Earnings days pooled").value,
+    ).toContain(String(pooled.events));
+    for (const f of b.findings) expect(f.caveats.length).toBeGreaterThan(0);
+  });
+
   test("the review tool sees every company as drafted, illustrative or reviewed, none missing", async ({
     request,
   }) => {
@@ -351,6 +367,7 @@ test.describe("pages with real data", () => {
       "/rebalance",
       "/benchmark",
       "/forces",
+      "/evidence",
       "/compare",
       "/report",
       "/simulation",
