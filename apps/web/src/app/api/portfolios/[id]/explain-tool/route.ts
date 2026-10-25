@@ -13,6 +13,7 @@ const bodySchema = z.discriminatedUnion("tool", [
     preset: z.string().max(40).optional(),
     shocks: z.record(z.string().max(60), z.number().min(-1).max(1)).optional(),
   }),
+  z.object({ tool: z.literal("benchmark") }),
   z.object({ tool: z.literal("rebalance"), maxWeight: z.number().min(0.05).max(1).optional() }),
   z.object({
     tool: z.literal("simulation"),

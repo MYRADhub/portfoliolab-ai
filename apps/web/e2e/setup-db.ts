@@ -19,6 +19,7 @@ import {
 import {
   FixtureProvider,
   eventTradingDate,
+  ingestBenchmark,
   ingestPrices,
   loadConstituents,
   type Constituent,
@@ -66,6 +67,7 @@ async function main() {
   }
   // Prices for the 24 companies used by the sample portfolios (no demo news or exposures: tests assert on their own fixtures).
   await seedDemoPrices(db);
+  await ingestBenchmark(db, provider, "SPY", { backfillFrom: threeYearsAgo, to: today });
   // Six more companies used only by the research study tests; each has a consumer-spending exposure and nothing else.
   for (const t of STUDY_EXTRA)
     await ingestPrices(db, provider, t, { backfillFrom: threeYearsAgo, to: today });

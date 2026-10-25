@@ -54,3 +54,14 @@ export const dataSources = pgTable("data_sources", {
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Daily adjusted closes of market benchmarks (for example SPY), kept apart from company prices. */
+export const benchmarkPrices = pgTable(
+  "benchmark_prices",
+  {
+    symbol: text("symbol").notNull(),
+    date: date("date").notNull(),
+    adjClose: doublePrecision("adj_close").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.symbol, t.date] })],
+);

@@ -10,7 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "e2e": "tsx e2e/setup-db.ts && next build && playwright test",
-    "e2e:run": "tsx e2e/setup-db.ts && playwright test"
+    "e2e:run": "tsx e2e/setup-db.ts && playwright test",
+    "e2e:real": "next build && playwright test -c playwright.real.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

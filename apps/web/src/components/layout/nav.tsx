@@ -4,6 +4,8 @@ import {
   Activity,
   BookOpen,
   Compass,
+  Gauge,
+  FileText,
   Grid3x3,
   LayoutDashboard,
   Network,
@@ -40,6 +42,7 @@ const groups: { label: string; items: Item[] }[] = [
     items: [
       { href: "/exposures", label: "Exposures", icon: Network, tour: "nav-exposures" },
       { href: "/correlation", label: "Correlation", icon: Grid3x3, tour: "nav-correlation" },
+      { href: "/benchmark", label: "Market comparison", icon: Gauge, tour: "nav-benchmark" },
       { href: "/stress", label: "Stress Lab", icon: Zap, tour: "nav-stress" },
       { href: "/discovery", label: "Discovery", icon: Compass, tour: "nav-discovery" },
       { href: "/rebalance", label: "Rebalance Lab", icon: Scale, tour: "nav-rebalance" },
@@ -56,7 +59,10 @@ const groups: { label: string; items: Item[] }[] = [
   },
   {
     label: "Help",
-    items: [{ href: "/guide", label: "Guide", icon: BookOpen, tour: "nav-guide" }],
+    items: [
+      { href: "/report", label: "Report", icon: FileText, tour: "nav-report" },
+      { href: "/guide", label: "Guide", icon: BookOpen, tour: "nav-guide" },
+    ],
   },
 ];
 

@@ -171,6 +171,8 @@ test.describe("theme", () => {
     "/research",
     "/events",
     "/rebalance",
+    "/benchmark",
+    "/report",
     "/simulation",
   ]) {
     test(`${path} has no accessibility violations in the dark theme`, async ({ page }) => {

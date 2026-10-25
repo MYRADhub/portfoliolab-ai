@@ -12,6 +12,7 @@ A portfolio of ten stocks can look diversified and still depend on one thing: in
 | Dashboard and Terminal | Plain-language insight cards (what to watch, most important first) and a four-section workspace of charts and tables: returns, risk, drawdowns, correlation, news.                                                                              |
 | News                   | Stories ranked by a transparent score: how much of your money they touch, how economically important they are, how fresh they are. A "why am I seeing this" breakdown shows each part.                                                          |
 | Reactions              | A market-model event study on real earnings events: what a stock did around the news after removing what the market did.                                                                                                                        |
+| Market comparison      | Beta, alpha, tracking error and up/down capture against the S&P 500, with rolling beta and year-by-year returns.                                                                                                                                |
 | Stress Lab             | Push an economic force up or down, or pick a scenario, and see the estimated effect on each holding and the portfolio, with a reliability figure.                                                                                               |
 | Rebalance Lab          | Compare your weights with equal weights, the lowest-volatility mix and equal-risk weights.                                                                                                                                                      |
 | Simulation             | Thousands of possible paths built from the portfolio's own history, re-centred on a typical return so a past boom is not assumed to repeat.                                                                                                     |
@@ -44,7 +45,7 @@ A direct test on real data: when a large company reports earnings, do stocks wit
 ## How it was checked
 
 - About 390 unit tests, including hand-computed expectations (regressions, optimiser closed forms, relevance scores, concentration measures) and invariants (portfolio contributions sum to the portfolio return; the minimum-variance mix is never riskier than any feasible alternative; the event-study model never uses days after the event).
-- About 300 end-to-end browser tests in desktop and phone layouts, including accessibility scans in light and dark themes, a mock language-model server (grounded, ungrounded, retry, refusal, error), session isolation, and independent recomputation of displayed numbers.
+- About 320 end-to-end browser tests in desktop and phone layouts, plus 16 read-only checks against the real-data database. The browser tests include accessibility scans in light and dark themes, a mock language-model server (grounded, ungrounded, retry, refusal, error), session isolation, and independent recomputation of displayed numbers.
 - Mutation checks: the suite fails when grounding or session ownership is deliberately broken.
 - Bugs the tests and real data caught are listed honestly in `docs/DECISIONS.md` (section 13 and the "Mistakes" part of each slice), for example a simulation that reported a 0% chance of loss because it replayed a boom.
 

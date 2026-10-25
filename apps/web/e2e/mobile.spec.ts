@@ -37,6 +37,7 @@ test.describe("mobile layout", () => {
       "Terminal",
       "Exposures",
       "Correlation",
+      "Market comparison",
       "Stress Lab",
       "Discovery",
       "Rebalance Lab",
@@ -44,6 +45,7 @@ test.describe("mobile layout", () => {
       "News",
       "Reactions",
       "Research",
+      "Report",
       "Guide",
     ]) {
       const b = await nav.getByRole("link", { name, exact: true }).boundingBox();

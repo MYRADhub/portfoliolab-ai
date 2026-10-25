@@ -26,20 +26,22 @@ When the second number is much smaller than the first, your portfolio is less di
 
 ## What you can do with it
 
-| Page              | What it answers                                                                                                      |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Dashboard**     | What changed, and what should I watch? Plain-language cards, most important first.                                   |
-| **Terminal**      | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                      |
-| **Exposures**     | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                         |
-| **Correlation**   | How closely do my holdings move together, and does that get worse when markets fall?                                 |
-| **Stress Lab**    | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding. |
-| **Discovery**     | Which companies would spread my hidden exposures across more forces?                                                 |
-| **Rebalance Lab** | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                  |
-| **Simulation**    | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.             |
-| **News**          | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                            |
-| **Reactions**     | How did stocks actually move around earnings and SEC filings, after removing what the market did?                    |
-| **Research**      | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                   |
-| **Guide**         | Every term explained in plain language, plus a guided tour of the app.                                               |
+| Page                  | What it answers                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Dashboard**         | What changed, and what should I watch? Plain-language cards, most important first.                                                   |
+| **Terminal**          | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                                      |
+| **Exposures**         | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                                         |
+| **Correlation**       | How closely do my holdings move together, and does that get worse when markets fall?                                                 |
+| **Stress Lab**        | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                 |
+| **Discovery**         | Which companies would spread my hidden exposures across more forces?                                                                 |
+| **Market comparison** | How does my portfolio behave versus the S&P 500? Beta, alpha, tracking error, and how much of the market's good and bad days I take. |
+| **Rebalance Lab**     | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                                  |
+| **Simulation**        | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.                             |
+| **News**              | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                            |
+| **Reactions**         | How did stocks actually move around earnings and SEC filings, after removing what the market did?                                    |
+| **Research**          | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                                   |
+| **Report**            | A one-page summary of a portfolio you can print or save as a PDF.                                                                    |
+| **Guide**             | Every term explained in plain language, plus a guided tour of the app.                                                               |
 
 New here? The app opens with a short **guided tour**, a **getting-started checklist**, and a collapsed **"How to read this"** note on every page.
 
@@ -58,7 +60,7 @@ pnpm db:up        # starts the database in Docker
 pnpm demo         # builds a clearly-labelled made-up dataset and starts the app
 ```
 
-Open **http://localhost:3000** (use `localhost`, not `127.0.0.1`). Five sample portfolios load for you on your first visit.
+Open **http://localhost:3000** (use `localhost`, not `127.0.0.1`). Five sample portfolios load for you on your first visit. To use your own holdings, go to **New portfolio** and paste a list or a broker export (percentages, dollar values or share counts all work).
 
 Everything in demo mode is made up and marked as such. It lives in its own database (`pl_demo`) and never touches anything else.
 
@@ -156,12 +158,13 @@ Developers: start with `docs/ARCHITECTURE.md`.
 
 ```sh
 pnpm format:check && pnpm lint && pnpm typecheck && pnpm test     # about 390 unit tests
-pnpm --filter @portfolio-lab/web e2e                               # about 300 browser tests
+pnpm --filter @portfolio-lab/web e2e                               # about 320 browser tests
+pnpm --filter @portfolio-lab/web e2e:real                          # 16 read-only checks against the real-data database
 ```
 
 The browser tests rebuild the app, create a fresh test database, and use a pretend OpenAI server, so they never spend money. They run in desktop and phone layouts and include accessibility scans in light and dark themes. They need Google Chrome and a running database.
 
-Tests that need the database require `pnpm db:up`.
+Tests that need the database require `pnpm db:up`. The real-data checks need the real-data database to be built first (see "Use real data").
 
 ## If something goes wrong
 

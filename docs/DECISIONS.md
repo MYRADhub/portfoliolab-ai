@@ -704,6 +704,32 @@ A version that clusters standard errors by calendar week to fix the independence
 
 ---
 
+## 27. Real-data testing, import, market comparison and a printable report (added 2026-10-23)
+
+**27.1 The browser tests never touched real data, so I added a suite that does.** Final. Who: Me (you asked whether everything was tested end to end).
+`pnpm --filter @portfolio-lab/web e2e:real` runs 16 read-only checks against the real-data database: price histories are long and clean (no non-positive prices or duplicate days, almost no absurd one-day jumps), the SEC figures match well-known facts (Apple's fiscal 2025 revenue of $416,161,000,000 and diluted EPS of 7.46), every company has an exposure profile and none is mislabelled as reviewed, the event study finds Centene's roughly 40% collapse on 2 July 2025, every analysis returns finite plausible numbers for all five sample portfolios, and no page anywhere shows NaN, Infinity or a script error. It writes nothing and never calls OpenAI.
+
+**27.2 What is still not automated.** Open. Who: Me.
+Real Yahoo, SEC and OpenAI calls (they were checked by hand, not by tests, because they depend on outside services); the `pnpm demo` and `pnpm real` launchers; real news providers (no keys); browsers other than Chrome; load or speed testing; and GitHub's CI, which GitHub refused to start for an account billing reason.
+
+**27.3 Import your own portfolio.** Final. Who: Me.
+Paste a list or a broker export, or load a CSV. It understands percentages, dollar values and share counts, with or without a header row, thousands separators, brokers' share-class spellings (BRK-B, BRK/B), and skips cash, totals and short positions saying why. Share counts are converted to weights at the latest close; tickers outside the S&P 500 are listed and left out; unpriced shares are left out and reported. You see exactly what was understood before anything is created, and only tickers and numbers are sent to the server.
+
+**27.4 Market comparison against the S&P 500.** Final. Who: Me.
+Beta, alpha, correlation, tracking error, information ratio, up and down capture, share of days beating the market, a rolling beta and calendar-year returns, against SPY loaded into its own table (real Yahoo data in the real database). Alpha is defined plainly: the average daily return left after removing beta times the market's return, times 252. The page warns that a few years of data make alpha noisy and not skill. Tests recompute every statistic independently from the returned curves.
+
+**27.5 A printable report.** Final. Who: Me.
+One page of key figures, what to know, holdings, hidden concentration, market comparison and three illustrative stress scenarios, with the standard disclaimer and labels for unreviewed exposure scores. The browser's print dialog saves it as a PDF. Print styles hide the sidebar, controls and button.
+
+### Mistakes in this slice
+
+- I wrote a test assuming GOOGL had no prices; it is one of the 24 demo tickers. The test now uses a company that really has none.
+- My first "page has finished loading" check in the real-data suite waited for any status element to disappear, but Recharts' tooltip keeps one forever. The check now looks for the loading placeholder specifically.
+- A chart-count check counted legend icons as charts.
+- Two accessibility scans were flaky because buttons were mid-colour-transition; they now wait for animations to finish.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

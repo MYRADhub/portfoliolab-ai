@@ -10,7 +10,13 @@ import {
   type Db,
 } from "@portfolio-lab/db";
 import { seedEventTypes } from "@portfolio-lab/classify";
-import { FixtureProvider, ingestPrices, marketSession, titleHash } from "@portfolio-lab/data";
+import {
+  FixtureProvider,
+  ingestBenchmark,
+  ingestPrices,
+  marketSession,
+  titleHash,
+} from "@portfolio-lab/data";
 import { DEMO_EXPOSURES, DEMO_FACTORS, DEMO_NEWS, DEMO_TICKERS } from "./data";
 
 export interface DemoSeedSummary {
@@ -30,6 +36,7 @@ export async function seedDemoPrices(
   const from = new Date(now.getTime() - years * 365 * 86_400_000).toISOString().slice(0, 10);
   const provider = new FixtureProvider();
   for (const t of DEMO_TICKERS) await ingestPrices(db, provider, t, { backfillFrom: from, to });
+  await ingestBenchmark(db, provider, "SPY", { backfillFrom: from, to });
 }
 
 /**

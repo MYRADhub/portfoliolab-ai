@@ -7,6 +7,7 @@ const pages = [
   { path: "/terminal", heading: "Terminal", nav: "Terminal" },
   { path: "/exposures", heading: "Exposures", nav: "Exposures" },
   { path: "/correlation", heading: "Correlation", nav: "Correlation" },
+  { path: "/benchmark", heading: "Market comparison", nav: "Market comparison" },
   { path: "/stress", heading: "Stress Lab", nav: "Stress Lab" },
   { path: "/discovery", heading: "Discovery", nav: "Discovery" },
   { path: "/rebalance", heading: "Rebalance Lab", nav: "Rebalance Lab" },
@@ -14,6 +15,7 @@ const pages = [
   { path: "/news", heading: "News", nav: "News" },
   { path: "/events", heading: "Reactions", nav: "Reactions" },
   { path: "/research", heading: "Research", nav: "Research" },
+  { path: "/report", heading: "Report", nav: "Report" },
   { path: "/guide", heading: "Guide", nav: "Guide" },
 ];
 

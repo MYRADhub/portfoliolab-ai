@@ -3,6 +3,7 @@ import { factsFromEntries } from "@portfolio-lab/explain";
 import type { Db } from "@portfolio-lab/db";
 import { pct, signedPct } from "@/lib/format";
 import { runGroundedExplanation, type ExplainResult } from "./explain";
+import { getBenchmark } from "./benchmark";
 import { getRebalance } from "./rebalance";
 import { getSimulation } from "./simulation";
 import { runStress, STRESS_PRESETS } from "./stress";
@@ -10,7 +11,8 @@ import { runStress, STRESS_PRESETS } from "./stress";
 export type ToolParams =
   | { tool: "stress"; preset?: string; shocks?: Record<string, number> }
   | { tool: "rebalance"; maxWeight?: number }
-  | { tool: "simulation"; years?: number; drift?: number | "historical" };
+  | { tool: "simulation"; years?: number; drift?: number | "historical" }
+  | { tool: "benchmark" };
 
 interface Built {
   facts: Fact[];
@@ -137,6 +139,55 @@ async function simulationFacts(
   };
 }
 
+async function benchmarkFacts(db: Db, sid: string, pid: string): Promise<Built> {
+  const r = await getBenchmark(db, sid, pid);
+  if (!r.available)
+    return {
+      facts: entries([{ label: "Market comparison", text: "not available: no benchmark prices" }]),
+      task: "Explain that the comparison is not available.",
+    };
+  const s = r.stats;
+  const list: { label: string; text: string }[] = [
+    { label: "Benchmark", text: r.benchmark.name },
+    {
+      label: "Window",
+      text: `${r.window.from} to ${r.window.to} (${r.window.tradingDays} trading days)`,
+    },
+    { label: "Beta", text: s.beta === null ? "not measurable" : s.beta.toFixed(2) },
+    {
+      label: "Correlation with the market",
+      text: s.correlation === null ? "not measurable" : s.correlation.toFixed(2),
+    },
+    {
+      label: "Yearly return beyond beta (alpha)",
+      text: s.alpha === null ? "not measurable" : signedPct(s.alpha, 1),
+    },
+    {
+      label: "Tracking error",
+      text: s.trackingError === null ? "not measurable" : pct(s.trackingError, 1),
+    },
+    { label: "Yearly return minus the benchmark's", text: signedPct(s.activeReturn, 1) },
+    {
+      label: "Share of the market's up days captured",
+      text: s.upCapture === null ? "not measurable" : pct(s.upCapture, 0),
+    },
+    {
+      label: "Share of the market's down days captured",
+      text: s.downCapture === null ? "not measurable" : pct(s.downCapture, 0),
+    },
+    { label: "Days the portfolio beat the market", text: pct(s.battingAverage, 0) },
+  ];
+  for (const y of r.years.filter((x) => !x.partial))
+    list.push({
+      label: `Calendar year ${y.year}`,
+      text: `portfolio ${signedPct(y.portfolio, 1)}, market ${signedPct(y.benchmark, 1)}`,
+    });
+  return {
+    facts: entries(list),
+    task: "Explain how this portfolio behaved compared with the market: how much it moves with it, whether it earned anything beyond that, and how much of the market's good and bad days it took. Note that a few years of data make alpha noisy, and do not give advice.",
+  };
+}
+
 /** Facts for a tool's current result, recomputed on the server so the explanation can only quote real figures. */
 export async function buildToolFacts(
   db: Db,
@@ -146,6 +197,7 @@ export async function buildToolFacts(
 ): Promise<Built> {
   if (p.tool === "stress") return stressFacts(db, sid, pid, p);
   if (p.tool === "rebalance") return rebalanceFacts(db, sid, pid, p);
+  if (p.tool === "benchmark") return benchmarkFacts(db, sid, pid);
   return simulationFacts(db, sid, pid, p);
 }
 

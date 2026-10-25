@@ -1,6 +1,6 @@
 import { and, eq, max } from "drizzle-orm";
 import { asc, sql } from "drizzle-orm";
-import { companies, pricesDaily, type Db } from "@portfolio-lab/db";
+import { benchmarkPrices, companies, pricesDaily, type Db } from "@portfolio-lab/db";
 import { ProviderError, type PriceProvider } from "./providers/types";
 
 export interface IngestResult {
@@ -129,4 +129,33 @@ export async function runUpdate(
   }
   summary.remaining = queue.slice(batch.length);
   return summary;
+}
+
+/**
+ * Loads daily adjusted closes for a market benchmark such as SPY into its own table. Idempotent: starts the day after the
+ * latest stored day, or at `backfillFrom` when empty.
+ */
+export async function ingestBenchmark(
+  db: Db,
+  provider: PriceProvider,
+  symbol: string,
+  opts: { backfillFrom: string; to: string },
+): Promise<{ symbol: string; inserted: number }> {
+  const [latest] = await db
+    .select({ d: max(benchmarkPrices.date) })
+    .from(benchmarkPrices)
+    .where(eq(benchmarkPrices.symbol, symbol));
+  const from = latest?.d ? addDays(latest.d, 1) : opts.backfillFrom;
+  if (from > opts.to) return { symbol, inserted: 0 };
+  const bars = await provider.getDailyBars(symbol, from, opts.to);
+  let inserted = 0;
+  for (let i = 0; i < bars.length; i += 500) {
+    const rows = await db
+      .insert(benchmarkPrices)
+      .values(bars.slice(i, i + 500).map((b) => ({ symbol, date: b.date, adjClose: b.adjClose })))
+      .onConflictDoNothing()
+      .returning({ d: benchmarkPrices.date });
+    inserted += rows.length;
+  }
+  return { symbol, inserted };
 }

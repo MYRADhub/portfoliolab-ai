@@ -13,3 +13,4 @@ export * from "./experiment";
 export * from "./fundamentals";
 export * from "./optimize";
 export * from "./simulation";
+export * from "./benchmark";

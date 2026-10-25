@@ -50,6 +50,13 @@
       "when": 1792554311637,
       "tag": "0006_messy_captain_universe",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792730665968,
+      "tag": "0007_striped_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

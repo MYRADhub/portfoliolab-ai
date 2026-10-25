@@ -16,7 +16,7 @@ export function ExplainTool({
   label = "Explain this result",
 }: {
   portfolioId: string;
-  tool: "stress" | "rebalance" | "simulation";
+  tool: "stress" | "rebalance" | "simulation" | "benchmark";
   params: object;
   label?: string;
 }) {

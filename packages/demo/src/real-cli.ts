@@ -7,13 +7,19 @@ import { parseArgs } from "node:util";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { createDb } from "@portfolio-lab/db";
-import { loadConstituents, runUpdate, YahooProvider, type Constituent } from "@portfolio-lab/data";
+import {
+  ingestBenchmark,
+  loadConstituents,
+  runUpdate,
+  YahooProvider,
+  type Constituent,
+} from "@portfolio-lab/data";
 import { seedDemoExposures } from "./seed";
 
 const { values } = parseArgs({
   options: {
     db: { type: "string", default: "pl_real" },
-    steps: { type: "string", default: "prices,exposures" },
+    steps: { type: "string", default: "prices,benchmark,exposures" },
     years: { type: "string", default: "5" },
     limit: { type: "string" },
     tickers: { type: "string" },
@@ -63,6 +69,16 @@ async function main() {
     for (const f of summary.failed.slice(0, 20)) console.error(`  ${f.ticker}: ${f.error}`);
     if (summary.stoppedEarly)
       console.error(`stopped early: ${summary.stoppedEarly}; rerun to continue`);
+  }
+  if (steps.has("benchmark")) {
+    const now = new Date();
+    const from = new Date(now);
+    from.setUTCFullYear(from.getUTCFullYear() - Number(values.years));
+    const r = await ingestBenchmark(db, new YahooProvider(), "SPY", {
+      backfillFrom: from.toISOString().slice(0, 10),
+      to: now.toISOString().slice(0, 10),
+    });
+    console.log(`benchmark: ${r.symbol} ${r.inserted} new days`);
   }
   if (steps.has("exposures")) console.log("exposures:", await seedDemoExposures(db));
 

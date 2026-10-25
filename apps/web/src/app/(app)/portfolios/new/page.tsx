@@ -1,3 +1,4 @@
+import { ImportHoldings } from "@/components/portfolio/import-holdings";
 import { PortfolioForm } from "@/components/portfolio/portfolio-form";
 import { SamplePicker } from "@/components/portfolio/sample-picker";
 
@@ -9,6 +10,7 @@ export default function NewPortfolioPage() {
         <p className="mt-2 mb-6 text-muted-foreground">Enter your holdings and target weights.</p>
         <PortfolioForm />
       </section>
+      <ImportHoldings />
       <SamplePicker />
     </div>
   );

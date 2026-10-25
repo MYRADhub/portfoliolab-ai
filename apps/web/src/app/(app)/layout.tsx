@@ -12,7 +12,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TourProvider>
       <div className="flex min-h-screen flex-col md:flex-row">
-        <aside className="flex shrink-0 flex-col gap-3 border-b bg-sidebar p-3 text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-60 md:overflow-y-auto md:border-r md:border-b-0 md:p-4">
+        <aside className="flex shrink-0 flex-col gap-3 border-b bg-sidebar p-3 print:hidden text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-60 md:overflow-y-auto md:border-r md:border-b-0 md:p-4">
           <SidebarShell>
             <Suspense fallback={null}>
               <Nav />
@@ -23,7 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </SidebarShell>
         </aside>
-        <main className="flex min-w-0 flex-1 flex-col p-4 md:h-screen md:overflow-hidden md:px-8 md:py-6">
+        <main className="flex min-w-0 flex-1 flex-col p-4 md:h-screen md:overflow-hidden md:px-8 md:py-6 print:h-auto print:overflow-visible print:p-0">
           {DEMO_MODE && (
             <p
               role="note"
@@ -34,7 +34,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
           )}
           {/* On desktop each page scrolls inside this area, so the window itself never scrolls and the Terminal can fill the screen. */}
-          <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">{children}</div>
+          <div className="md:min-h-0 md:flex-1 md:overflow-y-auto print:overflow-visible">
+            {children}
+          </div>
         </main>
         <SessionBootstrap />
         <Suspense fallback={null}>

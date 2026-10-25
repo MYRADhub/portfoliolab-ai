@@ -28,16 +28,16 @@ Rules that keep it honest:
 
 ## Packages
 
-| Package              | Responsibility         | Key files                                                                                                                                                                                                                                                                                                                                                                              |
-| -------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/finance`   | Portfolio math         | `series`, `metrics`, `weights`, `correlation`, `exposure` (loadings, factor HHI), `attribution`, `relevance` (news score), `terminal` (VaR, drawdowns, risk shares), `stress`, `discovery`, `eventstudy` (market model, CAR, spillover), `experiment` (randomization, power, permutation test), `optimize` (min-variance, risk parity), `simulation` (block bootstrap), `fundamentals` |
-| `packages/data`      | Fetching and ingesting | `providers/` (Yahoo, Tiingo, fixture), `sec/` (EDGAR client, 8-K mapping, fundamentals), `news/` (Finnhub, Marketaux, clustering, market session), `matching/` (company alias matching), `ingest`, CLIs                                                                                                                                                                                |
-| `packages/classify`  | AI with validation     | `classifier` (news class and event type), `exposures` (draft exposure scores, agreement metrics), `eval` (accuracy harness), `store`                                                                                                                                                                                                                                                   |
-| `packages/explain`   | AI explanations        | `grounding` (number and citation checker), `generator` (explanations), `assistant` (tool-calling loop), `facts`                                                                                                                                                                                                                                                                        |
-| `packages/db`        | Schema and migrations  | `schema/*`, `migrations/`, `testing.ts` (creates throwaway test databases)                                                                                                                                                                                                                                                                                                             |
-| `packages/demo`      | Dataset builders       | `data.ts` (demo companies, factors, exposures, news), `seed`, `cli`, `real-cli`                                                                                                                                                                                                                                                                                                        |
-| `packages/shared`    | Settings               | `env.ts` (validated environment)                                                                                                                                                                                                                                                                                                                                                       |
-| `services/analytics` | Python FastAPI         | health check only so far; heavy statistics were kept in TypeScript for one runtime                                                                                                                                                                                                                                                                                                     |
+| Package              | Responsibility         | Key files                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/finance`   | Portfolio math         | `series`, `metrics`, `weights`, `correlation`, `exposure` (loadings, factor HHI), `attribution`, `relevance` (news score), `terminal` (VaR, drawdowns, risk shares), `benchmark` (beta, alpha, capture), `stress`, `discovery`, `eventstudy` (market model, CAR, spillover), `experiment` (randomization, power, permutation test), `optimize` (min-variance, risk parity), `simulation` (block bootstrap), `fundamentals` |
+| `packages/data`      | Fetching and ingesting | `providers/` (Yahoo, Tiingo, fixture), `sec/` (EDGAR client, 8-K mapping, fundamentals), `news/` (Finnhub, Marketaux, clustering, market session), `matching/` (company alias matching), `ingest`, CLIs                                                                                                                                                                                                                    |
+| `packages/classify`  | AI with validation     | `classifier` (news class and event type), `exposures` (draft exposure scores, agreement metrics), `eval` (accuracy harness), `store`                                                                                                                                                                                                                                                                                       |
+| `packages/explain`   | AI explanations        | `grounding` (number and citation checker), `generator` (explanations), `assistant` (tool-calling loop), `facts`                                                                                                                                                                                                                                                                                                            |
+| `packages/db`        | Schema and migrations  | `schema/*`, `migrations/`, `testing.ts` (creates throwaway test databases)                                                                                                                                                                                                                                                                                                                                                 |
+| `packages/demo`      | Dataset builders       | `data.ts` (demo companies, factors, exposures, news), `seed`, `cli`, `real-cli`                                                                                                                                                                                                                                                                                                                                            |
+| `packages/shared`    | Settings               | `env.ts` (validated environment)                                                                                                                                                                                                                                                                                                                                                                                           |
+| `services/analytics` | Python FastAPI         | health check only so far; heavy statistics were kept in TypeScript for one runtime                                                                                                                                                                                                                                                                                                                                         |
 
 ## Database
 
@@ -52,7 +52,7 @@ Postgres 16 (Docker, port 54330). Four databases next to each other, never mixed
 
 Tables (grouped):
 
-- **Market**: `companies` (with SEC `cik`), `prices_daily`, `data_sources`, `fundamentals` (annual SEC figures).
+- **Market**: `companies` (with SEC `cik`), `prices_daily`, `benchmark_prices` (SPY), `data_sources`, `fundamentals` (annual SEC figures).
 - **Exposure model**: `factors`, `factor_relationships`, `company_factor_exposures` (versioned with `valid_from`/`valid_to`, `source` of manual or AI, `reviewed_by`/`reviewed_at`).
 - **News**: `news_articles`, `event_types`, `news_classifications`, `news_company_links`, `company_aliases`, `ingest_failures`, `llm_runs` (cache and audit log of every AI call).
 - **Users**: `sessions`, `portfolios`, `holdings`, `rate_limit_hits` (Postgres-backed limiter with advisory locks).
@@ -81,10 +81,11 @@ Notable conventions:
 
 ```
 Session, data      POST /api/session   GET /api/health   GET /api/companies   GET|POST /api/samples
+Import             POST /api/import/preview  (parse result to weights; no session needed)
 Portfolios         GET|POST /api/portfolios   DELETE /api/portfolios/:id
 Per portfolio      analytics  correlation  exposures  terminal  insights  radar  export
                    move  move/explain  explain  explain-tool  assistant
-                   stress (GET catalog, POST run)  discovery  whatif  rebalance  simulation
+                   stress (GET catalog, POST run)  discovery  whatif  rebalance  simulation  benchmark
 Research           GET /api/research/:ticker
 Reactions          GET /api/events   GET /api/events/spillover
 Review (token)     GET /api/review/summary|companies   GET|PUT /api/review/companies/:ticker
@@ -119,7 +120,8 @@ All handlers go through `route()` (`server/errors.ts`) which assigns a request i
 ## Testing
 
 - **Unit** (Vitest): about 390 tests across packages. Database tests create and drop their own throwaway databases (`createTestDb`) and need `DATABASE_URL`.
-- **End to end** (Playwright, real Chrome, desktop and phone): about 300 tests against a production build, a fresh `pl_e2e` database, and a mock OpenAI server (`e2e/mock-openai.ts`) with modes for grounded, ungrounded, retry, refusal, incomplete and error answers. Includes axe accessibility scans in light and dark, session isolation, independent recomputation of displayed numbers, and mutation checks.
+- **Real-data checks** (`e2e:real`, Playwright): 16 read-only tests against `pl_real` (integrity of prices and filings, known facts, plausibility of every analysis on the sample portfolios, no NaN on any page). Writes nothing, never calls OpenAI.
+- **End to end** (Playwright, real Chrome, desktop and phone): about 320 tests against a production build, a fresh `pl_e2e` database, and a mock OpenAI server (`e2e/mock-openai.ts`) with modes for grounded, ungrounded, retry, refusal, incomplete and error answers. Includes axe accessibility scans in light and dark, session isolation, independent recomputation of displayed numbers, and mutation checks.
 - Tests that edit shared fixtures (the review tool) can only run once per seeded database; the full `e2e` script reseeds first.
 - Gotchas: `getByRole("alert")` also matches Next's route announcer (use the `appAlert` helper); CSS transitions can make accessibility scans flaky (wait for animations first); Prettier reflows code, so scripted text edits must be verified.
 
@@ -134,11 +136,12 @@ All handlers go through `route()` (`server/errors.ts`) which assigns a request i
 
 ## Environments and commands
 
-| Command                                                                                     | Does                                 |
-| ------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `pnpm db:up`, `db:down`, `db:migrate`, `db:seed`, `db:generate`                             | database lifecycle                   |
-| `pnpm data:sp500`, `data:ingest`, `data:news`, `data:aliases`, `data:sec`, `data:exposures` | data pipelines                       |
-| `pnpm demo`, `demo:seed`                                                                    | made-up demo database and app        |
-| `pnpm real:seed`, `real`                                                                    | real-data database and app           |
-| `pnpm format`, `lint`, `typecheck`, `test`                                                  | checks                               |
-| `pnpm --filter @portfolio-lab/web e2e`                                                      | browser tests (rebuilds and reseeds) |
+| Command                                                                                     | Does                                       |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `pnpm db:up`, `db:down`, `db:migrate`, `db:seed`, `db:generate`                             | database lifecycle                         |
+| `pnpm data:sp500`, `data:ingest`, `data:news`, `data:aliases`, `data:sec`, `data:exposures` | data pipelines                             |
+| `pnpm demo`, `demo:seed`                                                                    | made-up demo database and app              |
+| `pnpm real:seed`, `real`                                                                    | real-data database and app                 |
+| `pnpm format`, `lint`, `typecheck`, `test`                                                  | checks                                     |
+| `pnpm --filter @portfolio-lab/web e2e`                                                      | browser tests (rebuilds and reseeds)       |
+| `pnpm --filter @portfolio-lab/web e2e:real`                                                 | read-only checks on the real-data database |
