@@ -8,6 +8,7 @@ const pages = [
   { path: "/exposures", heading: "Exposures", nav: "Exposures" },
   { path: "/correlation", heading: "Correlation", nav: "Correlation" },
   { path: "/benchmark", heading: "Market comparison", nav: "Market comparison" },
+  { path: "/compare", heading: "Compare", nav: "Compare" },
   { path: "/stress", heading: "Stress Lab", nav: "Stress Lab" },
   { path: "/discovery", heading: "Discovery", nav: "Discovery" },
   { path: "/rebalance", heading: "Rebalance Lab", nav: "Rebalance Lab" },

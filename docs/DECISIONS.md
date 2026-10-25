@@ -748,6 +748,23 @@ Cancelling exposures only works if the exposure scores are right, and most are u
 
 ---
 
+## 29. Compare two portfolios (added 2026-10-25)
+
+**29.1 A side-by-side page.** Final. Who: Me.
+Pick any two of your portfolios and see, over the dates both have prices for: yearly return, volatility, worst fall, Sharpe ratio, effective sectors and forces, market beta and biggest economic force, with the better value in each row marked, a growth chart, and plain sentences about what differs ("B returned 5.2 points a year more than A, with 11.0 points more volatility"). The sentences are produced by a small tested function from the figures, not by the AI.
+
+**29.2 Overlap is money, and the page also shows the hidden link.** Final. Who: Me.
+Overlap is the sum, over companies both portfolios hold, of the smaller of the two weights, so it reads as "60% of the money is in companies both hold". Because two portfolios can share nothing and still move together through shared economic forces, the page also shows the correlation of their daily returns and each one's biggest force.
+
+**29.3 "Better" describes the past only.** Final. Who: Me.
+Green marks the better value in each row, and the page says that is a description of this period, not advice on which to own. Tests recompute every number from the returned curves, and the real-data suite checks that tech is bumpier and higher-beta than the defensive sample.
+
+### Mistakes in this slice
+
+- Two of my page tests assumed the portfolio list was in creation order; it is newest first, so the default choice was not the pair I expected. The tests now choose explicitly.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

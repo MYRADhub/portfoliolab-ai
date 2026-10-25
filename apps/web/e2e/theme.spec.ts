@@ -172,6 +172,7 @@ test.describe("theme", () => {
     "/events",
     "/rebalance",
     "/benchmark",
+    "/compare",
     "/report",
     "/simulation",
   ]) {

@@ -389,3 +389,5 @@ Progress (2026-10-22, later): real data (Yahoo prices, SEC 8-K events and 10-K f
 Progress (2026-10-23): real-data end-to-end suite (`e2e:real`), portfolio import from pasted lists and broker exports, market comparison against SPY (beta, alpha, tracking error, capture, rolling beta) and a printable one-page report. See docs/DECISIONS.md section 27.
 
 Progress (2026-10-23): real-data end-to-end suite (`e2e:real`), portfolio import from pasted lists and broker exports, market comparison against SPY (beta, alpha, tracking error, capture, rolling beta) and a printable one-page report. See docs/DECISIONS.md section 27.
+
+Progress (2026-10-25): a rebalancing strategy built on hidden exposures (smallest net exposure, with its trade-offs stated) and a Compare page for two portfolios. See docs/DECISIONS.md sections 28 and 29.

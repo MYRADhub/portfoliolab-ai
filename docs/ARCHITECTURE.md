@@ -83,6 +83,7 @@ Notable conventions:
 Session, data      POST /api/session   GET /api/health   GET /api/companies   GET|POST /api/samples
 Import             POST /api/import/preview  (parse result to weights; no session needed)
 Portfolios         GET|POST /api/portfolios   DELETE /api/portfolios/:id
+Compare            GET /api/compare?a=&b=  (two session-owned portfolios)
 Per portfolio      analytics  correlation  exposures  terminal  insights  radar  export
                    move  move/explain  explain  explain-tool  assistant
                    stress (GET catalog, POST run)  discovery  whatif  rebalance  simulation  benchmark

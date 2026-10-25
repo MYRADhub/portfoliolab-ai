@@ -224,6 +224,20 @@ test.describe("sample portfolios on real data", () => {
     expect(d.stats.downCapture).toBeLessThan(b.stats.downCapture);
   });
 
+  test("comparing two real samples gives finite, consistent figures", async ({ request }) => {
+    const portfolios = await session(request);
+    const tech = portfolios.find((p) => /mega-cap tech/i.test(p.name))!;
+    const def = portfolios.find((p) => /defensive/i.test(p.name))!;
+    const c = (await (await request.get(`/api/compare?a=${tech.id}&b=${def.id}`)).json()) as Json;
+    expect(c.window.tradingDays).toBeGreaterThan(500);
+    expect(c.a.volatility).toBeGreaterThan(c.b.volatility); // tech is bumpier than staples
+    expect(c.a.beta).toBeGreaterThan(c.b.beta);
+    expect(c.correlation).toBeGreaterThan(-0.2);
+    expect(c.correlation).toBeLessThan(0.95);
+    expect(c.overlap.sharedWeight).toBeLessThan(0.5);
+    expect(c.differences.length).toBeGreaterThanOrEqual(5);
+  });
+
   test("stress, discovery and what-if work on real exposures", async ({ request }) => {
     const [first] = await session(request);
     const catalog = (await (
@@ -280,6 +294,7 @@ test.describe("pages with real data", () => {
       "/discovery",
       "/rebalance",
       "/benchmark",
+      "/compare",
       "/report",
       "/simulation",
       "/research",

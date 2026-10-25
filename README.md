@@ -35,6 +35,7 @@ When the second number is much smaller than the first, your portfolio is less di
 | **Stress Lab**        | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                 |
 | **Discovery**         | Which companies would spread my hidden exposures across more forces?                                                                 |
 | **Market comparison** | How does my portfolio behave versus the S&P 500? Beta, alpha, tracking error, and how much of the market's good and bad days I take. |
+| **Compare**           | Two of my portfolios side by side: performance, risk, hidden concentration and how much they overlap.                                |
 | **Rebalance Lab**     | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                                  |
 | **Simulation**        | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.                             |
 | **News**              | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                            |
