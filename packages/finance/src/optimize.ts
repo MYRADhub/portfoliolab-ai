@@ -92,3 +92,31 @@ export function riskParityWeights(
   }
   return w;
 }
+
+/**
+ * Gram matrix of holdings' signed exposure vectors: entry (i, j) is the sum over forces of s_i,f x s_j,f. For weights w the
+ * quadratic form w' Q w equals the sum over forces of the squared net loading, so minimizing it (with
+ * `minVarianceWeights`) finds the mix whose net dependence on every economic force is smallest.
+ */
+export function exposureGram(exposures: readonly (readonly number[])[]): number[][] {
+  const n = exposures.length;
+  return Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) =>
+      exposures[i]!.reduce((a, s, f) => a + s * (exposures[j]![f] ?? 0), 0),
+    ),
+  );
+}
+
+/** Sum over forces of the squared net loading of the portfolio: the quantity `exposureGram` minimizes. */
+export function exposureEnergy(
+  w: readonly number[],
+  exposures: readonly (readonly number[])[],
+): number {
+  const forces = Math.max(0, ...exposures.map((e) => e.length));
+  let total = 0;
+  for (let f = 0; f < forces; f++) {
+    const net = w.reduce((a, wi, i) => a + wi * (exposures[i]![f] ?? 0), 0);
+    total += net * net;
+  }
+  return total;
+}

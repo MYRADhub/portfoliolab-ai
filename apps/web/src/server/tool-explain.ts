@@ -83,6 +83,11 @@ async function rebalanceFacts(
     list.push({ label: `${s.name} volatility`, text: pct(s.volatility, 1) });
     list.push({ label: `${s.name} worst fall`, text: pct(s.maxDrawdown, 1) });
     list.push({ label: `${s.name} yearly return`, text: signedPct(s.annualReturn, 1) });
+    if (s.effectiveFactors !== null)
+      list.push({
+        label: `${s.name} effective economic forces`,
+        text: s.effectiveFactors.toFixed(1),
+      });
   }
   const cur = r.strategies.find((s) => s.id === "current")!;
   const min = r.strategies.find((s) => s.id === "min_variance")!;

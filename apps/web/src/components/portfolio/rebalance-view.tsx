@@ -35,6 +35,7 @@ const COLORS: Record<string, string> = {
   equal: "var(--chart-2)",
   min_variance: "var(--chart-3)",
   risk_parity: "var(--chart-4)",
+  min_exposure: "var(--chart-5)",
 };
 
 export function RebalanceView() {
@@ -76,7 +77,13 @@ function Content({ id }: { id: string }) {
           <strong>Lowest volatility</strong> finds the mix that moved up and down the least.{" "}
           <strong>Equal risk</strong> gives each holding the same share of the portfolio&apos;s ups
           and downs. <strong>Money moved</strong> is how much of your portfolio would change hands
-          to get there.
+          to get there. <strong>Smallest net exposure</strong> uses the exposure scores instead of
+          prices: it finds the mix whose net dependence on every economic force is smallest, and
+          &ldquo;effective forces&rdquo; shows how many independent forces each mix really rides. It
+          works by cancelling opposite exposures, so it can raise volatility and reduce the number
+          of effective forces: read every column, and remember it is only as good as the exposure
+          scores, many of which are AI drafts. It appears only when every holding has an exposure
+          profile.
         </p>
         <p>
           Every number looks backwards and was fitted on the same period it is measured on, so the
@@ -132,6 +139,9 @@ function Content({ id }: { id: string }) {
                   Effective positions
                 </TableHead>
                 <TableHead scope="col" className="text-right">
+                  Effective forces
+                </TableHead>
+                <TableHead scope="col" className="text-right">
                   Money moved
                 </TableHead>
               </TableRow>
@@ -163,6 +173,9 @@ function Content({ id }: { id: string }) {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {s.effectiveN.toFixed(1)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {s.effectiveFactors === null ? "n/a" : s.effectiveFactors.toFixed(1)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {s.id === "current" ? "n/a" : pct(s.turnover, 0)}

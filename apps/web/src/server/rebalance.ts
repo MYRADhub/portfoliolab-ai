@@ -5,6 +5,9 @@ import {
   cumulativeGrowth,
   dailyReturns,
   equalWeights,
+  exposureGram,
+  factorConcentration,
+  factorLoadings,
   maxDrawdown,
   minVarianceWeights,
   portfolioReturns,
@@ -14,13 +17,14 @@ import {
 } from "@portfolio-lab/finance";
 import type { Db } from "@portfolio-lab/db";
 import { AppError } from "./errors";
+import { getPortfolioExposures } from "./exposures";
 import { loadPortfolioWithPrices, monthsAgo } from "./portfolio-data";
 
 export const REBALANCE_YEARS = 3;
 export const DEFAULT_MAX_WEIGHT = 0.4;
 
 export interface Strategy {
-  id: "current" | "equal" | "min_variance" | "risk_parity";
+  id: "current" | "equal" | "min_variance" | "risk_parity" | "min_exposure";
   name: string;
   description: string;
   weights: { ticker: string; weight: number; riskShare: number }[];
@@ -30,6 +34,10 @@ export interface Strategy {
   maxDrawdown: number;
   /** Effective number of positions, 1 / sum of squared weights. */
   effectiveN: number;
+  /** Effective number of independent economic forces the mix depends on; null without exposure data. */
+  effectiveFactors: number | null;
+  /** Sum of absolute net loadings across forces: total hidden dependence, whatever its spread. Null without exposure data. */
+  grossLoading: number | null;
   /** Half the sum of absolute weight changes from the current portfolio: the share of money that would move. */
   turnover: number;
 }
@@ -67,6 +75,29 @@ export async function getRebalance(
   const cov = covarianceMatrix(byAsset);
   const current = hs.map((h) => h.weight);
 
+  // Hidden-exposure view: only when every holding has an exposure profile.
+  const exp = await getPortfolioExposures(db, sessionId, portfolioId);
+  const slugs = exp.available ? exp.factors.map((f) => f.slug) : [];
+  const signed = new Map<string, Record<string, number>>();
+  if (exp.available)
+    for (const c of exp.cells)
+      signed.set(c.ticker, { ...signed.get(c.ticker), [c.factor]: c.signed });
+  const matrix = hs.map((h) => slugs.map((s) => signed.get(h.ticker)?.[s] ?? 0));
+  const exposureOf = (w: number[]) => {
+    if (!exp.available) return { effectiveFactors: null, grossLoading: null };
+    const loadings = factorLoadings(
+      hs.map((h, i) => ({
+        ticker: h.ticker,
+        weight: w[i]!,
+        exposures: signed.get(h.ticker) ?? {},
+      })),
+    );
+    return {
+      effectiveFactors: factorConcentration(loadings).effectiveFactors,
+      grossLoading: loadings.reduce((a, l) => a + Math.abs(l.net), 0),
+    };
+  };
+
   const defs: { id: Strategy["id"]; name: string; description: string; w: number[] }[] = [
     {
       id: "current",
@@ -92,6 +123,16 @@ export async function getRebalance(
       description: "Each holding contributes the same share of the portfolio's ups and downs.",
       w: riskParityWeights(cov),
     },
+    ...(exp.available
+      ? [
+          {
+            id: "min_exposure" as const,
+            name: "Smallest net exposure",
+            description: `The mix whose net dependence on every economic force is smallest, with no holding above ${Math.round(cap * 100)}%. It uses the exposure scores, not prices, and works by cancelling opposite exposures, so it can raise volatility and lower the number of effective forces.`,
+            w: minVarianceWeights(exposureGram(matrix), { maxWeight: cap }),
+          },
+        ]
+      : []),
   ];
 
   const series: Record<string, number[]> = {};
@@ -109,6 +150,7 @@ export async function getRebalance(
       sharpe: sharpeRatio(rets, 0),
       maxDrawdown: maxDrawdown(rets),
       effectiveN: 1 / d.w.reduce((a, w) => a + w * w, 0),
+      ...exposureOf(d.w),
       turnover: 0.5 * d.w.reduce((a, w, i) => a + Math.abs(w - current[i]!), 0),
     };
   });

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { COVERED, mock, newSession, startUiSession, uniqueHoldings } from "./helpers";
+import { COVERED, EXAMPLE, mock, newSession, startUiSession, uniqueHoldings } from "./helpers";
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -19,6 +19,7 @@ test.describe("rebalance API", () => {
       "equal",
       "min_variance",
       "risk_parity",
+      "min_exposure",
     ]);
     for (const st of b.strategies) {
       expect(sum(st.weights.map((w: Json) => w.weight))).toBeCloseTo(1, 9);
@@ -55,6 +56,61 @@ test.describe("rebalance API", () => {
     by.risk_parity.weights.forEach((w: Json) => expect(w.riskShare).toBeCloseTo(0.25, 6));
     expect(by.equal.weights.every((w: Json) => Math.abs(w.weight - 0.25) < 1e-12)).toBe(true);
     expect(b.caveat).toMatch(/not advice/);
+  });
+
+  test("the least-hidden-exposure mix really has the smallest net dependence on the economic forces", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    const id = await s.create("Covered", COVERED);
+    const b = (await (await page.request.get(`/api/portfolios/${id}/rebalance`)).json()) as Json;
+    const x = (await (await page.request.get(`/api/portfolios/${id}/exposures`)).json()) as Json;
+    // energy = sum over forces of the squared net loading, recomputed here from the fixtures' exposure scores
+    const energy = (weights: Json[]) => {
+      const w = Object.fromEntries(weights.map((r: Json) => [r.ticker, r.weight]));
+      const net: Record<string, number> = {};
+      for (const c of x.cells) net[c.factor] = (net[c.factor] ?? 0) + (w[c.ticker] ?? 0) * c.signed;
+      return Object.values(net).reduce((a, v) => a + v * v, 0);
+    };
+    const by = Object.fromEntries(b.strategies.map((st: Json) => [st.id, st]));
+    const e = (id: string) => energy(by[id].weights);
+    for (const other of ["current", "equal", "min_variance", "risk_parity"])
+      expect(e("min_exposure"), other).toBeLessThanOrEqual(e(other) + 1e-9);
+    expect(Math.max(...by.min_exposure.weights.map((w: Json) => w.weight))).toBeLessThanOrEqual(
+      b.maxWeight + 1e-9,
+    );
+    expect(by.min_exposure.weights.reduce((a: number, w: Json) => a + w.weight, 0)).toBeCloseTo(
+      1,
+      9,
+    );
+    for (const st of b.strategies) {
+      expect(st.effectiveFactors).toBeGreaterThan(0);
+      expect(st.grossLoading).toBeGreaterThan(0);
+    }
+    // the current mix's effective forces equal what the exposures page reports
+    expect(by.current.effectiveFactors).toBeCloseTo(x.concentration.effectiveFactors, 9);
+  });
+
+  test("without full exposure data there is no exposure strategy and no exposure figures", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    const id = await s.create("Partial", EXAMPLE);
+    const b = (await (await page.request.get(`/api/portfolios/${id}/rebalance`)).json()) as Json;
+    expect(b.strategies.map((st: Json) => st.id)).toEqual([
+      "current",
+      "equal",
+      "min_variance",
+      "risk_parity",
+    ]);
+    expect(
+      b.strategies.every((st: Json) => st.effectiveFactors === null && st.grossLoading === null),
+    ).toBe(true);
+    await page.goto("/rebalance");
+    await expect(
+      page.getByRole("table", { name: "Strategy comparison" }).locator("tbody tr"),
+    ).toHaveCount(4);
+    await expect(page.getByText("Smallest net exposure").first()).toBeHidden();
   });
 
   test("a tighter cap is honoured, floored at an equal split, and the input is validated", async ({
@@ -265,7 +321,7 @@ test.describe("rebalance and simulation pages", () => {
     await page.goto("/rebalance");
     await expect(page.getByRole("heading", { name: "Rebalance Lab", level: 1 })).toBeVisible();
     const table = page.getByRole("table", { name: "Strategy comparison" });
-    await expect(table.locator("tbody tr")).toHaveCount(4);
+    await expect(table.locator("tbody tr")).toHaveCount(5);
     const min = api.strategies.find((x: Json) => x.id === "min_variance");
     await expect(table.getByRole("row", { name: /Lowest volatility/ })).toContainText(
       `${(min.volatility * 100).toFixed(1)}%`,

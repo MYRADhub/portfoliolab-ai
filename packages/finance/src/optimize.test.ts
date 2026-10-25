@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   equalWeights,
+  exposureEnergy,
+  exposureGram,
   minVarianceWeights,
   portfolioVariance,
   projectCappedSimplex,
@@ -105,5 +107,52 @@ describe("riskParityWeights and riskShares", () => {
     close(s[0]!, 0.8, 1e-12);
     close(s[1]!, 0.2, 1e-12);
     expect(() => riskShares([0, 0], diag(0.04, 0.01))).toThrow();
+  });
+});
+
+describe("exposureGram and exposureEnergy", () => {
+  it("builds the inner products of the holdings' exposure vectors", () => {
+    // holding A: (2, 0), B: (-2, 1), C: (0, 3)
+    const q = exposureGram([
+      [2, 0],
+      [-2, 1],
+      [0, 3],
+    ]);
+    expect(q).toEqual([
+      [4, -4, 0],
+      [-4, 5, 3],
+      [0, 3, 9],
+    ]);
+  });
+
+  it("makes w'Qw equal the sum of squared net loadings", () => {
+    const e = [
+      [2, 0],
+      [-2, 1],
+      [0, 3],
+    ];
+    const w = [0.5, 0.3, 0.2];
+    const q = exposureGram(e);
+    // net loadings: 0.5*2 + 0.3*-2 = 0.4 and 0.3*1 + 0.2*3 = 0.9 -> 0.16 + 0.81
+    close(exposureEnergy(w, e), 0.97, 1e-12);
+    close(portfolioVariance(w, q), 0.97, 1e-12);
+  });
+
+  it("finds an exact hedge: opposite exposures cancel at equal weights", () => {
+    const e = [[2], [-2]];
+    const w = minVarianceWeights(exposureGram(e));
+    close(w[0]!, 0.5, 1e-6);
+    close(exposureEnergy(w, e), 0, 1e-9);
+  });
+
+  it("leans toward the holding with the smallest dependence, and respects a cap", () => {
+    // one force; loadings 3, 1, 2 -> energy (3a + b + 2c)^2 is minimized by putting everything in b
+    const e = [[3], [1], [2]];
+    const w = minVarianceWeights(exposureGram(e));
+    close(w[1]!, 1, 1e-6);
+    const capped = minVarianceWeights(exposureGram(e), { maxWeight: 0.5 });
+    close(capped[1]!, 0.5, 1e-6);
+    expect(exposureEnergy(capped, e)).toBeGreaterThan(exposureEnergy(w, e));
+    expect(exposureEnergy(w, e)).toBeLessThanOrEqual(exposureEnergy([1 / 3, 1 / 3, 1 / 3], e));
   });
 });

@@ -330,6 +330,11 @@ test.describe("News page", () => {
     await s.create("Radar", EXAMPLE);
     await page.goto("/news");
     await page.getByLabel("Period").selectOption("30");
+    // The fixture story is some days old, and older stories score lower and are collapsed, so open the group if there is one.
+    await page
+      .getByText(/\d+ low-relevance items?/)
+      .first()
+      .click();
     await expect(page.getByText(NEWS_TITLE)).toBeVisible();
     await page.getByLabel("Period").selectOption("1");
     await expect(page.getByText(NEWS_TITLE)).toHaveCount(0);

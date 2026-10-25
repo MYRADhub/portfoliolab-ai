@@ -730,6 +730,24 @@ One page of key figures, what to know, holdings, hidden concentration, market co
 
 ---
 
+## 28. A rebalancing strategy built on hidden exposures (added 2026-10-25)
+
+**28.1 Smallest net exposure.** Final. Who: Me.
+Rebalance Lab now has a fifth alternative built from the exposure scores instead of prices: the mix whose net dependence on every economic force (the sum over forces of the squared net loading) is smallest, with the same cap on any one holding. It reuses the optimiser already in the app, applied to the matrix of inner products of the holdings' exposure vectors; tests check that the optimum is exact for hand-built cases (opposite exposures cancel at equal weights) and that no other mix has a smaller net dependence. It appears only when every holding has a profile. Each strategy now also shows its effective number of forces.
+
+**28.2 What it does, on real data, and why the page warns about it.** Final. Who: Me.
+It does what it says but not always what you might hope. On the Balanced sample it cut the net dependence but lowered the effective number of forces from 6.1 to 3.8 and raised volatility from 12.2% to 18.3%; on Mega-cap tech it lowered both effective forces (7.6 to 6.3) and volatility (24.1% to 21.7%). The reason is that it works by concentrating in names whose exposures cancel. That is the same blind spot as the Hedge tag in Discovery: "least exposed" is not "most diversified". So the strategy is named "Smallest net exposure", its description and the page's note say it can raise volatility and reduce effective forces, and every column is shown side by side.
+
+**28.3 It is only as good as the scores.** Final. Who: Me.
+Cancelling exposures only works if the exposure scores are right, and most are unreviewed AI drafts. The page says so next to the strategy.
+
+### Mistakes in this slice
+
+- A News test passed all week and failed on a Sunday: the fixture story is "six weekdays ago", which is nine calendar days over a weekend, so its relevance score decayed below the collapse threshold and the story was hidden in the low-relevance group. The app was right; the test now opens that group first. Tests tied to "today" need to survive any day of the week.
+- I first named it "Least hidden exposure", which suggests a better, safer portfolio. Seeing the real numbers showed that is not what it delivers, so I renamed it and rewrote its description before anyone relied on it.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.
