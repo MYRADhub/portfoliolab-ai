@@ -43,6 +43,7 @@ const groups: { label: string; items: Item[] }[] = [
     items: [
       { href: "/exposures", label: "Exposures", icon: Network, tour: "nav-exposures" },
       { href: "/correlation", label: "Correlation", icon: Grid3x3, tour: "nav-correlation" },
+      { href: "/forces", label: "What the forces did", icon: Activity, tour: "nav-forces" },
       { href: "/benchmark", label: "Market comparison", icon: Gauge, tour: "nav-benchmark" },
       { href: "/compare", label: "Compare", icon: GitCompare, tour: "nav-compare" },
       { href: "/stress", label: "Stress Lab", icon: Zap, tour: "nav-stress" },

@@ -26,23 +26,24 @@ When the second number is much smaller than the first, your portfolio is less di
 
 ## What you can do with it
 
-| Page                  | What it answers                                                                                                                       |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dashboard**         | What changed, and what should I watch? Plain-language cards, most important first.                                                    |
-| **Terminal**          | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                                       |
-| **Exposures**         | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                                          |
-| **Correlation**       | How closely do my holdings move together, and does that get worse when markets fall?                                                  |
-| **Stress Lab**        | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                  |
-| **Discovery**         | Which companies would spread my hidden exposures across more forces?                                                                  |
-| **Market comparison** | How does my portfolio behave versus the S&P 500? Beta, alpha, tracking error, and how much of the market's good and bad days I take.  |
-| **Compare**           | Two of my portfolios side by side: performance, risk, hidden concentration and how much they overlap.                                 |
-| **Rebalance Lab**     | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                                   |
-| **Simulation**        | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.                              |
-| **News**              | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                             |
-| **Reactions**         | How did stocks actually move around earnings and SEC filings, after removing what the market did? Includes the pooled spillover test. |
-| **Research**          | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                                    |
-| **Report**            | A one-page summary of a portfolio you can print or save as a PDF.                                                                     |
-| **Guide**             | Every term explained in plain language, plus a guided tour of the app.                                                                |
+| Page                    | What it answers                                                                                                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**           | What changed, and what should I watch? Plain-language cards, most important first.                                                                                                              |
+| **Terminal**            | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                                                                                                 |
+| **Exposures**           | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                                                                                                    |
+| **Correlation**         | How closely do my holdings move together, and does that get worse when markets fall?                                                                                                            |
+| **Stress Lab**          | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                                                                            |
+| **Discovery**           | Which companies would spread my hidden exposures across more forces?                                                                                                                            |
+| **What the forces did** | Which hidden forces really moved stocks over the last year, and how much of my portfolio's return each explains. Also checks whether exposure scores describe stocks better than sector labels. |
+| **Market comparison**   | How does my portfolio behave versus the S&P 500? Beta, alpha, tracking error, and how much of the market's good and bad days I take.                                                            |
+| **Compare**             | Two of my portfolios side by side: performance, risk, hidden concentration and how much they overlap.                                                                                           |
+| **Rebalance Lab**       | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                                                                                             |
+| **Simulation**          | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.                                                                                        |
+| **News**                | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                                                                                       |
+| **Reactions**           | How did stocks actually move around earnings and SEC filings, after removing what the market did? Includes the pooled spillover test.                                                           |
+| **Research**            | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                                                                                              |
+| **Report**              | A one-page summary of a portfolio you can print or save as a PDF.                                                                                                                               |
+| **Guide**               | Every term explained in plain language, plus a guided tour of the app.                                                                                                                          |
 
 New here? The app opens with a short **guided tour**, a **getting-started checklist**, and a collapsed **"How to read this"** note on every page.
 

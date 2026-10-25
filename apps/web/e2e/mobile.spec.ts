@@ -37,6 +37,7 @@ test.describe("mobile layout", () => {
       "Terminal",
       "Exposures",
       "Correlation",
+      "What the forces did",
       "Market comparison",
       "Compare",
       "Stress Lab",

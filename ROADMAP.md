@@ -392,4 +392,6 @@ Progress (2026-10-23): real-data end-to-end suite (`e2e:real`), portfolio import
 
 Progress (2026-10-25): a rebalancing strategy built on hidden exposures (smallest net exposure, with its trade-offs stated) and a Compare page for two portfolios. See docs/DECISIONS.md sections 28 and 29.
 
+Progress (2026-10-25, forces): new page "What the forces did" estimates each hidden force's daily return from real prices, splits a portfolio's return into force, market and residual parts, and shows exposures explain 17.4% of daily stock differences against 13.1% for sector labels. See docs/DECISIONS.md section 31.
+
 Progress (2026-10-25, pooled spillover): the Reactions page now pools every large company's earnings days into one test with events grouped by calendar week and a shuffled-scores placebo (real data: 119 days, 70 weeks, sector-adjusted t 4.1, placebo p 0.005). See docs/DECISIONS.md section 30.

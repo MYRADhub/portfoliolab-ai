@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { REVIEW_TOKEN, realDatabaseUrl } from "./env";
@@ -170,6 +171,42 @@ test.describe("real data through the API", () => {
     expect(r.placebo.pPartial).toBeLessThan(0.05);
   });
 
+  test("what the forces did: parts add up exactly, and exposures describe stocks better than sectors", async ({
+    request,
+  }) => {
+    const portfolios = await session(request);
+    const tech = portfolios.find((p) => p.name.includes("Mega-cap tech"))!;
+    const energy = portfolios.find((p) => p.name.includes("Energy and banks"))!;
+    const get = async (id: string) =>
+      (await (await request.get(`/api/portfolios/${id}/forces`)).json()) as Json;
+    for (const p of [tech, energy]) {
+      const f = await get(p.id);
+      expect(f.available).toBe(true);
+      expect(f.window.days).toBeGreaterThan(200);
+      expect(f.universe.stocks).toBeGreaterThan(400);
+      expect(f.forces.length).toBe(f.universe.forces);
+      // the split of the portfolio's return is exact, and the force rows add to its force total
+      const a = f.attribution;
+      expect(a.forces + a.market + a.residual).toBeCloseTo(a.total, 9);
+      const rows = (f.forces as Json[]).reduce((s, r) => s + r.contribution, 0);
+      expect(rows).toBeCloseTo(a.forces, 9);
+      // exposures explain more of the daily differences between stocks than sector labels do
+      expect(f.fit.exposures).toBeGreaterThan(f.fit.sectors);
+      expect(f.fit.daysExposuresBetter).toBeGreaterThan(0.5);
+      for (const r of f.forces) {
+        expect(Number.isFinite(r.cumulative)).toBe(true);
+        expect(Math.abs(r.cumulative)).toBeLessThan(1.5);
+      }
+    }
+    // the universe-wide force returns do not depend on the portfolio
+    const [ft, fe] = [await get(tech.id), await get(energy.id)];
+    const cum = (f: Json, slug: string) => f.forces.find((r: Json) => r.slug === slug).cumulative;
+    expect(cum(ft, "oil_price")).toBeCloseTo(cum(fe, "oil_price"), 9);
+    // oil matters to the energy sample and barely to tech
+    const net = (f: Json, slug: string) => f.forces.find((r: Json) => r.slug === slug).portfolioNet;
+    expect(net(fe, "oil_price")).toBeGreaterThan(net(ft, "oil_price"));
+  });
+
   test("the review tool sees every company as drafted, illustrative or reviewed, none missing", async ({
     request,
   }) => {
@@ -313,6 +350,7 @@ test.describe("pages with real data", () => {
       "/discovery",
       "/rebalance",
       "/benchmark",
+      "/forces",
       "/compare",
       "/report",
       "/simulation",
@@ -326,6 +364,31 @@ test.describe("pages with real data", () => {
         expect(text, `${path} shows ${bad}`).not.toContain(bad);
     }
     expect(errors).toEqual([]);
+  });
+
+  test("the forces page shows the split and the comparison with sectors, accessibly", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+    await expect
+      .poll(async () => (await page.context().cookies()).some((c) => c.name === "pl_session"))
+      .toBe(true);
+    expect((await page.request.post("/api/samples")).ok()).toBe(true);
+    await page.goto("/forces");
+    await expect(page.getByTestId("forces-summary")).toContainText("trading days", {
+      timeout: 60_000,
+    });
+    await expect(page.getByTestId("forces-fit")).toContainText("sector labels alone");
+    await expect(
+      page.getByRole("table", { name: "What each force did" }).locator("tbody tr"),
+    ).toHaveCount(12);
+    await page.evaluate(() =>
+      Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+    );
+    const r = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    expect(r.violations).toEqual([]);
   });
 
   test("the exposure page is honest about drafts, and the company page shows SEC figures", async ({

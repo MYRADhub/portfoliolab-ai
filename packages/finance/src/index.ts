@@ -14,3 +14,4 @@ export * from "./fundamentals";
 export * from "./optimize";
 export * from "./simulation";
 export * from "./benchmark";
+export * from "./factorreturns";

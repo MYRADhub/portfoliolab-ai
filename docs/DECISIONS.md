@@ -791,6 +791,31 @@ The pooled request reads every bellwether's earnings days (about 5 seconds on re
 
 ---
 
+## 31. What the forces did (added 2026-10-25)
+
+**31.1 Estimate each force's real daily return.** Final. Who: Me.
+New page "What the forces did". Each day, every profiled stock's return is regressed on its exposure scores (a cross-sectional regression, the Fama-MacBeth method); each coefficient is that force's return for the day. Analogy: line up everyone in a school by how much they like sport, and see how much faster the sporty ones ran that day; that gap is "the sport force". The math is `crossSectionFit` and `attributeToFactors` in `packages/finance/src/factorreturns.ts`; the service is `server/forces.ts`.
+
+**31.2 A small ridge, with an unpenalised intercept.** Final. Who: Me.
+Forces that nearly always appear together (rates and growth, for instance) can produce wild offsetting coefficients, so a mild ridge penalty (1.0) is applied to the force columns but not to the intercept, which is the market-wide return of the day.
+
+**31.3 The portfolio's return is split exactly.** Final. Who: Me.
+Portfolio daily return = market-wide part + sum of (net exposure x force return) + residual, where the residual is whatever is left, so the three always add up to the total of the portfolio's daily returns. The tests check that identity both in unit tests and on real data, and that the force rows add to the force total.
+
+**31.4 A check on the exposure scores themselves.** Final. Who: Me.
+The same daily regression is run with sector labels instead of exposure scores, and both report an adjusted R-squared (penalised for how many columns they use). On real data over 252 days and about 500 stocks: exposures explain 17.4% of the daily differences between stocks, sector labels 13.1%, and exposures did better on 66% of days. This is in-sample (fitted on the day it is measured on), and the scores are AI drafts, so it shows the scores carry market information, not that they are right.
+
+**31.5 Needs at least 60 profiled companies.** Final. Who: Me.
+With fewer than 60, a day's cross-section is too thin to estimate 12 forces, so the page says so instead of showing numbers. The fixture test database has ten, so the browser tests there cover the unavailable and missing-profile paths, and the real-data suite checks the numbers and the page.
+
+### Mistakes in this slice
+
+- The first version of the chart was marked hidden from screen readers, but Recharts makes the drawing focusable, which axe flagged as a serious accessibility error. It is now a labelled group, and the table below carries the same figures.
+- My first window fetched 60 calendar days beyond the target, which gave 210 trading days, not 252. It now fetches enough calendar days.
+- I had planned a daily briefing page and dropped it: the Dashboard already is one (ranked insights plus the day's move), so a second page would have repeated it.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

@@ -7,6 +7,7 @@ const pages = [
   { path: "/terminal", heading: "Terminal", nav: "Terminal" },
   { path: "/exposures", heading: "Exposures", nav: "Exposures" },
   { path: "/correlation", heading: "Correlation", nav: "Correlation" },
+  { path: "/forces", heading: "What the forces did", nav: "What the forces did" },
   { path: "/benchmark", heading: "Market comparison", nav: "Market comparison" },
   { path: "/compare", heading: "Compare", nav: "Compare" },
   { path: "/stress", heading: "Stress Lab", nav: "Stress Lab" },
