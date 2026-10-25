@@ -119,6 +119,24 @@ test.describe("spillover test", () => {
     }
   });
 
+  test("the pooled test withholds figures when no day has enough comparable stocks", async ({
+    page,
+  }) => {
+    const r = (await (await page.request.get("/api/events/spillover?pooled=1")).json()) as Json;
+    expect(r).toMatchObject({
+      events: 0,
+      clusters: 0,
+      correlation: null,
+      clusteredCorrelation: null,
+      minStocks: 30,
+    });
+    expect(r.placebo).toMatchObject({ permutations: 0, pCorrelation: null });
+  });
+
+  test("the pooled request is validated", async ({ page }) => {
+    expect((await page.request.get("/api/events/spillover?pooled=2")).status()).toBe(400);
+  });
+
   test("validates the request", async ({ page }) => {
     const get = (q: string) => page.request.get(`/api/events/spillover?${q}`);
     expect((await get("ticker=ZZZZ")).status()).toBe(404);
@@ -138,6 +156,8 @@ test.describe("spillover test", () => {
     await expect(
       page.getByText("No large company has enough earnings history to run this test yet."),
     ).toBeVisible();
+    await expect(page.getByText("All large companies pooled")).toBeVisible();
+    await expect(page.getByTestId("pooled-verdict")).toContainText("Not enough earnings days");
     const note = page.locator("details").filter({ hasText: "How this test works" });
     await expect(note).toBeVisible();
     await expect(note).not.toHaveAttribute("open", "");

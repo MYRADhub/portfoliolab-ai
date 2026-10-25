@@ -5,9 +5,12 @@ import {
   aggregate,
   exposureSimilarity,
   MIN_SPILLOVER_STOCKS,
+  pooledSpillover,
   spilloverFigures,
   studyEvent,
   type Aggregate,
+  type PooledEventInput,
+  type PooledSpillover,
 } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
 import {
@@ -105,6 +108,76 @@ export async function eligibleBellwethers(db: Db, now = new Date()): Promise<str
   return out;
 }
 
+interface RawEvent {
+  date: string;
+  ar0: number;
+  similarity: number[];
+  signedMove: number[];
+  sameSector: number[];
+}
+
+type CompanyRow = typeof companies.$inferSelect;
+
+/** Everything the test needs, loaded once so many companies can share the same price history. */
+async function spilloverContext(db: Db, now: Date) {
+  const all = await db.select().from(companies);
+  const profiles = await exposureMap(db);
+  const since = new Date(now.getTime() - STUDY_YEARS * 365 * 86_400_000);
+  const priceFrom = new Date(since.getTime() - ESTIMATION_LOOKBACK_DAYS * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const market = await loadMarket(db, priceFrom, now.toISOString().slice(0, 10));
+  const series = new Map<string, ReturnType<typeof seriesFor>>();
+  const get = (t: string) => {
+    let s = series.get(t);
+    if (!s) series.set(t, (s = seriesFor(market, t)));
+    return s;
+  };
+  return { all, profiles, since, now, get };
+}
+
+type Context = Awaited<ReturnType<typeof spilloverContext>>;
+
+/** For each recent earnings day of `company`: every other profiled stock's similarity, sector flag and signed move. */
+async function collectEvents(
+  db: Db,
+  ctx: Context,
+  company: CompanyRow,
+  events: number,
+): Promise<RawEvent[]> {
+  const own = ctx.profiles.get(company.id)!;
+  const dates = (await earningsDates(db, company.id, ctx.since, ctx.now)).slice(0, events);
+  const others = ctx.all
+    .filter((c) => c.id !== company.id && ctx.profiles.has(c.id))
+    .map((c) => ({
+      ticker: c.ticker,
+      sim: exposureSimilarity(own, ctx.profiles.get(c.id)!),
+      sameSector: c.sector !== null && c.sector === company.sector ? 1 : 0,
+    }))
+    .filter((c): c is { ticker: string; sim: number; sameSector: number } => c.sim !== null);
+
+  const out: RawEvent[] = [];
+  for (const date of dates) {
+    const r0 = studyEvent({ ...ctx.get(company.ticker), eventDate: date });
+    if (!r0.ok) continue;
+    const ar0 = r0.ar.find((a) => a.offset === 0)?.value;
+    if (ar0 === undefined || ar0 === 0) continue;
+    const sign = Math.sign(ar0);
+    const ev: RawEvent = { date, ar0, similarity: [], signedMove: [], sameSector: [] };
+    for (const o of others) {
+      const r = studyEvent({ ...ctx.get(o.ticker), eventDate: date });
+      if (!r.ok) continue;
+      const a = r.ar.find((x) => x.offset === 0)?.value;
+      if (a === undefined) continue;
+      ev.similarity.push(o.sim);
+      ev.signedMove.push(a * sign);
+      ev.sameSector.push(o.sameSector);
+    }
+    out.push(ev);
+  }
+  return out;
+}
+
 /**
  * When `ticker` reports earnings, do stocks whose hidden exposures resemble its own move with it? For each of its last
  * earnings days we line up every other profiled stock's abnormal return (times the sign of the company's own) against
@@ -117,65 +190,24 @@ export async function getSpillover(
   opts: { events?: number; now?: Date } = {},
 ): Promise<Spillover> {
   const { events = DEFAULT_EVENTS, now = new Date() } = opts;
-  const all = await db.select().from(companies);
-  const company = all.find((c) => c.ticker === tickerInput.toUpperCase());
+  const ctx = await spilloverContext(db, now);
+  const company = ctx.all.find((c) => c.ticker === tickerInput.toUpperCase());
   if (!company) throw new AppError("not_found", "Company not found");
-  const profiles = await exposureMap(db);
-  const own = profiles.get(company.id);
-  if (!own) throw new AppError("bad_request", "This company has no exposure profile");
+  if (!ctx.profiles.has(company.id))
+    throw new AppError("bad_request", "This company has no exposure profile");
 
-  const since = new Date(now.getTime() - STUDY_YEARS * 365 * 86_400_000);
-  const dates = (await earningsDates(db, company.id, since, now)).slice(0, events);
-  const priceFrom = new Date(since.getTime() - ESTIMATION_LOOKBACK_DAYS * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-  const market = await loadMarket(db, priceFrom, now.toISOString().slice(0, 10));
-
-  const series = new Map<string, ReturnType<typeof seriesFor>>();
-  const get = (t: string) => {
-    let s = series.get(t);
-    if (!s) series.set(t, (s = seriesFor(market, t)));
-    return s;
-  };
-  const others = all
-    .filter((c) => c.id !== company.id && profiles.has(c.id))
-    .map((c) => ({
-      ticker: c.ticker,
-      sim: exposureSimilarity(own, profiles.get(c.id)!),
-      sameSector: c.sector !== null && c.sector === company.sector ? 1 : 0,
-    }))
-    .filter((c): c is { ticker: string; sim: number; sameSector: number } => c.sim !== null);
-
-  const out: SpilloverEvent[] = [];
-  for (const date of dates) {
-    const r0 = studyEvent({ ...get(company.ticker), eventDate: date });
-    if (!r0.ok) continue;
-    const ar0 = r0.ar.find((a) => a.offset === 0)?.value;
-    if (ar0 === undefined || ar0 === 0) continue;
-    const sign = Math.sign(ar0);
-    const xs: number[] = [];
-    const ys: number[] = [];
-    const sector: number[] = [];
-    for (const o of others) {
-      const r = studyEvent({ ...get(o.ticker), eventDate: date });
-      if (!r.ok) continue;
-      const a = r.ar.find((x) => x.offset === 0)?.value;
-      if (a === undefined) continue;
-      xs.push(o.sim);
-      ys.push(a * sign);
-      sector.push(o.sameSector);
-    }
-    const f = spilloverFigures(xs, ys, { sameSector: sector });
-    out.push({
-      date,
-      ar0,
+  const out: SpilloverEvent[] = (await collectEvents(db, ctx, company, events)).map((e) => {
+    const f = spilloverFigures(e.similarity, e.signedMove, { sameSector: e.sameSector });
+    return {
+      date: e.date,
+      ar0: e.ar0,
       stocks: f.n,
       correlation: f.correlation,
       partialCorrelation: f.partialCorrelation,
       similarMean: f.similarMean,
       dissimilarMean: f.dissimilarMean,
-    });
-  }
+    };
+  });
 
   const cors = out.map((e) => e.correlation).filter((c): c is number => c !== null);
   const partials = out.map((e) => e.partialCorrelation).filter((c): c is number => c !== null);
@@ -191,6 +223,55 @@ export async function getSpillover(
     partialSummary: partials.length ? aggregate(partials, 1) : null,
     similarMean: avg(out.map((e) => e.similarMean)),
     dissimilarMean: avg(out.map((e) => e.dissimilarMean)),
+    minStocks: MIN_SPILLOVER_STOCKS,
+  };
+}
+
+/** Monday of the week containing an ISO date: events in the same week share market conditions. */
+export function weekKey(date: string): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+export interface PooledReport extends PooledSpillover {
+  /** Companies whose earnings days were pooled. */
+  companies: string[];
+  eventsPerCompany: number;
+  minStocks: number;
+}
+
+/**
+ * The same test over many companies at once. Every earnings day of every eligible bellwether is pooled, events within
+ * the same calendar week count as one observation for the uncertainty, and a placebo that reshuffles the similarity
+ * scores shows what the result looks like with no real relationship.
+ */
+export async function getPooledSpillover(
+  db: Db,
+  opts: { events?: number; permutations?: number; now?: Date } = {},
+): Promise<PooledReport> {
+  const { events = DEFAULT_EVENTS, permutations = 200, now = new Date() } = opts;
+  const ctx = await spilloverContext(db, now);
+  const inputs: PooledEventInput[] = [];
+  const used: string[] = [];
+  for (const t of BELLWETHERS) {
+    const c = ctx.all.find((r) => r.ticker === t);
+    if (!c || !ctx.profiles.has(c.id)) continue;
+    const raw = await collectEvents(db, ctx, c, events);
+    if (raw.length < MIN_ELIGIBLE_EVENTS) continue;
+    used.push(t);
+    for (const e of raw)
+      inputs.push({
+        cluster: weekKey(e.date),
+        similarity: e.similarity,
+        signedMove: e.signedMove,
+        sameSector: e.sameSector,
+      });
+  }
+  return {
+    ...pooledSpillover(inputs, { permutations }),
+    companies: used,
+    eventsPerCompany: events,
     minStocks: MIN_SPILLOVER_STOCKS,
   };
 }

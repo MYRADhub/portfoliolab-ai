@@ -26,23 +26,23 @@ When the second number is much smaller than the first, your portfolio is less di
 
 ## What you can do with it
 
-| Page                  | What it answers                                                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Dashboard**         | What changed, and what should I watch? Plain-language cards, most important first.                                                   |
-| **Terminal**          | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                                      |
-| **Exposures**         | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                                         |
-| **Correlation**       | How closely do my holdings move together, and does that get worse when markets fall?                                                 |
-| **Stress Lab**        | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                 |
-| **Discovery**         | Which companies would spread my hidden exposures across more forces?                                                                 |
-| **Market comparison** | How does my portfolio behave versus the S&P 500? Beta, alpha, tracking error, and how much of the market's good and bad days I take. |
-| **Compare**           | Two of my portfolios side by side: performance, risk, hidden concentration and how much they overlap.                                |
-| **Rebalance Lab**     | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                                  |
-| **Simulation**        | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.                             |
-| **News**              | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                            |
-| **Reactions**         | How did stocks actually move around earnings and SEC filings, after removing what the market did?                                    |
-| **Research**          | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                                   |
-| **Report**            | A one-page summary of a portfolio you can print or save as a PDF.                                                                    |
-| **Guide**             | Every term explained in plain language, plus a guided tour of the app.                                                               |
+| Page                  | What it answers                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**         | What changed, and what should I watch? Plain-language cards, most important first.                                                    |
+| **Terminal**          | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                                       |
+| **Exposures**         | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                                          |
+| **Correlation**       | How closely do my holdings move together, and does that get worse when markets fall?                                                  |
+| **Stress Lab**        | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                  |
+| **Discovery**         | Which companies would spread my hidden exposures across more forces?                                                                  |
+| **Market comparison** | How does my portfolio behave versus the S&P 500? Beta, alpha, tracking error, and how much of the market's good and bad days I take.  |
+| **Compare**           | Two of my portfolios side by side: performance, risk, hidden concentration and how much they overlap.                                 |
+| **Rebalance Lab**     | Would different weights have given a smoother ride? Compares your weights with simple alternatives.                                   |
+| **Simulation**        | What range of outcomes is normal? Thousands of possible futures built from your portfolio's own history.                              |
+| **News**              | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                             |
+| **Reactions**         | How did stocks actually move around earnings and SEC filings, after removing what the market did? Includes the pooled spillover test. |
+| **Research**          | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                                    |
+| **Report**            | A one-page summary of a portfolio you can print or save as a PDF.                                                                     |
+| **Guide**             | Every term explained in plain language, plus a guided tour of the app.                                                                |
 
 New here? The app opens with a short **guided tour**, a **getting-started checklist**, and a collapsed **"How to read this"** note on every page.
 
@@ -104,11 +104,13 @@ Each step can be repeated safely and picks up where it stopped. Real data lives 
 
 ## Does the idea hold up? A real test
 
-When a large company reports earnings, do stocks with similar hidden exposures move the same way, more than stocks with different exposures do? Over 121 real earnings days for 11 large companies:
+When a large company reports earnings, do stocks with similar hidden exposures move the same way, more than stocks with different exposures do? Over 119 real earnings days for 11 large companies:
 
-- The average correlation is **+0.055** (statistically distinguishable from zero).
+- The average correlation is **+0.056**.
 - After removing what "same sector" explains, it is **+0.041**, so exposures add something the sector label does not.
-- It is small, it varies by company (strongest among chip makers, absent for some), and the events are not fully independent.
+- Earnings days in the same week are not independent, so they are counted once: 119 days become 70 independent weeks, and the result still holds (t = 4.1).
+- A **placebo** reshuffles which stock gets which similarity score, 200 times. Shuffled scores average 0.000 and never matched the real figure (p = 0.005, the smallest value 200 runs can give).
+- It is small (the most-similar fifth of stocks moves about 0.28 points more with the company than the least-similar fifth), it varies by company, and the scores are AI drafts.
 
 So this is suggestive evidence, not proof. The full write-up, with the caveats, is in `docs/DECISIONS.md` (section 26) and the page is on **Reactions**.
 

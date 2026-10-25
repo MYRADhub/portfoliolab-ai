@@ -14,6 +14,7 @@ import { pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { EventStudyReport } from "@/server/events";
 import { HowToRead } from "@/components/ui/how-to-read";
+import { PooledSpilloverCard } from "./pooled-spillover-card";
 import { SpilloverCard } from "./spillover-card";
 import { Loading } from "@/components/ui/skeleton";
 
@@ -190,6 +191,7 @@ export function EventsView() {
         </CardContent>
       </Card>
 
+      <PooledSpilloverCard />
       <SpilloverCard />
 
       <p className="max-w-3xl text-xs text-muted-foreground">

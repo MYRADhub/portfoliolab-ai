@@ -244,3 +244,116 @@ export function spilloverFigures(
     dissimilarMean: avg(order.slice(-k)),
   };
 }
+
+export interface PooledEventInput {
+  /** Events sharing a cluster (for example the same calendar week) are not independent, so they count once. */
+  cluster: string;
+  similarity: readonly number[];
+  signedMove: readonly number[];
+  sameSector: readonly number[];
+}
+
+export interface PooledSpillover {
+  /** Events with enough comparable stocks to produce a correlation. */
+  events: number;
+  clusters: number;
+  /** Mean per-event correlation and sector-adjusted correlation, with the t-statistic that treats every event as independent. */
+  correlation: Aggregate | null;
+  partialCorrelation: Aggregate | null;
+  /** The same means, but every cluster counts once: the honest uncertainty when events on nearby days share market moves. */
+  clusteredCorrelation: Aggregate | null;
+  clusteredPartial: Aggregate | null;
+  /** Mean over events of (similar fifth minus dissimilar fifth) signed move. */
+  similarMinusDissimilar: number | null;
+  placebo: {
+    permutations: number;
+    /** Share of shuffled runs whose pooled mean was at least as large as the real one (one-sided, with the +1 correction). */
+    pCorrelation: number | null;
+    pPartial: number | null;
+    /** Mean and spread of the pooled correlation across shuffled runs: where "no relationship" sits. */
+    nullMean: number | null;
+    nullSd: number | null;
+  };
+}
+
+const average = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+function clusterMeans(items: readonly { cluster: string; value: number }[]): number[] {
+  const groups = new Map<string, number[]>();
+  for (const i of items) groups.set(i.cluster, [...(groups.get(i.cluster) ?? []), i.value]);
+  return [...groups.values()].map(average);
+}
+
+/**
+ * Pools many earnings events into one test of "do stocks with similar hidden exposures move together?". Three guards
+ * against fooling ourselves: events are grouped into clusters (such as calendar weeks) and each cluster counts once,
+ * so shared market swings do not inflate confidence; a sector control separates exposures from the sector label; and
+ * a placebo reshuffles which stock gets which similarity score inside every event, many times, to show how large the
+ * pooled correlation looks when there is truly no relationship.
+ */
+export function pooledSpillover(
+  events: readonly PooledEventInput[],
+  opts: { permutations?: number; seed?: number; minStocks?: number } = {},
+): PooledSpillover {
+  const { permutations = 200, seed = 1, minStocks = MIN_SPILLOVER_STOCKS } = opts;
+  const real = events.map((e) => ({
+    e,
+    f: spilloverFigures(e.similarity, e.signedMove, { sameSector: e.sameSector, minStocks }),
+  }));
+  const usable = real.filter((r) => r.f.correlation !== null);
+  const corrItems = usable.map((r) => ({ cluster: r.e.cluster, value: r.f.correlation! }));
+  const partialItems = usable
+    .filter((r) => r.f.partialCorrelation !== null)
+    .map((r) => ({ cluster: r.e.cluster, value: r.f.partialCorrelation! }));
+  const gaps = usable
+    .filter((r) => r.f.similarMean !== null && r.f.dissimilarMean !== null)
+    .map((r) => r.f.similarMean! - r.f.dissimilarMean!);
+
+  const agg = (xs: readonly number[]) => (xs.length ? aggregate(xs, seed) : null);
+  const base: PooledSpillover = {
+    events: usable.length,
+    clusters: new Set(usable.map((r) => r.e.cluster)).size,
+    correlation: agg(corrItems.map((i) => i.value)),
+    partialCorrelation: agg(partialItems.map((i) => i.value)),
+    clusteredCorrelation: agg(clusterMeans(corrItems)),
+    clusteredPartial: agg(clusterMeans(partialItems)),
+    similarMinusDissimilar: gaps.length ? average(gaps) : null,
+    placebo: { permutations: 0, pCorrelation: null, pPartial: null, nullMean: null, nullSd: null },
+  };
+  if (usable.length === 0 || permutations <= 0) return base;
+
+  const rand = mulberry32(seed + 7919);
+  const nullCorr: number[] = [];
+  const nullPartial: number[] = [];
+  for (let p = 0; p < permutations; p++) {
+    const cs: number[] = [];
+    const ps: number[] = [];
+    for (const { e } of usable) {
+      const sim = [...e.similarity];
+      for (let i = sim.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [sim[i], sim[j]] = [sim[j]!, sim[i]!];
+      }
+      const f = spilloverFigures(sim, e.signedMove, { sameSector: e.sameSector, minStocks });
+      if (f.correlation !== null) cs.push(f.correlation);
+      if (f.partialCorrelation !== null) ps.push(f.partialCorrelation);
+    }
+    if (cs.length) nullCorr.push(average(cs));
+    if (ps.length) nullPartial.push(average(ps));
+  }
+  const pValue = (nulls: readonly number[], observed: number | undefined) =>
+    observed === undefined || nulls.length === 0
+      ? null
+      : (1 + nulls.filter((x) => x >= observed).length) / (1 + nulls.length);
+  const sd = nullCorr.length >= 2 ? stdev(nullCorr) : null;
+  return {
+    ...base,
+    placebo: {
+      permutations,
+      pCorrelation: pValue(nullCorr, base.correlation?.mean),
+      pPartial: pValue(nullPartial, base.partialCorrelation?.mean),
+      nullMean: nullCorr.length ? average(nullCorr) : null,
+      nullSd: sd,
+    },
+  };
+}

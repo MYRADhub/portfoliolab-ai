@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregate,
   fitMarketModel,
+  pooledSpillover,
   reactionZ,
   spilloverFigures,
   studyEvent,
@@ -229,5 +230,84 @@ describe("spilloverFigures", () => {
     expect(flat.similarMean).toBeCloseTo(0.01, 12);
     expect(() => spilloverFigures([1, 2], [1])).toThrow();
     expect(() => spilloverFigures([1, 2], [1, 2], { sameSector: [1] })).toThrow();
+  });
+});
+
+describe("pooledSpillover", () => {
+  const stocks = 40;
+  const sim = Array.from({ length: stocks }, (_, i) => i / stocks);
+  const sector = sim.map((_, i) => (i % 5 === 0 ? 1 : 0));
+  const make = (cluster: string, slope: number, seed: number) => {
+    const r = rng(seed);
+    return {
+      cluster,
+      similarity: sim,
+      signedMove: sim.map((s) => slope * s + 0.5 * r()),
+      sameSector: sector,
+    };
+  };
+
+  it("finds a built-in relationship and rejects it as chance under the placebo", () => {
+    const events = Array.from({ length: 12 }, (_, i) => make(`w${i}`, 1, 100 + i));
+    const r = pooledSpillover(events, { permutations: 100, minStocks: 10 });
+    expect(r.events).toBe(12);
+    expect(r.clusters).toBe(12);
+    expect(r.correlation!.mean).toBeGreaterThan(0.5);
+    expect(r.partialCorrelation!.mean).toBeGreaterThan(0.5);
+    expect(r.placebo.pCorrelation).toBeLessThan(0.05);
+    expect(r.placebo.permutations).toBe(100);
+    expect(Math.abs(r.placebo.nullMean!)).toBeLessThan(0.1);
+    expect(r.similarMinusDissimilar!).toBeGreaterThan(0);
+  });
+
+  it("does not call pure noise a finding", () => {
+    const events = Array.from({ length: 12 }, (_, i) => make(`w${i}`, 0, 500 + i));
+    const r = pooledSpillover(events, { permutations: 200, minStocks: 10 });
+    expect(Math.abs(r.correlation!.mean)).toBeLessThan(0.15);
+    expect(r.placebo.pCorrelation).toBeGreaterThan(0.05);
+  });
+
+  it("counts events in one cluster once, which widens the t-statistic's denominator", () => {
+    const events = [
+      ...Array.from({ length: 6 }, (_, i) => make("same-week", 0.3, 900 + i)),
+      ...Array.from({ length: 6 }, (_, i) => make(`other${i}`, 0.3, 950 + i)),
+    ];
+    const r = pooledSpillover(events, { permutations: 0, minStocks: 10 });
+    expect(r.events).toBe(12);
+    expect(r.clusters).toBe(7);
+    expect(r.clusteredCorrelation!.n).toBe(7);
+    expect(r.correlation!.n).toBe(12);
+    // the same-week events collapse to their average
+    const same = events
+      .slice(0, 6)
+      .map((e) => pooledSpillover([e], { permutations: 0, minStocks: 10 }).correlation!.mean);
+    const others = events
+      .slice(6)
+      .map((e) => pooledSpillover([e], { permutations: 0, minStocks: 10 }).correlation!.mean);
+    const expected = (same.reduce((a, b) => a + b, 0) / 6 + others.reduce((a, b) => a + b, 0)) / 7;
+    close(r.clusteredCorrelation!.mean, expected);
+  });
+
+  it("is repeatable for a given seed and skips events with too few stocks", () => {
+    const events = [
+      make("a", 1, 1),
+      make("b", 1, 2),
+      { cluster: "c", similarity: [0.1, 0.9], signedMove: [0, 1], sameSector: [0, 1] },
+    ];
+    const a = pooledSpillover(events, { permutations: 50, seed: 3, minStocks: 10 });
+    const b = pooledSpillover(events, { permutations: 50, seed: 3, minStocks: 10 });
+    expect(a).toEqual(b);
+    expect(a.events).toBe(2);
+  });
+
+  it("returns nulls when nothing is usable", () => {
+    const r = pooledSpillover([], {});
+    expect(r).toMatchObject({
+      events: 0,
+      clusters: 0,
+      correlation: null,
+      clusteredCorrelation: null,
+    });
+    expect(r.placebo.pCorrelation).toBeNull();
   });
 });

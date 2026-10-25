@@ -88,7 +88,7 @@ Per portfolio      analytics  correlation  exposures  terminal  insights  radar 
                    move  move/explain  explain  explain-tool  assistant
                    stress (GET catalog, POST run)  discovery  whatif  rebalance  simulation  benchmark
 Research           GET /api/research/:ticker
-Reactions          GET /api/events   GET /api/events/spillover
+Reactions          GET /api/events   GET /api/events/spillover  (?ticker= single company, ?pooled=1 all)
 Review (token)     GET /api/review/summary|companies   GET|PUT /api/review/companies/:ticker
 Study              /api/experiment, enroll, universe, preview, submit, events, participant,
                    export and results (admin token)
@@ -107,16 +107,16 @@ All handlers go through `route()` (`server/errors.ts`) which assigns a request i
 
 ## Where to find a calculation
 
-| Question                         | Where                                                                              |
-| -------------------------------- | ---------------------------------------------------------------------------------- |
-| How is concentration measured?   | `finance/exposure.ts` (factor HHI over normalized absolute net loadings; ADR 0004) |
-| How is news scored?              | `finance/relevance.ts` (10 x exposure match x impact x recency)                    |
-| What is an abnormal return?      | `finance/eventstudy.ts` (market model on days -250 to -30, no look-ahead)          |
-| Spillover test                   | `finance/eventstudy.ts` `spilloverFigures`, `server/spillover.ts`                  |
-| Stress impact                    | `finance/stress.ts` (linear, 3% per exposure point under a full shock)             |
-| Lowest-volatility mix            | `finance/optimize.ts` (accelerated projected gradient on a capped simplex)         |
-| Simulation                       | `finance/simulation.ts` (circular block bootstrap, optional re-centering)          |
-| Study randomization and analysis | `finance/experiment.ts`, `server/experiment.ts`                                    |
+| Question                         | Where                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| How is concentration measured?   | `finance/exposure.ts` (factor HHI over normalized absolute net loadings; ADR 0004)                            |
+| How is news scored?              | `finance/relevance.ts` (10 x exposure match x impact x recency)                                               |
+| What is an abnormal return?      | `finance/eventstudy.ts` (market model on days -250 to -30, no look-ahead)                                     |
+| Spillover test                   | `finance/eventstudy.ts` `spilloverFigures`, `pooledSpillover` (week clusters, placebo), `server/spillover.ts` |
+| Stress impact                    | `finance/stress.ts` (linear, 3% per exposure point under a full shock)                                        |
+| Lowest-volatility mix            | `finance/optimize.ts` (accelerated projected gradient on a capped simplex)                                    |
+| Simulation                       | `finance/simulation.ts` (circular block bootstrap, optional re-centering)                                     |
+| Study randomization and analysis | `finance/experiment.ts`, `server/experiment.ts`                                                               |
 
 ## Testing
 

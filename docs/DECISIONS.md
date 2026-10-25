@@ -765,6 +765,32 @@ Green marks the better value in each row, and the page says that is a descriptio
 
 ---
 
+## 30. Pooled spillover test with stricter checks (added 2026-10-25)
+
+**30.1 One test over every large company.** Final. Who: Me.
+The Reactions page now has an "All large companies pooled" card above the single-company one. It combines the last 12 earnings days of each eligible bellwether (11 on real data, 119 days) into one test of the question from section 26. The math is `pooledSpillover` in `packages/finance`; the service reuses the same per-event collection as the single-company test, so the two cannot drift apart.
+
+**30.2 Events in the same week count once.** Final. Who: Me.
+Section 26 admitted that earnings days are not independent: companies report in clumps, and the whole market moves on the same days. I group events by calendar week and average inside each week before working out the t-statistic. Real result: 119 days collapse to 70 independent weeks, and the sector-adjusted t goes from 3.9 to 4.1, so the clustering did not weaken the finding. Calendar week is a coarse stand-in for "same market conditions"; it is not a full cluster-robust covariance.
+
+**30.3 A placebo.** Final. Who: Me.
+Inside every event, the similarity scores are reshuffled among the stocks (200 times, seeded) and the pooled correlation is recomputed. The p-value is the share of shuffled runs that did at least as well as the real one, with a +1 correction, so with 200 runs the smallest possible value is 0.005. Real result: shuffled runs average 0.000 with a spread of 0.004, against a real mean of +0.056 raw and +0.041 sector-adjusted, so p = 0.005 for both. This shows the link between a stock's similarity score and its move is not luck of the draw; it does not show the scores are right, only that they carry information.
+
+**30.4 What this does not show.** Final. Who: Me.
+The effect is small: the average gap between the most-similar and least-similar fifth of stocks is 0.28 percentage points on the event day. The exposure scores are AI drafts. The test says the scores carry information about real moves, not that a portfolio built on them would earn more. The page says so in its "How the pooled test works" note, and the verdict is worded to match: it claims a finding only when the clustered sector-adjusted t is at least 2 and the placebo p is below 0.05.
+
+**30.5 A shared cache.** Final. Who: Me.
+The pooled request reads every bellwether's earnings days (about 5 seconds on real data), so the route keeps one result for 10 minutes.
+
+### Mistakes in this slice
+
+- My new help text repeated the title of the existing card as a phrase, which broke a browser test that looks that title up by text. I reworded the help text instead of loosening the test.
+- `pnpm test` had been failing in `apps/web` because the unit runner picked up the real-data browser tests under `e2e-real/`; they are now excluded like `e2e/`.
+- The real-data sample test timed out once when run straight after the heavier tests (it needs about 50 seconds alone). Its time limit is now generous.
+- The README quoted "121 earnings days"; the window moves with the date and the count is now 119. The README states the current figures.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

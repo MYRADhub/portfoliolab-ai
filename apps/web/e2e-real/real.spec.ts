@@ -152,6 +152,24 @@ test.describe("real data through the API", () => {
     expect(eligible).toEqual(expect.arrayContaining(["NVDA", "AAPL", "MSFT"]));
   });
 
+  test("the pooled spillover test finds a small, placebo-robust relationship", async ({
+    request,
+  }) => {
+    const r = (await (await request.get("/api/events/spillover?pooled=1")).json()) as Json;
+    expect(r.events).toBeGreaterThan(80);
+    expect(r.clusters).toBeGreaterThan(40);
+    expect(r.clusters).toBeLessThanOrEqual(r.events);
+    expect(r.companies.length).toBeGreaterThanOrEqual(8);
+    // clustering by week can only reduce the number of observations
+    expect(r.clusteredPartial.n).toBe(r.clusters);
+    expect(r.partialCorrelation.mean).toBeGreaterThan(0);
+    expect(r.partialCorrelation.mean).toBeLessThan(0.2);
+    expect(r.clusteredPartial.t).toBeGreaterThan(2);
+    // shuffled scores centre on zero, far from the real figure
+    expect(Math.abs(r.placebo.nullMean)).toBeLessThan(0.01);
+    expect(r.placebo.pPartial).toBeLessThan(0.05);
+  });
+
   test("the review tool sees every company as drafted, illustrative or reviewed, none missing", async ({
     request,
   }) => {
@@ -176,6 +194,7 @@ async function session(request: APIRequestContext) {
 
 test.describe("sample portfolios on real data", () => {
   test("every analysis returns finite, plausible numbers for every sample", async ({ request }) => {
+    test.setTimeout(300_000); // about 50 s alone, but the real database is shared with whatever else is running
     const portfolios = await session(request);
     const finite = (v: unknown, path: string) => {
       if (typeof v === "number") expect(Number.isFinite(v), path).toBe(true);
@@ -337,5 +356,8 @@ test.describe("pages with real data", () => {
     ).toBeVisible();
     await page.getByLabel("Company reporting earnings").waitFor({ timeout: 60_000 });
     await expect(page.getByTestId("spillover-verdict")).toBeVisible({ timeout: 90_000 });
+    await expect(page.getByTestId("pooled-verdict")).toContainText("Pooled across companies", {
+      timeout: 90_000,
+    });
   });
 });
