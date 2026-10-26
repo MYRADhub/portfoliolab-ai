@@ -2,6 +2,18 @@
 
 **Owning different stocks does not mean owning different risks.** PortfolioLab shows you the hidden forces that your investments really depend on, which news actually matters to you, and how stocks have really reacted to events, then explains it all in plain English.
 
+**Read the paper:** [Different Stocks, Same Risks? Measuring Hidden Economic Exposures in the S&P 500 with AI-Drafted Scores](docs/paper.pdf) (7 pages). Every number in it is produced by this code and checked by a separate Python implementation.
+
+## What the research found
+
+Measured on real data for all 503 S&P 500 companies (prices through 2026-10-20):
+
+- **Sector spread tells you almost nothing about economic spread.** Across 2,000 random 10-stock portfolios, the correlation between how many sectors a portfolio spans and how many economic forces it depends on is 0.03. Portfolios spread across eight or more sectors are no better spread across forces than the rest.
+- **The AI-drafted exposure scores carry real information.** Each day over a year, they explained 17.2% of the differences between stocks' returns, against 13.1% for sector labels, and did better on 65% of days.
+- **Similar companies move together on news, beyond their sector.** On 121 earnings days of 11 large companies, stocks with similar exposures moved with the reporting company even after removing what sharing its sector explains (t = 4.38 with days in the same week counted once; none of 2,000 shuffled placebos came close). The effect is small.
+
+**Still open, with the measurement built:** how often the AI's scores agree with a person who scores the same 33 companies without seeing them (the blind gold set), and whether showing people their hidden exposures changes how they build a portfolio (a randomized study, pre-registered, waiting for approval; see `docs/study-protocol.md`).
+
 |                                                |                                                        |
 | ---------------------------------------------- | ------------------------------------------------------ |
 | ![Dashboard](docs/screenshots/dashboard.png)   | ![Hidden exposure map](docs/screenshots/exposures.png) |
@@ -22,7 +34,7 @@ Most tools show you sectors, weights and past returns. PortfolioLab goes one ste
 - **Effective sectors**: how many groups you look spread across by industry.
 - **Effective forces**: how many independent economic forces you are really exposed to.
 
-When the second number is much smaller than the first, your portfolio is less diversified than it looks.
+The two numbers are measured on different scales, so compare each with what it could be, not with each other. The point is that the first does not predict the second: a portfolio can look well spread by sector and still rest on two or three forces, so the second number has to be measured.
 
 ## What you can do with it
 
@@ -107,15 +119,15 @@ Each step can be repeated safely and picks up where it stopped. Real data lives 
 
 ## Does the idea hold up? A real test
 
-When a large company reports earnings, do stocks with similar hidden exposures move the same way, more than stocks with different exposures do? Over 119 real earnings days for 11 large companies:
+When a large company reports earnings, do stocks with similar hidden exposures move the same way, more than stocks with different exposures do? Over 121 real earnings days for 11 large companies:
 
-- The average correlation is **+0.056**.
-- After removing what "same sector" explains, it is **+0.041**, so exposures add something the sector label does not.
-- Earnings days in the same week are not independent, so they are counted once: 119 days become 70 independent weeks, and the result still holds (t = 4.1).
-- A **placebo** reshuffles which stock gets which similarity score, 200 times. Shuffled scores average 0.000 and never matched the real figure (p = 0.005, the smallest value 200 runs can give).
-- It is small (the most-similar fifth of stocks moves about 0.28 points more with the company than the least-similar fifth), it varies by company, and the scores are AI drafts.
+- The average correlation is **+0.059**.
+- After removing what "same sector" explains, it is **+0.046**, so exposures add something the sector label does not.
+- Earnings days in the same week are not independent, so they are counted once: 121 days become 70 independent weeks, and the result still holds (t = 4.38).
+- A **placebo** reshuffles which stock gets which similarity score. Shuffled scores average zero; in the paper's run none of 2,000 shuffles matched the real figure.
+- It is small, it varies by company, and the scores are AI drafts. The language model may also know, from its training text, which companies moved together in this period, so this shows the scores describe the period, not that they would have predicted it.
 
-So this is suggestive evidence, not proof. The full write-up, with the caveats, is in `docs/DECISIONS.md` (section 26) and the page is on **Reactions**.
+So this is evidence, not proof. The method and caveats are in [the paper](docs/paper.pdf) (section 4) and `docs/DECISIONS.md` (sections 26 and 30), and the live test is on the **Evidence** and **Reactions** pages.
 
 ---
 
@@ -165,8 +177,9 @@ Developers: start with `docs/ARCHITECTURE.md`.
 ## Checking the code
 
 ```sh
-pnpm format:check && pnpm lint && pnpm typecheck && pnpm test     # about 390 unit tests
-pnpm --filter @portfolio-lab/web e2e                               # about 320 browser tests
+pnpm format:check && pnpm lint && pnpm typecheck && pnpm test     # about 490 unit tests
+pnpm --filter @portfolio-lab/web e2e                               # about 350 browser tests
+pnpm paper                                                         # rebuild the paper from real data and re-check it in Python
 pnpm --filter @portfolio-lab/web e2e:real                          # 16 read-only checks against the real-data database
 ```
 
@@ -184,10 +197,10 @@ Tests that need the database require `pnpm db:up`. The real-data checks need the
 ## Honest limitations
 
 - Prices come from an unofficial free source. Use a licensed source before anything public or commercial.
-- Hidden-exposure scores are judgments, not measurements. Most are AI drafts awaiting human review, and the 12-force list is a starting point.
+- Hidden-exposure scores are judgments, not measurements. Most are AI drafts awaiting human review, and the 12-force list is a starting point. The model that drafted them may know how companies moved in the period tested (look-ahead), so the tests show the scores describe that period, not that they predict.
 - Rebalance results look backwards and were fitted on the same period they describe. Simulations assume the future is as bumpy as the last three years.
 - Event studies use an equal-weighted average of other S&P 500 stocks as "the market", not an official index.
-- The research study has no ethics approval yet.
+- The research study has no approval yet. It refuses to enrol anyone until the approval details are configured.
 - The CI workflow in `.github/workflows` is set up, but its first run (October 2026) was refused by GitHub because of an account billing or spending-limit issue, so every check so far was run locally. Fix the billing setting, then re-run it.
 
 ## More to read
@@ -195,7 +208,9 @@ Tests that need the database require `pnpm db:up`. The real-data checks need the
 - `docs/OVERVIEW.md`: what it does and how it was checked, for readers new to the project.
 - `docs/ARCHITECTURE.md`: how the pieces fit, tables, routes and where each calculation lives.
 - `docs/DECISIONS.md`: every decision in plain language, who made it, and every mistake found along the way.
+- `docs/paper.pdf` and `paper/`: the research paper, the exported data behind every number in it, and the independent Python check.
 - `docs/experiment-design.md`: the research study's design and ethics checklist.
+- `docs/study-protocol.md`: the protocol to give the person approving the study, with the consent text, recruitment message and a parent or guardian form.
 - `docs/factor-taxonomy.md` and `docs/event-taxonomy.md`: the lists of economic forces and event types (drafts awaiting review).
 - `docs/adr/`: short technical decision records.
 - `ROADMAP.md` and `description.md`: the original plan and product description.
