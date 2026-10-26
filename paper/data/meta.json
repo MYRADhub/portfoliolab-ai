@@ -1,0 +1,12 @@
+{
+  "dataThrough": "2026-10-20",
+  "companies": 503,
+  "profiled": 503,
+  "exposureRows": 1717,
+  "randomPortfolios": {
+    "n": 2000,
+    "size": 10,
+    "seed": 20261026
+  },
+  "placeboShuffles": 2000
+}

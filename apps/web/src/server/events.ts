@@ -157,14 +157,22 @@ export function seriesFor(market: Market, ticker: string) {
  * the event day, plus the average reaction for each event type. The market proxy is the equal-weighted average of
  * the other stocks in our price universe, so with a small universe the results are rough.
  */
-export async function getEventStudy(db: Db, opts: { now?: Date } = {}): Promise<EventStudyReport> {
+/** `allReactions` returns every studied reaction instead of the most unusual few (for the paper's export). */
+export async function getEventStudy(
+  db: Db,
+  opts: { now?: Date; allReactions?: boolean } = {},
+): Promise<EventStudyReport> {
   if (!opts.now && cached && Date.now() - cached.at < CACHE_MS) return cached.report;
-  const report = await computeEventStudy(db, opts.now ?? new Date());
+  const report = await computeEventStudy(db, opts.now ?? new Date(), opts.allReactions ?? false);
   if (!opts.now) cached = { at: Date.now(), report };
   return report;
 }
 
-async function computeEventStudy(db: Db, now: Date): Promise<EventStudyReport> {
+async function computeEventStudy(
+  db: Db,
+  now: Date,
+  allReactions: boolean,
+): Promise<EventStudyReport> {
   const to = now.toISOString().slice(0, 10);
   const from = new Date(now.getTime() - STUDY_YEARS * 365 * 86_400_000).toISOString().slice(0, 10);
   const priceFrom = new Date(Date.parse(from) - ESTIMATION_LOOKBACK_DAYS * 86_400_000)
@@ -295,7 +303,7 @@ async function computeEventStudy(db: Db, now: Date): Promise<EventStudyReport> {
     eventsFound: found,
     eventsStudied: reactions.length,
     skipped,
-    reactions: reactions.slice(0, REACTIONS_SHOWN),
+    reactions: allReactions ? reactions : reactions.slice(0, REACTIONS_SHOWN),
     byType,
   };
 }

@@ -3,7 +3,7 @@ import type { RaterAgreement } from "@portfolio-lab/finance";
 import { getDraftAgreement } from "./agreement";
 import { EARNINGS_TYPES, getEventStudy } from "./events";
 import { estimateForces, FORCE_DAYS } from "./forces";
-import { getPooledSpilloverCached, type PooledReport } from "./spillover";
+import { getPooledSpillover, getPooledSpilloverCached, type PooledReport } from "./spillover";
 
 export type Verdict = "supported" | "not_supported" | "inconclusive" | "no_data";
 
@@ -82,7 +82,8 @@ export function judgeDrafts(
 export async function getEvidence(db: Db, opts: { now?: Date } = {}): Promise<Evidence> {
   const { now = new Date() } = opts;
   const [pooled, forces, events, agreement] = await Promise.all([
-    getPooledSpilloverCached(db),
+    // A fixed date (the paper) bypasses the cache so every figure uses the same window.
+    opts.now ? getPooledSpillover(db, { now }) : getPooledSpilloverCached(db),
     estimateForces(db, { now, days: FORCE_DAYS, held: [] }),
     getEventStudy(db, opts.now ? { now: opts.now } : {}),
     getDraftAgreement(db),

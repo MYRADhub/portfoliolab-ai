@@ -1,0 +1,104 @@
+{
+  "goldSize": 33,
+  "reviewers": [],
+  "ai": {
+    "companies": 0,
+    "cells": 0,
+    "exact": 0,
+    "weightedKappa": null,
+    "kappaInterval": null,
+    "presenceKappa": null,
+    "bothExposed": 0,
+    "signAgreement": null,
+    "meanAbsDiff": 0,
+    "aiForcesPerCompany": 0,
+    "humanForcesPerCompany": 0,
+    "byForce": [
+      {
+        "slug": "ai_infrastructure_capex",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "china_demand",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "consumer_spending",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "economic_growth",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "enterprise_it_spending",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "healthcare_spending",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "inflation",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "interest_rates",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "oil_price",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "semiconductor_demand",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "taiwan_supply_chain_risk",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      },
+      {
+        "slug": "usd_strength",
+        "aiExposed": 0,
+        "humanExposed": 0,
+        "presenceAgreement": 0,
+        "meanAbsDiff": 0
+      }
+    ]
+  },
+  "humans": null
+}

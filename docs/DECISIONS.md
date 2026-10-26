@@ -825,7 +825,7 @@ Because the aim is to show the idea holds up, the "Evidence" page runs three tes
 "Supported" means a stated bar was cleared, not that the idea is proven. Spillover: clustered sector-adjusted t at least 2 and placebo p below 0.05. Sectors: exposures explain more than sector labels and do better on at least 60% of days. Earnings: at least 15% of days move more than twice normal noise (about 5% would by chance), over at least 30 events. Below the thresholds the verdict is "Inconclusive" or "Not supported"; with too little data it says "Not enough data" rather than guessing. The bars are judgment calls; they are separate pure functions with unit tests so they can be changed in one place.
 
 **32.3 Real result today.** Final. Who: Me.
-All three are "Supported" on the real data (119 earnings days and 70 weeks, exposures 17.4% versus sectors 13.1%, a majority of earnings days unusual). The effect sizes are small and the exposure scores are AI drafts, which the caveats on the page say.
+All three are "Supported" on the real data (119 earnings days and 70 weeks, exposures 17.4% versus sectors 13.1%, a majority of earnings days unusual). Re-measured on 2026-10-26 after the 24 demo profiles were replaced by AI drafts (section 34.1): still all three, with 121 earnings days in 70 weeks (clustered sector-adjusted t 4.38), exposures 17.2% against sectors 13.1%, and 55% of 6,153 earnings days unusual. The effect sizes are small and the exposure scores are AI drafts, which the caveats on the page say.
 
 **32.4 Shared and cached.** Final. Who: Me.
 It needs no session and no portfolio. It re-runs three studies, so the result is cached for 10 minutes; the cache for the pooled test moved into the spillover service so both pages share it. The force estimate was split out of the page service (`estimateForces`) so the same regressions serve both pages.
@@ -906,6 +906,32 @@ After submitting, a participant sees which version they had and their portfolio'
 ### Mistakes in this slice
 
 - The roadmap listed the debrief screen and the signed cookie as not built, but both existed. I corrected the roadmap instead of rebuilding them.
+
+---
+
+## 36. The paper (added 2026-10-26)
+
+**36.1 A short research paper built from the app's own numbers.** Final. Who: Me.
+`paper/main.tex` (LaTeX, 7 pages, built with tectonic) writes up the hidden-concentration measure, the three tests, the blind gold-set protocol and the study design, with their limitations. `pnpm paper` exports every figure from the real-data database with the same functions the app uses (`apps/web/scripts/paper-export.mts` to `paper/data/`), runs `paper/check.py`, and typesets `docs/paper.pdf`. No number is typed into the text: `check.py` writes them as LaTeX macros, so rerunning on new data updates the paper, including the blind-agreement section once ten companies are scored.
+
+**36.2 An independent re-implementation, not a second copy.** Final. Who: Me.
+`check.py` uses only the Python standard library and recomputes, from the raw exports, the effective sectors, effective forces and top-force share of all 2,000 random portfolios, the earnings event counts, typical move and unusual share, and the weighted kappa; it stops with an error if any differs from the app's figure. Two implementations written separately agreeing is stronger evidence than a second run of the same code. It does not re-run the regressions or the spillover test, which would need numerical libraries.
+
+**36.3 A new finding, stated as found.** Final. Who: Me.
+2,000 random equal-weighted 10-stock portfolios (seeded) show that effective sectors and effective forces are nearly unrelated (Spearman 0.03), and portfolios touching eight or more sectors have the same median number of effective forces as the rest. That supports "a sector breakdown does not show economic concentration". It does not support the stronger "portfolios are less diversified than they look": the two counts have different maximums, and only 22% of random portfolios have fewer effective forces than effective sectors. The paper says exactly this.
+
+**36.4 Fixed dates and more shuffles for the paper.** Final. Who: Me.
+The export fixes "now" to the day after the last price so a rerun gives the same paper, passes that date to every study (the Evidence service now bypasses its cache when given a date), returns every earnings reaction instead of the 40 the page shows, and uses 2,000 placebo shuffles instead of 200 so the p-value is not stuck at its floor. None of the 2,000 matched the real value.
+
+**36.5 Wording I corrected while writing.** Final. Who: Me.
+I first wrote that the Evidence bars were "set before seeing the result". They were written down in section 32, after section 26 had already reported results, so the paper says they are written down and implemented as tested functions, not that they were pre-registered. Only the study is pre-registered.
+
+### Mistakes in this slice
+
+- The export script first failed because `apps/web` is a CommonJS package and the script uses top-level await; it is now an `.mts` file.
+- I read the force series as days by forces when it is forces by days.
+- The local TeX installation lacked common packages, so the build uses tectonic, which fetches them.
+- A LaTeX macro named `\kappa` would have replaced the Greek letter; it is `\kappaValue`.
 
 ---
 

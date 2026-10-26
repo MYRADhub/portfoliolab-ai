@@ -1,0 +1,14 @@
+{
+  "interest_rates": "Interest rates",
+  "inflation": "Inflation",
+  "usd_strength": "U.S. dollar strength",
+  "economic_growth": "Economic growth",
+  "oil_price": "Oil price",
+  "consumer_spending": "Consumer spending",
+  "enterprise_it_spending": "Enterprise IT spending",
+  "healthcare_spending": "Healthcare spending",
+  "china_demand": "China demand",
+  "ai_infrastructure_capex": "AI infrastructure spending",
+  "semiconductor_demand": "Semiconductor demand",
+  "taiwan_supply_chain_risk": "Taiwan supply chain risk"
+}

@@ -1,0 +1,122 @@
+{
+  "generatedFor": "2026-10-21",
+  "findings": [
+    {
+      "id": "spillover",
+      "question": "When a large company reports earnings, do stocks with similar hidden exposures move with it?",
+      "verdict": "supported",
+      "result": "Yes, slightly: similar stocks moved the same way, beyond what sector explains, and shuffled scores do not reproduce it.",
+      "figures": [
+        {
+          "label": "Earnings days pooled",
+          "value": "121 (11 companies)"
+        },
+        {
+          "label": "Independent weeks",
+          "value": "70"
+        },
+        {
+          "label": "Sector-adjusted correlation",
+          "value": "+0.046"
+        },
+        {
+          "label": "t-statistic counting each week once",
+          "value": "4.38"
+        },
+        {
+          "label": "Placebo p-value",
+          "value": "0.005"
+        }
+      ],
+      "caveats": [
+        "The effect is small.",
+        "Calendar weeks are a coarse way to account for days that share market conditions.",
+        "The exposure scores are AI drafts that no person has reviewed."
+      ],
+      "href": "/events"
+    },
+    {
+      "id": "sectors",
+      "question": "Do the hidden-exposure scores describe stocks better than sector labels?",
+      "verdict": "supported",
+      "result": "Yes: exposure scores explained more of the daily differences between stocks than sector labels did, on most days.",
+      "figures": [
+        {
+          "label": "Explained by exposure scores",
+          "value": "17.2%"
+        },
+        {
+          "label": "Explained by sector labels",
+          "value": "13.1%"
+        },
+        {
+          "label": "Days exposure scores did better",
+          "value": "65%"
+        },
+        {
+          "label": "Stocks per day",
+          "value": "501"
+        },
+        {
+          "label": "Days",
+          "value": "252"
+        }
+      ],
+      "caveats": [
+        "Both are fitted on the same day they are measured on, so this is not a forecast.",
+        "Both figures are adjusted for how many columns each uses, and daily stock moves are mostly noise.",
+        "The exposure scores are AI drafts that no person has reviewed."
+      ],
+      "href": "/forces"
+    },
+    {
+      "id": "earnings",
+      "question": "Do earnings days move stocks by more than an ordinary day?",
+      "verdict": "supported",
+      "result": "Yes: far more earnings days than chance would give moved the stock by more than twice its normal noise.",
+      "figures": [
+        {
+          "label": "Earnings events studied",
+          "value": "6153"
+        },
+        {
+          "label": "Typical move either way",
+          "value": "4.9%"
+        },
+        {
+          "label": "Share of unusual days",
+          "value": "55.0%"
+        },
+        {
+          "label": "Share expected by chance",
+          "value": "about 5%"
+        }
+      ],
+      "caveats": [
+        "The market is an equal-weighted average of other S&P 500 stocks, not an official index.",
+        "Prices come from an unofficial free source.",
+        "Direction is not tested here: the average abnormal return is close to zero because good and bad news cancel."
+      ],
+      "href": "/events"
+    },
+    {
+      "id": "drafts",
+      "question": "Do the AI-drafted exposure scores agree with a person who scored the same companies blind?",
+      "verdict": "no_data",
+      "result": "Only 0 of the 33 gold-set companies have been scored blind so far; at least 10 are needed.",
+      "figures": [
+        {
+          "label": "Companies scored blind",
+          "value": "0 of 33"
+        }
+      ],
+      "caveats": [
+        "The gold set is the most traded companies in each sector, which are likely the easiest for both the AI and a person.",
+        "A person's scores are judgements too, not measurements; agreement shows consistency, not truth.",
+        "Kappa counts every force for every company, including the many both leave at zero."
+      ],
+      "href": "/api/evidence/agreement",
+      "linkLabel": "Download the scores (CSV)"
+    }
+  ]
+}

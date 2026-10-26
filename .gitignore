@@ -11,3 +11,4 @@ __pycache__
 scripts/provider-spike/out
 .DS_Store
 packages/classify/evals/out
+paper/main.pdf
