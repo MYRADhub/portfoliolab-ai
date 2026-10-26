@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, max } from "drizzle-orm";
 import { z } from "zod";
 import { companies, companyFactorExposures, factors, type Db } from "@portfolio-lab/db";
 import { DEFAULT_MODEL } from "./classifier";
@@ -11,6 +11,8 @@ export const MAX_DRAFT_EXPOSURES = 6;
 export const MAX_DRAFT_CONFIDENCE = 0.8;
 export const MIN_DRAFT_CONFIDENCE = 0.3;
 export const DRAFT_LABEL = "AI-drafted, not reviewed:";
+/** Rationale prefix written by the demo seed. Such rows are made up and may be replaced by a draft on request. */
+export const ILLUSTRATIVE_LABEL = "Demo data";
 
 export interface FactorInfo {
   slug: string;
@@ -156,11 +158,19 @@ export interface StoreSummary {
 /**
  * Drafts and stores profiles for companies that have none. Companies with any current exposure row (hand-made or
  * drafted) are never touched, so reviewed data cannot be overwritten. Rows are labelled as unreviewed drafts.
+ *
+ * With `replaceIllustrative`, companies whose current rows are all made-up demo rows are drafted too: the demo rows
+ * are closed (kept as history) and the draft is stored as the next version. Reviewed and drafted rows stay untouched.
  */
 export async function draftAndStore(
   db: Db,
   drafter: ExposureDrafter,
-  opts: { tickers?: readonly string[]; limit?: number; concurrency?: number } = {},
+  opts: {
+    tickers?: readonly string[];
+    limit?: number;
+    concurrency?: number;
+    replaceIllustrative?: boolean;
+  } = {},
 ): Promise<StoreSummary> {
   const list = await loadFactorInfo(db);
   const slugs = new Set(list.map((f) => f.slug));
@@ -173,23 +183,26 @@ export async function draftAndStore(
   const all = await db.select().from(companies);
   const wanted = opts.tickers ? new Set(opts.tickers) : null;
   const pool = all.filter((c) => !wanted || wanted.has(c.ticker));
-  const have = new Set(
-    (
-      await db
-        .select({ id: companyFactorExposures.companyId })
-        .from(companyFactorExposures)
-        .where(
-          and(
-            isNull(companyFactorExposures.validTo),
-            inArray(
-              companyFactorExposures.companyId,
-              pool.map((c) => c.id),
-            ),
-          ),
-        )
-    ).map((r) => r.id),
-  );
-  const todo = pool.filter((c) => !have.has(c.id)).slice(0, opts.limit ?? Infinity);
+  const current = await db
+    .select({ id: companyFactorExposures.companyId, rationale: companyFactorExposures.rationale })
+    .from(companyFactorExposures)
+    .where(
+      and(
+        isNull(companyFactorExposures.validTo),
+        inArray(
+          companyFactorExposures.companyId,
+          pool.map((c) => c.id),
+        ),
+      ),
+    );
+  const have = new Set(current.map((r) => r.id));
+  // A company is replaceable only when every current row is a demo row.
+  const replaceable = new Set(opts.replaceIllustrative ? have : []);
+  for (const r of current)
+    if (!r.rationale?.startsWith(ILLUSTRATIVE_LABEL)) replaceable.delete(r.id);
+  const todo = pool
+    .filter((c) => !have.has(c.id) || replaceable.has(c.id))
+    .slice(0, opts.limit ?? Infinity);
   const summary: StoreSummary = {
     drafted: 0,
     stored: 0,
@@ -216,20 +229,40 @@ export async function draftAndStore(
           summary.failed.push({ ticker: c.ticker, reason: "no valid exposures" });
           continue;
         }
-        await db
-          .insert(companyFactorExposures)
-          .values(
-            rows.map((r) => ({
-              companyId: c.id,
-              factorId: factorId.get(r.slug)!,
-              magnitude: r.magnitude,
-              direction: r.direction,
-              confidence: r.confidence,
-              rationale: `${DRAFT_LABEL} ${r.rationale}`,
-              source: "llm_seeded" as const,
-            })),
-          )
-          .onConflictDoNothing();
+        await db.transaction(async (tx) => {
+          let version = 1;
+          if (replaceable.has(c.id)) {
+            const [v] = await tx
+              .select({ v: max(companyFactorExposures.version) })
+              .from(companyFactorExposures)
+              .where(eq(companyFactorExposures.companyId, c.id));
+            version = (v?.v ?? 0) + 1;
+            await tx
+              .update(companyFactorExposures)
+              .set({ validTo: new Date() })
+              .where(
+                and(
+                  eq(companyFactorExposures.companyId, c.id),
+                  isNull(companyFactorExposures.validTo),
+                ),
+              );
+          }
+          await tx
+            .insert(companyFactorExposures)
+            .values(
+              rows.map((r) => ({
+                companyId: c.id,
+                factorId: factorId.get(r.slug)!,
+                magnitude: r.magnitude,
+                direction: r.direction,
+                confidence: r.confidence,
+                rationale: `${DRAFT_LABEL} ${r.rationale}`,
+                source: "llm_seeded" as const,
+                version,
+              })),
+            )
+            .onConflictDoNothing();
+        });
         summary.stored += rows.length;
       } catch (e) {
         summary.failed.push({

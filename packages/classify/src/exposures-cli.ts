@@ -1,6 +1,7 @@
 // Usage:
 //   tsx src/exposures-cli.ts --eval              draft the companies that have hand-made profiles and report agreement (stores nothing)
 //   tsx src/exposures-cli.ts [--limit N] [--tickers A,B]   draft and store profiles for companies that have none
+//   tsx src/exposures-cli.ts --replace-illustrative         also redraft companies that only have made-up demo rows
 // Needs OPENAI_API_KEY and DATABASE_URL. Makes one API call per company and spends real money.
 import OpenAI from "openai";
 import { parseArgs } from "node:util";
@@ -25,6 +26,7 @@ const { values } = parseArgs({
     tickers: { type: "string" },
     model: { type: "string", default: DEFAULT_MODEL },
     concurrency: { type: "string", default: "4" },
+    "replace-illustrative": { type: "boolean", default: false },
   },
 });
 const url = process.env.DATABASE_URL;
@@ -97,6 +99,7 @@ if (values.eval) {
     tickers,
     limit: values.limit ? Number(values.limit) : undefined,
     concurrency: Number(values.concurrency),
+    replaceIllustrative: values["replace-illustrative"],
   });
   console.log(
     `drafted ${s.drafted}, stored ${s.stored} rows, skipped ${s.skippedExisting} that already have profiles, ${s.failed.length} failed`,

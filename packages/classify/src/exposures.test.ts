@@ -243,4 +243,49 @@ describe("draftAndStore", () => {
     await draftAndStore(ctx.db, d, { tickers: ["CCC"], limit: 1 });
     expect(d.calls).toEqual(["CCC"]);
   });
+
+  it("replaces demo-only profiles when asked, keeping the demo rows as history and never touching reviewed rows", async () => {
+    const [ddd] = await ctx.db
+      .insert(companies)
+      .values({ ticker: "DDD", name: "Ddd Inc", sector: "Tech", industry: "Chips" })
+      .returning();
+    const [oil] = await ctx.db.select().from(factors).where(eq(factors.slug, "oil"));
+    await ctx.db.insert(companyFactorExposures).values({
+      companyId: ddd!.id,
+      factorId: oil!.id,
+      magnitude: 2,
+      direction: -1,
+      confidence: 0.6,
+      rationale: "Demo data: illustrative only, not reviewed.",
+      source: "manual",
+    });
+
+    // Without the flag the demo profile counts as existing.
+    const plain = fake({});
+    await draftAndStore(ctx.db, plain, { concurrency: 1 });
+    expect(plain.calls).toEqual([]);
+
+    const d = fake({
+      DDD: { exposures: [e("rates", 3, -1)] },
+      BBB: { exposures: [e("rates", 1, 1)] },
+    });
+    const s = await draftAndStore(ctx.db, d, { concurrency: 1, replaceIllustrative: true });
+    expect(d.calls).toEqual(["DDD"]); // BBB is reviewed, the others are already drafted
+    expect(s).toMatchObject({ drafted: 1, stored: 1 });
+
+    const all = await ctx.db
+      .select()
+      .from(companyFactorExposures)
+      .where(eq(companyFactorExposures.companyId, ddd!.id));
+    const open = all.filter((r) => r.validTo === null);
+    expect(open).toHaveLength(1);
+    expect(open[0]).toMatchObject({ source: "llm_seeded", version: 2, magnitude: 3 });
+    const closed = all.filter((r) => r.validTo !== null);
+    expect(closed).toEqual([
+      expect.objectContaining({
+        version: 1,
+        rationale: "Demo data: illustrative only, not reviewed.",
+      }),
+    ]);
+  });
 });
