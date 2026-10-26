@@ -22,7 +22,7 @@ const FIVE = [
 async function enrolled(playwright: Playwright, experience = "intermediate") {
   const ctx = await playwright.request.newContext({ baseURL: BASE });
   const r = await ctx.post("/api/experiment/enroll", {
-    data: { consent: true, experience, pre: PRE },
+    data: { consent: true, ageGroup: "adult", experience, pre: PRE },
   });
   expect(r.status(), await r.text()).toBe(201);
   const arm = ((await r.json()) as Json).participant.arm as "control" | "treatment";
@@ -56,6 +56,13 @@ test.describe("study API", () => {
       enabled: true,
       participant: null,
       limits: { minHoldings: 5, maxHoldings: 10, minWeightPct: 1 },
+      study: {
+        researcher: "E2E Researcher, Test School",
+        approval: "Test approver, 2026-10-01",
+        contact: "study@example.org",
+        end: "2026-12-31",
+        allowMinors: true,
+      },
     });
     expect((await ctx.get("/api/experiment/universe")).status()).toBe(401);
   });
@@ -64,8 +71,12 @@ test.describe("study API", () => {
     playwright,
   }) => {
     const ctx = await playwright.request.newContext({ baseURL: BASE });
-    const post = (data: unknown) => ctx.post("/api/experiment/enroll", { data });
+    const post = (data: Json) =>
+      ctx.post("/api/experiment/enroll", { data: { ageGroup: "adult", ...data } });
     expect((await post({ consent: false, experience: "novice", pre: PRE })).status()).toBe(400);
+    expect(
+      (await post({ consent: true, ageGroup: "child", experience: "novice", pre: PRE })).status(),
+    ).toBe(400);
     expect((await post({ consent: true, experience: "guru", pre: PRE })).status()).toBe(400);
     expect(
       (
@@ -81,13 +92,33 @@ test.describe("study API", () => {
     expect(rows).toBeGreaterThanOrEqual(0);
   });
 
+  test("a minor can take part only with a guardian's consent, and only the age group is stored", async ({
+    playwright,
+  }) => {
+    const ctx = await playwright.request.newContext({ baseURL: BASE });
+    const post = (data: Json) =>
+      ctx.post("/api/experiment/enroll", {
+        data: { consent: true, ageGroup: "minor", experience: "novice", pre: PRE, ...data },
+      });
+    const refused = await post({});
+    expect(refused.status()).toBe(400);
+    expect(((await refused.json()) as Json).error.message).toMatch(/parent or guardian/);
+    expect((await post({ guardianConsent: false })).status()).toBe(400);
+    expect((await post({ guardianConsent: true })).status()).toBe(201);
+    const id = (await ctx.storageState()).cookies
+      .find((c) => c.name === "pl_exp")!
+      .value.split(".")[0];
+    const mine = (await csv(ctx)).find((r) => r.participant_id === id)!;
+    expect(mine).toMatchObject({ age_group: "minor", pilot: "false" });
+  });
+
   test("a second enrollment from the same browser does not create another participant", async ({
     playwright,
   }) => {
     const { ctx, arm } = await enrolled(playwright);
     const before = (await csv(ctx)).length;
     const again = await ctx.post("/api/experiment/enroll", {
-      data: { consent: true, experience: "expert", pre: PRE },
+      data: { consent: true, ageGroup: "adult", experience: "expert", pre: PRE },
     });
     expect(again.status()).toBe(200);
     expect(((await again.json()) as Json).participant.arm).toBe(arm);
@@ -187,14 +218,19 @@ test.describe("study API", () => {
     const hhi = (1.45 ** 2 + 1.4 ** 2 + 1.1 ** 2 + 1.05 ** 2 + 1.5 ** 2) / 6.5 ** 2;
     expect(Number(mine!.factor_hhi)).toBeCloseTo(hhi, 10);
     expect(Number(mine!.effective_factors)).toBeCloseTo(1 / hhi, 8);
+    // the return-based robustness outcome lies between one bet and one per holding
+    expect(Number(mine!.effective_bets)).toBeGreaterThanOrEqual(1);
+    expect(Number(mine!.effective_bets)).toBeLessThanOrEqual(5);
+    expect(Number(mine!.seconds_to_submit)).toBeGreaterThanOrEqual(0);
 
     expect(
       (await ctx.post("/api/experiment/submit", { data: { holdings: FIVE, post: POST } })).status(),
     ).toBe(409);
     expect((await ctx.get("/api/experiment")).ok()).toBe(true);
-    expect(((await (await ctx.get("/api/experiment")).json()) as Json).participant.completed).toBe(
-      true,
-    );
+    const done = ((await (await ctx.get("/api/experiment")).json()) as Json).participant;
+    expect(done.completed).toBe(true);
+    expect(done.result).toMatchObject({ nHoldings: 5 });
+    expect(done.result.effectiveFactors).toBeCloseTo(1 / hhi, 8);
   });
 
   test("logs interaction events and rejects unknown event types", async ({ playwright }) => {
@@ -282,6 +318,10 @@ test.describe("study API", () => {
     expect(b.plannedPerArm).toEqual({ smallEffect: 393, mediumEffect: 63, largeEffect: 25 });
     expect(b.primary.name).toBe("factor_hhi");
     expect(b.primary.nControl + b.primary.nTreatment).toBe(b.completed);
+    // these submissions are fast, so the pre-registered sensitivity check drops them
+    expect(b.primaryExcludingFast.excluded).toBe(b.completed);
+    expect(b.secondary.map((o: Json) => o.name)).toContain("effective_bets");
+    expect(b.pilot).toMatchObject({ completed: 0, factorHhiSd: null });
     const file = await ctx.get("/api/experiment/export", { headers: ADMIN });
     expect(file.headers()["content-type"]).toContain("text/csv");
     expect(await file.text()).toMatch(/^participant_id,arm,experience,/);
@@ -293,9 +333,11 @@ async function dismissToTask(page: Page, experience = "Some experience") {
   await expect(
     page.getByRole("heading", { name: "Portfolio construction study", level: 1 }),
   ).toBeVisible();
+  await expect(page.getByRole("definition").filter({ hasText: "study@example.org" })).toBeVisible();
   const start = page.getByRole("button", { name: "Start the task" });
   await expect(start).toBeDisabled();
   await page.getByLabel("I have read this information and agree to take part.").check();
+  await page.getByLabel("18 or over").check();
   await page.getByLabel(experience).check();
   await page
     .getByRole("group", { name: "How well diversified would you say you are as an investor?" })
@@ -354,6 +396,13 @@ test.describe("study page", () => {
     await expect(page.getByText("Thank you. Your answers have been recorded.")).toBeVisible();
     await expect(page.getByText("About this study")).toBeVisible();
     await expect(page.getByText(/randomly assigned to one of two versions/)).toBeVisible();
+    await expect(page.getByTestId("debrief-arm")).toContainText(
+      arm === "treatment" ? "with hidden exposures" : "without hidden exposures",
+    );
+    await expect(page.getByTestId("debrief-result")).toContainText("independent economic forces");
+    await expect(
+      page.getByText(/Please do not discuss the study .* before 2026-12-31/),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Withdraw and delete my data" }).click();
     await page.getByRole("button", { name: "Confirm withdrawal" }).click();
@@ -378,6 +427,29 @@ test.describe("study page", () => {
       await page.getByRole("button", { name: `Add ${t}` }).click();
     await expect(page.getByRole("list", { name: "Your portfolio" }).locator("li")).toHaveCount(10);
     await expect(page.getByRole("button", { name: /^Added / })).toHaveCount(10);
+  });
+
+  test("a minor needs a guardian's consent before the task can start", async ({ page }) => {
+    await page.goto("/experiment");
+    await page.getByLabel("I have read this information and agree to take part.").check();
+    await page.getByLabel("Under 18").check();
+    await page.getByLabel("New to investing").check();
+    await page
+      .getByRole("group", { name: "How well diversified would you say you are as an investor?" })
+      .getByLabel("3", { exact: true })
+      .check();
+    await page
+      .getByRole("group", {
+        name: "How confident are you in your ability to build a diversified portfolio?",
+      })
+      .getByLabel("4", { exact: true })
+      .check();
+    const start = page.getByRole("button", { name: "Start the task" });
+    await expect(start).toBeDisabled();
+    await page
+      .getByLabel("A parent or guardian has signed the consent form for this study.")
+      .check();
+    await expect(start).toBeEnabled();
   });
 
   test("leaving the study page for the rest of the app is not possible once enrolled", async ({

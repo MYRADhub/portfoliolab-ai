@@ -133,3 +133,75 @@ export function compareArms(
     permutationP: p,
   };
 }
+
+/**
+ * Eigenvalues and eigenvectors of a symmetric matrix by cyclic Jacobi rotations. Fine for the small matrices here
+ * (a portfolio of at most a few dozen holdings). Vectors are the columns of `vectors`.
+ */
+export function symmetricEigen(m: readonly (readonly number[])[]): {
+  values: number[];
+  vectors: number[][];
+} {
+  const n = m.length;
+  const a = m.map((r) => [...r]);
+  const v: number[][] = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)),
+  );
+  for (let sweep = 0; sweep < 100; sweep++) {
+    let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += a[p]![q]! ** 2;
+    if (off < 1e-30) break;
+    for (let p = 0; p < n; p++)
+      for (let q = p + 1; q < n; q++) {
+        const apq = a[p]![q]!;
+        if (Math.abs(apq) < 1e-300) continue;
+        const theta = (a[q]![q]! - a[p]![p]!) / (2 * apq);
+        const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+        const c = 1 / Math.sqrt(t * t + 1);
+        const s = t * c;
+        for (let k = 0; k < n; k++) {
+          const akp = a[k]![p]!;
+          const akq = a[k]![q]!;
+          a[k]![p] = c * akp - s * akq;
+          a[k]![q] = s * akp + c * akq;
+        }
+        for (let k = 0; k < n; k++) {
+          const apk = a[p]![k]!;
+          const aqk = a[q]![k]!;
+          a[p]![k] = c * apk - s * aqk;
+          a[q]![k] = s * apk + c * aqk;
+        }
+        for (let k = 0; k < n; k++) {
+          const vkp = v[k]![p]!;
+          const vkq = v[k]![q]!;
+          v[k]![p] = c * vkp - s * vkq;
+          v[k]![q] = s * vkp + c * vkq;
+        }
+      }
+  }
+  return { values: a.map((r, i) => r[i]!), vectors: v };
+}
+
+/**
+ * Effective number of independent bets (Meucci 2009): split the portfolio's variance across the principal components
+ * of the holdings' return covariance and take exp(entropy) of those shares. It is 1 when one source drives all the
+ * risk and equals the number of holdings when the risk is spread evenly over independent sources. It uses returns
+ * only, so it checks the exposure-based outcome with a measure that does not depend on our exposure scores.
+ * Null when the portfolio has no variance.
+ */
+export function effectiveBets(
+  weights: readonly number[],
+  covariance: readonly (readonly number[])[],
+): number | null {
+  if (weights.length !== covariance.length)
+    throw new Error("weights and covariance differ in size");
+  const { values, vectors } = symmetricEigen(covariance);
+  const contrib = values.map((lambda, k) => {
+    const b = weights.reduce((s, w, i) => s + w * vectors[i]![k]!, 0);
+    return b * b * Math.max(lambda, 0);
+  });
+  const total = contrib.reduce((s, x) => s + x, 0);
+  if (!(total > 0)) return null;
+  const entropy = contrib.reduce((s, x) => (x > 0 ? s - (x / total) * Math.log(x / total) : s), 0);
+  return Math.exp(entropy);
+}

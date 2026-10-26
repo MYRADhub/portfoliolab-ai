@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assignArm, compareArms, normalQuantile, requiredPerArm } from "./index";
+import {
+  assignArm,
+  compareArms,
+  effectiveBets,
+  normalQuantile,
+  requiredPerArm,
+  symmetricEigen,
+} from "./index";
 
 const close = (a: number, b: number, tol = 1e-9) => expect(Math.abs(a - b)).toBeLessThan(tol);
 
@@ -77,5 +84,70 @@ describe("compareArms", () => {
     const flat = compareArms([1, 1], [2, 2]);
     expect(flat.t).toBeNull();
     expect(compareArms([], [1, 2]).permutationP).toBeNull();
+  });
+});
+
+describe("symmetricEigen", () => {
+  it("recovers a known decomposition and keeps the vectors orthonormal", () => {
+    const { values, vectors } = symmetricEigen([
+      [2, 1],
+      [1, 2],
+    ]);
+    expect([...values].sort((a, b) => a - b).map((x) => +x.toFixed(10))).toEqual([1, 3]);
+    const dot = vectors[0]![0]! * vectors[0]![1]! + vectors[1]![0]! * vectors[1]![1]!;
+    expect(Math.abs(dot)).toBeLessThan(1e-12);
+  });
+
+  it("reproduces the matrix from its eigenvectors", () => {
+    const m = [
+      [4, 1, 0.5],
+      [1, 3, 0.2],
+      [0.5, 0.2, 1],
+    ];
+    const { values, vectors } = symmetricEigen(m);
+    for (let i = 0; i < 3; i++)
+      for (let j = 0; j < 3; j++) {
+        const back = values.reduce((s, l, k) => s + l * vectors[i]![k]! * vectors[j]![k]!, 0);
+        expect(Math.abs(back - m[i]![j]!)).toBeLessThan(1e-10);
+      }
+  });
+});
+
+describe("effectiveBets", () => {
+  it("equals the number of holdings for equal weights on independent, equally risky assets", () => {
+    const cov = [
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, 1],
+    ];
+    expect(effectiveBets([0.25, 0.25, 0.25, 0.25], cov)).toBeCloseTo(4, 10);
+  });
+
+  it("is close to 1 when the assets are almost perfectly correlated", () => {
+    const cov = [
+      [1, 0.999, 0.999],
+      [0.999, 1, 0.999],
+      [0.999, 0.999, 1],
+    ];
+    expect(effectiveBets([1 / 3, 1 / 3, 1 / 3], cov)!).toBeLessThan(1.01);
+  });
+
+  it("falls when weight is concentrated, and is null without variance", () => {
+    const cov = [
+      [1, 0],
+      [0, 1],
+    ];
+    expect(effectiveBets([0.9, 0.1], cov)!).toBeLessThan(effectiveBets([0.5, 0.5], cov)!);
+    expect(
+      effectiveBets(
+        [0.5, 0.5],
+        [
+          [0, 0],
+          [0, 0],
+        ],
+      ),
+    ).toBeNull();
+    expect(() => effectiveBets([1], cov)).toThrow();
   });
 });

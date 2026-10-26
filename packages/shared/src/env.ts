@@ -13,8 +13,27 @@ export const envSchema = z.object({
   FRED_API_KEY: optionalKey,
   /** "1" turns the research study on. Off by default: no data is collected from participants unless set. */
   EXPERIMENT_ENABLED: z.enum(["0", "1"]).optional(),
-  /** Comma-separated tickers the study universe is limited to. Defaults to every company with exposure data. */
+  /**
+   * Comma-separated tickers the study universe is limited to, or "gold" for the gold set. Defaults to every company
+   * with exposure data.
+   */
   EXPERIMENT_UNIVERSE: z.string().optional(),
+  /** "1" marks new participants as pilot participants, who are reported apart from the main analysis. */
+  EXPERIMENT_PILOT: z.enum(["0", "1"]).optional(),
+  /**
+   * Details from the approval, shown on the consent screen. The study does not enrol anyone until the first four are
+   * set. STUDY_END is the date after which participants may discuss the study (YYYY-MM-DD).
+   */
+  STUDY_RESEARCHER: z.string().min(2).max(200).optional(),
+  STUDY_APPROVAL: z.string().min(2).max(300).optional(),
+  STUDY_CONTACT: z.string().min(2).max(200).optional(),
+  STUDY_RETENTION: z.string().min(2).max(300).optional(),
+  STUDY_END: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  /** "1" lets people under 18 take part once they confirm a parent or guardian has signed the consent form. */
+  STUDY_ALLOW_MINORS: z.enum(["0", "1"]).optional(),
   /** Secret for the exposure review tool at /review. With none set the tool does not exist. */
   REVIEW_TOKEN: z.string().min(16).optional(),
   EXPERIMENT_ADMIN_TOKEN: z.string().min(16).optional(),

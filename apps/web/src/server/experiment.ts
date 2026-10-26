@@ -21,13 +21,17 @@ import {
   compareArms,
   concentration,
   correlationMatrix,
+  covarianceMatrix,
   dailyReturns,
+  effectiveBets,
   factorConcentration,
   factorLoadings,
   portfolioReturns,
   requiredPerArm,
+  stdev,
   type Arm,
 } from "@portfolio-lab/finance";
+import { GOLD_SET } from "@portfolio-lab/shared";
 import { z } from "zod";
 import { AppError } from "./errors";
 import { env } from "./env";
@@ -40,12 +44,39 @@ export const MIN_HOLDINGS = 5;
 export const MAX_HOLDINGS = 10;
 export const MIN_WEIGHT_PCT = 1;
 const MIN_COMMON_DAYS = 120;
+/** Pre-registered: submissions faster than this after enrolment are flagged and reported with and without. */
+export const FAST_SUBMIT_SECONDS = 20;
 
 export const experimentEnabled = () => env().EXPERIMENT_ENABLED === "1";
 
 export function assertEnabled(): void {
   if (!experimentEnabled() || !env().EXPERIMENT_ADMIN_TOKEN)
     throw new AppError("not_found", "Not found");
+}
+
+export interface StudyInfo {
+  researcher: string;
+  approval: string;
+  contact: string;
+  retention: string;
+  /** Date after which participants may talk about the study, or null if none was set. */
+  end: string | null;
+  allowMinors: boolean;
+}
+
+/** The approval details shown on the consent screen, or null while any required one is missing. */
+export function studyInfo(): StudyInfo | null {
+  const e = env();
+  if (!e.STUDY_RESEARCHER || !e.STUDY_APPROVAL || !e.STUDY_CONTACT || !e.STUDY_RETENTION)
+    return null;
+  return {
+    researcher: e.STUDY_RESEARCHER,
+    approval: e.STUDY_APPROVAL,
+    contact: e.STUDY_CONTACT,
+    retention: e.STUDY_RETENTION,
+    end: e.STUDY_END ?? null,
+    allowMinors: e.STUDY_ALLOW_MINORS === "1",
+  };
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -99,16 +130,32 @@ export type Questionnaire = z.infer<typeof questionnaireSchema>;
 
 export const enrollSchema = z.object({
   consent: z.literal(true),
+  ageGroup: z.enum(["adult", "minor"]),
+  /** Required for a minor: a parent or guardian has signed the paper consent form. */
+  guardianConsent: z.boolean().optional(),
   experience: z.enum(["novice", "intermediate", "expert"]),
   pre: questionnaireSchema,
 });
 
-/** Randomizes within the experience stratum and records consent plus the pre-task answers, atomically. */
+/**
+ * Randomizes within the experience stratum and records consent plus the pre-task answers, atomically. Refuses while
+ * the approval details are missing, and refuses minors unless the study allows them and a guardian has consented.
+ */
 export async function enroll(
   db: Db,
   input: z.infer<typeof enrollSchema>,
   rand: () => number = Math.random,
 ): Promise<Participant> {
+  const info = studyInfo();
+  if (!info) throw new AppError("unavailable", "The study is not open yet");
+  if (input.ageGroup === "minor" && !info.allowMinors)
+    throw new AppError("forbidden", "This study is open to people aged 18 or over only");
+  if (input.ageGroup === "minor" && input.guardianConsent !== true)
+    throw new AppError(
+      "bad_request",
+      "A parent or guardian must sign the consent form before you take part",
+    );
+  const pilot = env().EXPERIMENT_PILOT === "1";
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext('experiment_enroll'))`);
     const rows = await tx
@@ -123,14 +170,20 @@ export async function enroll(
     const arm = assignArm(counts, rand());
     const [p] = await tx
       .insert(experimentParticipants)
-      .values({ arm, experience: input.experience, consentVersion: CONSENT_VERSION })
+      .values({
+        arm,
+        experience: input.experience,
+        consentVersion: CONSENT_VERSION,
+        ageGroup: input.ageGroup,
+        pilot,
+      })
       .returning();
     await tx
       .insert(experimentResponses)
       .values({ participantId: p!.id, phase: "pre", ...input.pre });
     await tx
       .insert(experimentEvents)
-      .values({ participantId: p!.id, type: "enrolled", payload: { arm } });
+      .values({ participantId: p!.id, type: "enrolled", payload: { arm, pilot } });
     return { id: p!.id, arm, experience: input.experience, completed: false };
   });
 }
@@ -153,10 +206,14 @@ interface Profile {
   factorNames: Record<string, string>;
 }
 
-/** Tickers the study is limited to, from EXPERIMENT_UNIVERSE; null means every company with exposure data. */
+/**
+ * Tickers the study is limited to, from EXPERIMENT_UNIVERSE ("gold" means the gold set); null means every company with
+ * exposure data.
+ */
 function configuredUniverse(): string[] | null {
   const raw = env().EXPERIMENT_UNIVERSE;
   if (!raw) return null;
+  if (raw.trim().toLowerCase() === "gold") return [...GOLD_SET];
   const list = raw
     .split(",")
     .map((t) => t.trim().toUpperCase())
@@ -279,6 +336,8 @@ export interface PortfolioMetrics {
   effectiveSectors: number;
   volatility: number;
   averageCorrelation: number | null;
+  /** Robustness outcome from return covariance. Recorded for everyone and shown to no one during the task. */
+  effectiveBets: number | null;
   /** Hidden-exposure measures. Computed for every participant (the outcome) but shown to the treatment arm only. */
   factor: {
     factorHhi: number | null;
@@ -327,6 +386,7 @@ export async function computeMetrics(
     effectiveSectors: concentration([...sectorWeights.values()]).effectiveN,
     volatility: annualizedVolatility(portRets),
     averageCorrelation: averagePairwise(correlationMatrix(rets)),
+    effectiveBets: effectiveBets(weights, covarianceMatrix(rets)),
     factor: {
       factorHhi: conc.hhi,
       effectiveFactors: conc.effectiveFactors,
@@ -342,7 +402,8 @@ export async function computeMetrics(
 
 /** What a participant may see about their current selection. The control arm never receives hidden-exposure fields. */
 export function viewFor(arm: Arm, m: PortfolioMetrics) {
-  const { factor, ...common } = m;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { factor, effectiveBets: _bets, ...common } = m;
   return arm === "treatment" ? { ...common, factor } : common;
 }
 
@@ -391,6 +452,7 @@ export async function submit(
       effectiveFactors: m.factor.effectiveFactors!,
       effectiveSectors: m.effectiveSectors,
       topFactorShare: m.factor.topFactorShare!,
+      effectiveBets: m.effectiveBets,
     });
     await tx
       .insert(experimentResponses)
@@ -426,7 +488,11 @@ interface ExportRow {
   arm: string;
   experience: string;
   consent_version: string;
+  age_group: string;
+  pilot: boolean;
   completed: boolean;
+  /** Seconds from enrolment to submission; below FAST_SUBMIT_SECONDS the submission is flagged. */
+  seconds_to_submit: number | null;
   pre_perceived_diversification: number | null;
   pre_confidence: number | null;
   post_perceived_diversification: number | null;
@@ -436,6 +502,7 @@ interface ExportRow {
   effective_factors: number | null;
   effective_sectors: number | null;
   top_factor_share: number | null;
+  effective_bets: number | null;
   n_events: number;
   holdings: string | null;
 }
@@ -460,7 +527,12 @@ export async function exportRows(db: Db): Promise<ExportRow[]> {
       arm: p.arm,
       experience: p.experience,
       consent_version: p.consentVersion,
+      age_group: p.ageGroup,
+      pilot: p.pilot,
       completed: p.completedAt !== null,
+      seconds_to_submit: sub
+        ? Math.round((sub.submittedAt.getTime() - p.consentedAt.getTime()) / 1000)
+        : null,
       pre_perceived_diversification: pre?.perceivedDiversification ?? null,
       pre_confidence: pre?.confidence ?? null,
       post_perceived_diversification: post?.perceivedDiversification ?? null,
@@ -470,6 +542,7 @@ export async function exportRows(db: Db): Promise<ExportRow[]> {
       effective_factors: sub?.effectiveFactors ?? null,
       effective_sectors: sub?.effectiveSectors ?? null,
       top_factor_share: sub?.topFactorShare ?? null,
+      effective_bets: sub?.effectiveBets ?? null,
       n_events: es.find((e) => e.id === p.id)?.n ?? 0,
       holdings: sub
         ? (sub.holdings as { ticker: string; weightPct: number }[])
@@ -481,16 +554,20 @@ export async function exportRows(db: Db): Promise<ExportRow[]> {
 }
 
 export async function analysis(db: Db) {
-  const rows = (await exportRows(db)).filter((r) => r.completed);
-  const pick = (arm: string, f: (r: ExportRow) => number | null) =>
-    rows
-      .filter((r) => r.arm === arm)
-      .map(f)
-      .filter((v): v is number => v !== null);
-  const outcome = (name: string, f: (r: ExportRow) => number | null) => ({
-    name,
-    ...compareArms(pick("control", f), pick("treatment", f), { seed: 1 }),
-  });
+  const all = (await exportRows(db)).filter((r) => r.completed);
+  const rows = all.filter((r) => !r.pilot);
+  const compare = (set: readonly ExportRow[], name: string, f: (r: ExportRow) => number | null) => {
+    const pick = (arm: string) =>
+      set
+        .filter((r) => r.arm === arm)
+        .map(f)
+        .filter((v): v is number => v !== null);
+    return { name, ...compareArms(pick("control"), pick("treatment"), { seed: 1 }) };
+  };
+  const outcome = (name: string, f: (r: ExportRow) => number | null) => compare(rows, name, f);
+  const slow = rows.filter((r) => (r.seconds_to_submit ?? 0) >= FAST_SUBMIT_SECONDS);
+  const pilot = all.filter((r) => r.pilot);
+  const pilotHhi = pilot.map((r) => r.factor_hhi).filter((v): v is number => v !== null);
   return {
     completed: rows.length,
     perArm: {
@@ -498,16 +575,53 @@ export async function analysis(db: Db) {
       treatment: rows.filter((r) => r.arm === "treatment").length,
     },
     primary: outcome("factor_hhi", (r) => r.factor_hhi),
+    /** Pre-registered sensitivity check: the primary outcome without submissions under FAST_SUBMIT_SECONDS. */
+    primaryExcludingFast: {
+      excluded: rows.length - slow.length,
+      ...compare(slow, "factor_hhi", (r) => r.factor_hhi),
+    },
     secondary: [
       outcome("effective_sectors", (r) => r.effective_sectors),
       outcome("top_factor_share", (r) => r.top_factor_share),
+      outcome("effective_bets", (r) => r.effective_bets),
       outcome("post_perceived_diversification", (r) => r.post_perceived_diversification),
       outcome("post_confidence", (r) => r.post_confidence),
     ],
+    /** Pilot participants, reported apart. Their spread of factor HHI turns a raw difference into an effect size. */
+    pilot: {
+      completed: pilot.length,
+      factorHhiMean: pilotHhi.length ? pilotHhi.reduce((a, b) => a + b, 0) / pilotHhi.length : null,
+      factorHhiSd: pilotHhi.length >= 2 ? stdev(pilotHhi) : null,
+    },
     plannedPerArm: {
       smallEffect: requiredPerArm(0.2),
       mediumEffect: requiredPerArm(0.5),
       largeEffect: requiredPerArm(0.8),
     },
+  };
+}
+
+export interface ParticipantResult {
+  nHoldings: number;
+  effectiveSectors: number;
+  effectiveFactors: number;
+  topFactorShare: number;
+}
+
+/** What a participant is told about their own portfolio after submitting (the debrief). */
+export async function participantResult(
+  db: Db,
+  participantId: string,
+): Promise<ParticipantResult | null> {
+  const [sub] = await db
+    .select()
+    .from(experimentSubmissions)
+    .where(eq(experimentSubmissions.participantId, participantId));
+  if (!sub) return null;
+  return {
+    nHoldings: sub.nHoldings,
+    effectiveSectors: sub.effectiveSectors,
+    effectiveFactors: sub.effectiveFactors,
+    topFactorShare: sub.topFactorShare,
   };
 }

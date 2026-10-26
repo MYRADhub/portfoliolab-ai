@@ -123,22 +123,24 @@ So this is suggestive evidence, not proof. The full write-up, with the caveats, 
 
 Copy `.env.example` to `.env`. Only the database URL is needed to start.
 
-| Setting                  | What it does                                                                                |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | The Postgres database. The default works with `pnpm db:up`.                                 |
-| `OPENAI_API_KEY`         | Turns on AI explanations, the assistant and exposure drafting. Never printed or committed.  |
-| `SEC_USER_AGENT`         | Set on the command line for `pnpm data:sec`. The SEC asks for a name and email.             |
-| `REVIEW_TOKEN`           | 16+ characters. Turns on the exposure review tool at `/review`. Leave empty to keep it off. |
-| `EXPERIMENT_ENABLED`     | `1` opens the research study at `/experiment`. Off by default. See the warning below.       |
-| `EXPERIMENT_ADMIN_TOKEN` | 16+ characters. Protects the study's export and results, and signs participants' cookies.   |
-| `EXPERIMENT_UNIVERSE`    | Optional comma-separated tickers the study participants choose from.                        |
-| Other `*_API_KEY`        | Optional paid or rate-limited data providers (Tiingo, Finnhub, Marketaux). Not needed.      |
+| Setting                  | What it does                                                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | The Postgres database. The default works with `pnpm db:up`.                                                                 |
+| `OPENAI_API_KEY`         | Turns on AI explanations, the assistant and exposure drafting. Never printed or committed.                                  |
+| `SEC_USER_AGENT`         | Set on the command line for `pnpm data:sec`. The SEC asks for a name and email.                                             |
+| `REVIEW_TOKEN`           | 16+ characters. Turns on the exposure review tool at `/review`. Leave empty to keep it off.                                 |
+| `EXPERIMENT_ENABLED`     | `1` opens the research study at `/experiment`. Off by default. See the warning below.                                       |
+| `EXPERIMENT_ADMIN_TOKEN` | 16+ characters. Protects the study's export and results, and signs participants' cookies.                                   |
+| `EXPERIMENT_UNIVERSE`    | Optional comma-separated tickers the study participants choose from, or `gold` for the gold set.                            |
+| `EXPERIMENT_PILOT`       | `1` marks new participants as pilot participants, reported apart from the main analysis.                                    |
+| `STUDY_*`                | The approval details shown on the consent screen. The study enrols nobody until they are set; see `docs/study-protocol.md`. |
+| Other `*_API_KEY`        | Optional paid or rate-limited data providers (Tiingo, Finnhub, Marketaux). Not needed.                                      |
 
 ## Two special tools (both off by default)
 
 **Exposure review (`/review`)**: the AI-drafted exposure scores need a human check. This tool lists companies by status, lets a reviewer accept, edit, remove or add scores, and records who reviewed what and when. Every save is a new version and nothing is erased. The **gold set** filter (33 companies, `pnpm data:gold`) hides the AI draft so a person can score a company blind; the Evidence page then measures how far the drafts agree with those scores. Turn it on with `REVIEW_TOKEN`.
 
-**Research study (`/experiment`)**: a built-in experiment that asks whether showing people their hidden exposures changes how they diversify. It has consent, random assignment to two groups, a control group that physically cannot reach exposure data, a data export, and a ready-made analysis. **Do not run it on real people until an ethics review has approved it.** The design, analysis plan and checklist are in `docs/experiment-design.md`.
+**Research study (`/experiment`)**: a built-in experiment that asks whether showing people their hidden exposures changes how they diversify. It has consent, random assignment to two groups, a control group that physically cannot reach exposure data, a data export, and a ready-made analysis. **Do not run it on real people until an ethics review has approved it.** The design, analysis plan and checklist are in `docs/experiment-design.md`; the document to give the approver, with the consent text, recruitment message and a parent or guardian form, is `docs/study-protocol.md`.
 
 ---
 

@@ -883,6 +883,32 @@ The Evidence page adds a fourth finding. "Supported" needs kappa of at least 0.6
 
 ---
 
+## 35. Getting the study ready to run (added 2026-10-26)
+
+**35.1 The approval is configuration, and the study stays shut without it.** Final. Who: Me.
+The researcher, the approval (who and when), a contact and the retention sentence are `STUDY_*` settings shown on the consent screen. Enrolment returns "not open yet" until all four are set, so the study cannot collect data by accident before it is approved. `docs/study-protocol.md` is the packet for the approver: procedures, what is stored, recruitment message, the on-screen consent and debrief text word for word, a parent or guardian form and a sign-off.
+
+**35.2 Age is asked, not assumed.** Final. Who: Me.
+Classmates are likely under 18, and the original design assumed adults. Participants now answer "18 or over" or "under 18" (no exact age is stored). Under-18s are refused unless `STUDY_ALLOW_MINORS=1`, and even then must confirm that a parent or guardian signed the consent form. The signed forms stay on paper with the supervisor and are never linked to answers. The age group is stored as a covariate.
+
+**35.3 Pilot participants are reported apart.** Final. Who: Me.
+With `EXPERIMENT_PILOT=1`, new participants are flagged and left out of every comparison. The results report their mean and standard deviation of factor HHI, which is what the sample-size plan was waiting for.
+
+**35.4 The pre-registered checks are now computed.** Final. Who: Me.
+The export has `seconds_to_submit`, and the results report the primary comparison again without submissions under 20 seconds, as the design promised. The robustness outcome promised in the design is now recorded at submission: Meucci's effective number of independent bets, from the principal components of the holdings' return covariance (exp of the entropy of each component's share of portfolio variance). It uses returns only, so it does not depend on our exposure scores. It is shown to neither arm during the task, so the control arm's information is unchanged. The eigen decomposition is a small Jacobi routine, tested against known decompositions.
+
+**35.5 The debrief shows the participant's own result.** Final. Who: Me.
+After submitting, a participant sees which version they had and their portfolio's effective sectors against effective forces and its largest-force share. This comes after the post-task answers, so it cannot affect the outcome. Because participants are classmates, the debrief asks them not to discuss the study with anyone who might still take part before `STUDY_END`.
+
+**35.6 The universe is the gold set.** Final. Who: Me.
+`EXPERIMENT_UNIVERSE=gold` uses the 33 gold-set companies (section 34), which are scored blind and reviewed by a person before the main study, so the treatment arm sees reviewed numbers.
+
+### Mistakes in this slice
+
+- The roadmap listed the debrief screen and the signed cookie as not built, but both existed. I corrected the roadmap instead of rebuilding them.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

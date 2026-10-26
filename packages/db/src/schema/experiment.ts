@@ -1,4 +1,5 @@
 import {
+  boolean,
   check,
   doublePrecision,
   index,
@@ -21,6 +22,10 @@ export const experimentParticipants = pgTable(
     arm: text("arm").notNull(),
     experience: text("experience").notNull(),
     consentVersion: text("consent_version").notNull(),
+    /** "adult" or "minor". No exact age is stored. Minors take part only with a guardian's consent. */
+    ageGroup: text("age_group").notNull().default("adult"),
+    /** Enrolled while the study ran in pilot mode. Pilot participants are left out of the main analysis. */
+    pilot: boolean("pilot").notNull().default(false),
     consentedAt: timestamp("consented_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
@@ -30,6 +35,7 @@ export const experimentParticipants = pgTable(
       "exp_participants_experience_chk",
       sql`${t.experience} in ('novice', 'intermediate', 'expert')`,
     ),
+    check("exp_participants_age_chk", sql`${t.ageGroup} in ('adult', 'minor')`),
     index("exp_participants_stratum_idx").on(t.experience, t.arm),
   ],
 );
@@ -65,6 +71,8 @@ export const experimentSubmissions = pgTable("experiment_submissions", {
   effectiveFactors: doublePrecision("effective_factors").notNull(),
   effectiveSectors: doublePrecision("effective_sectors").notNull(),
   topFactorShare: doublePrecision("top_factor_share").notNull(),
+  /** Robustness outcome from return covariance only (Meucci's effective number of bets). Null for older rows. */
+  effectiveBets: doublePrecision("effective_bets"),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

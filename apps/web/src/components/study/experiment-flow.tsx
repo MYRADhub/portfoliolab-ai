@@ -7,10 +7,32 @@ import { pct } from "@/lib/format";
 import { CONSENT_POINTS, DEBRIEF_POINTS } from "./consent";
 import { Loading } from "@/components/ui/skeleton";
 
+interface Study {
+  researcher: string;
+  approval: string;
+  contact: string;
+  retention: string;
+  end: string | null;
+  allowMinors: boolean;
+}
+
+interface Result {
+  nHoldings: number;
+  effectiveSectors: number;
+  effectiveFactors: number;
+  topFactorShare: number;
+}
+
 interface Status {
   enabled: boolean;
+  study?: Study | null;
   limits?: { minHoldings: number; maxHoldings: number; minWeightPct: number };
-  participant?: { arm: "control" | "treatment"; experience: string; completed: boolean } | null;
+  participant?: {
+    arm: "control" | "treatment";
+    experience: string;
+    completed: boolean;
+    result: Result | null;
+  } | null;
 }
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
@@ -41,8 +63,19 @@ export function ExperimentFlow() {
     );
   if (!status) return <Loading />;
   if (!status.enabled) return <p>The study is not open right now.</p>;
-  if (!status.participant) return <Consent onDone={refresh} />;
-  if (status.participant.completed) return <Done onWithdrawn={refresh} />;
+  if (!status.participant) {
+    if (!status.study) return <p>The study is not open yet.</p>;
+    return <Consent study={status.study} onDone={refresh} />;
+  }
+  if (status.participant.completed)
+    return (
+      <Done
+        arm={status.participant.arm}
+        result={status.participant.result}
+        end={status.study?.end ?? null}
+        onWithdrawn={refresh}
+      />
+    );
   return <Task limits={status.limits!} onDone={refresh} onWithdrawn={refresh} />;
 }
 
@@ -72,14 +105,17 @@ function Scale({
   );
 }
 
-function Consent({ onDone }: { onDone: () => void }) {
+function Consent({ study, onDone }: { study: Study; onDone: () => void }) {
   const [agree, setAgree] = useState(false);
+  const [age, setAge] = useState<"adult" | "minor" | null>(null);
+  const [guardian, setGuardian] = useState(false);
   const [experience, setExperience] = useState<string | null>(null);
   const [pd, setPd] = useState<number | null>(null);
   const [conf, setConf] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ready = agree && experience && pd && conf;
+  const ageOk = age === "adult" || (age === "minor" && study.allowMinors && guardian);
+  const ready = agree && ageOk && experience && pd && conf;
 
   async function start() {
     setBusy(true);
@@ -89,6 +125,8 @@ function Consent({ onDone }: { onDone: () => void }) {
         method: "POST",
         body: JSON.stringify({
           consent: true,
+          ageGroup: age,
+          ...(age === "minor" ? { guardianConsent: guardian } : {}),
           experience,
           pre: { perceivedDiversification: pd, confidence: conf },
         }),
@@ -110,7 +148,58 @@ function Consent({ onDone }: { onDone: () => void }) {
           {CONSENT_POINTS.map((p) => (
             <li key={p}>{p}</li>
           ))}
+          <li>Your answers are kept as follows: {study.retention}</li>
         </ul>
+        <dl
+          className="grid gap-1 rounded-lg border p-3 sm:grid-cols-[10rem_1fr]"
+          aria-label="About the study"
+        >
+          <dt className="text-muted-foreground">Researcher</dt>
+          <dd>{study.researcher}</dd>
+          <dt className="text-muted-foreground">Approved by</dt>
+          <dd>{study.approval}</dd>
+          <dt className="text-muted-foreground">Questions or concerns</dt>
+          <dd>{study.contact}</dd>
+        </dl>
+        <fieldset className="space-y-1">
+          <legend className="text-sm font-medium">How old are you?</legend>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="age"
+                checked={age === "adult"}
+                onChange={() => setAge("adult")}
+              />
+              18 or over
+            </label>
+            <label className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="age"
+                checked={age === "minor"}
+                onChange={() => setAge("minor")}
+              />
+              Under 18
+            </label>
+          </div>
+        </fieldset>
+        {age === "minor" &&
+          (study.allowMinors ? (
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={guardian}
+                onChange={(e) => setGuardian(e.target.checked)}
+                className="mt-1"
+              />
+              <span>A parent or guardian has signed the consent form for this study.</span>
+            </label>
+          ) : (
+            <p role="alert" className="text-destructive">
+              This study is open to people aged 18 or over only. Thank you for your interest.
+            </p>
+          ))}
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
@@ -165,7 +254,17 @@ function Consent({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Done({ onWithdrawn }: { onWithdrawn: () => void }) {
+function Done({
+  arm,
+  result,
+  end,
+  onWithdrawn,
+}: {
+  arm: "control" | "treatment";
+  result: Result | null;
+  end: string | null;
+  onWithdrawn: () => void;
+}) {
   return (
     <Card>
       <CardContent className="space-y-3 text-sm">
@@ -176,6 +275,27 @@ function Done({ onWithdrawn }: { onWithdrawn: () => void }) {
             <li key={p}>{p}</li>
           ))}
         </ul>
+        <p data-testid="debrief-arm">
+          You saw the version{" "}
+          {arm === "treatment" ? "with hidden exposures" : "without hidden exposures"}.
+        </p>
+        {result && (
+          <div className="rounded-lg border p-3" data-testid="debrief-result">
+            <h3 className="font-medium">Your portfolio</h3>
+            <p>
+              Your {result.nHoldings} companies looked spread across{" "}
+              <strong>{result.effectiveSectors.toFixed(1)}</strong> sectors, but depended on about{" "}
+              <strong>{result.effectiveFactors.toFixed(1)}</strong> independent economic forces. The
+              largest single force accounted for <strong>{pct(result.topFactorShare)}</strong> of
+              its hidden exposure. The lower the second number is compared with the first, the less
+              diversified a portfolio is than it looks.
+            </p>
+          </div>
+        )}
+        <p className="font-medium">
+          Please do not discuss the study with anyone who might still take part
+          {end ? ` before ${end}` : ""}: knowing what it tests would change their answers.
+        </p>
         <WithdrawButton onWithdrawn={onWithdrawn} />
       </CardContent>
     </Card>
