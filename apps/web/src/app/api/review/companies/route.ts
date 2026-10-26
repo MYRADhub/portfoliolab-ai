@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { assertReviewer, listForReview } from "@/server/review";
 
 const querySchema = z.object({
-  status: z.enum(["draft", "illustrative", "reviewed", "none", "all"]).optional(),
+  status: z.enum(["draft", "illustrative", "reviewed", "none", "all", "gold"]).optional(),
   q: z.string().max(40).optional(),
   limit: z.coerce.number().int().min(1).max(600).optional(),
 });

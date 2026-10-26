@@ -25,7 +25,8 @@
     "real:seed": "pnpm --filter @portfolio-lab/demo real",
     "data:sec": "pnpm --filter @portfolio-lab/data sec",
     "real": "node scripts/run-real.mjs",
-    "data:exposures": "pnpm --filter @portfolio-lab/classify exposures"
+    "data:exposures": "pnpm --filter @portfolio-lab/classify exposures",
+    "data:gold": "pnpm --filter @portfolio-lab/data gold"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

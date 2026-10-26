@@ -11,7 +11,8 @@
     "sp500": "tsx src/sp500-cli.ts",
     "news": "tsx src/news-cli.ts",
     "aliases": "tsx src/aliases-cli.ts",
-    "sec": "tsx src/sec-cli.ts"
+    "sec": "tsx src/sec-cli.ts",
+    "gold": "tsx src/gold-cli.ts"
   },
   "dependencies": {
     "@portfolio-lab/db": "workspace:*",

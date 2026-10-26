@@ -81,9 +81,15 @@ export function EvidenceView() {
                       </ul>
                     </div>
                   )}
-                  <Link href={f.href} className="text-xs underline underline-offset-2">
-                    See the full test
-                  </Link>
+                  {f.href.startsWith("/api/") ? (
+                    <a href={f.href} download className="text-xs underline underline-offset-2">
+                      {f.linkLabel ?? "See the full test"}
+                    </a>
+                  ) : (
+                    <Link href={f.href} className="text-xs underline underline-offset-2">
+                      {f.linkLabel ?? "See the full test"}
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
             </li>

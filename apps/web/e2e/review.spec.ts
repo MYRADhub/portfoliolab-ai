@@ -293,3 +293,73 @@ test.describe("review page", () => {
     await scan();
   });
 });
+
+test.describe("blind scoring of the gold set", () => {
+  // AMZN is in the gold set and is an AI draft in the fixture. The blind scores repeat the draft's values and
+  // confidences so that later tests still see the same exposures.
+  const amzn = [
+    row("consumer", { magnitude: 3, direction: 1, confidence: 0.8 }),
+    row("ai_capex", { magnitude: 1, direction: 1, confidence: 0.8 }),
+    row("rates", { magnitude: 2, direction: -1, confidence: 0.8 }),
+  ];
+
+  test("hides the draft, records the blind scores once per person, and feeds the agreement export", async ({
+    playwright,
+  }) => {
+    const ctx = await api(playwright);
+    const gold = (await (
+      await ctx.get("/api/review/companies?status=gold", { headers: H })
+    ).json()) as Json;
+    expect(gold.companies.map((c: Json) => c.ticker)).toContain("AMZN");
+    expect(gold.companies.every((c: Json) => c.gold)).toBe(true);
+
+    const hidden = (await (
+      await ctx.get("/api/review/companies/AMZN?blind=1", { headers: H })
+    ).json()) as Json;
+    expect(hidden.rows).toEqual([]);
+    expect(hidden.forces.length).toBeGreaterThan(3);
+    // NKE is a draft but not in the gold set
+    expect((await ctx.get("/api/review/companies/NKE?blind=1", { headers: H })).status()).toBe(400);
+
+    const put = (reviewer: string) =>
+      ctx.put("/api/review/companies/AMZN", {
+        headers: H,
+        data: { reviewer, blind: true, rows: amzn },
+      });
+    const saved = await put("Ada Lovelace");
+    expect(saved.status()).toBe(200);
+    expect(((await saved.json()) as Json).reviewedBy).toBe("Ada Lovelace");
+    expect((await put("Ada Lovelace")).status()).toBe(409);
+
+    const csv = await ctx.get("/api/evidence/agreement");
+    expect(csv.headers()["content-type"]).toContain("text/csv");
+    const lines = (await csv.text()).trim().split("\n");
+    expect(lines[0]).toBe("ticker,force,ai_score,human_score,reviewer");
+    expect(lines).toContain('AMZN,rates,-2,-2,"Ada Lovelace"');
+  });
+
+  test("the page scores a gold company without showing the draft", async ({ page }) => {
+    await unlock(page);
+    await page.getByLabel("Status filter").selectOption("gold");
+    const list = page.getByRole("list", { name: "Companies to review" });
+    await expect(list.getByRole("button", { name: /AMZN/ })).toContainText("Blind: Ada Lovelace");
+    await list.getByRole("button", { name: /AMZN/ }).click();
+    await expect(page.getByTestId("blind-note")).toBeVisible();
+    const scores = page.getByRole("list", { name: "Exposure scores" });
+    await expect(scores.locator("li")).toHaveCount(0);
+
+    await page.getByLabel("Your name (recorded with the review)").fill("Ada Lovelace");
+    await expect(page.getByRole("status")).toContainText("has already scored this company blind");
+    await page.getByLabel("Your name (recorded with the review)").fill("Grace Hopper");
+
+    await page.getByLabel("Force to add").selectOption("consumer");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await page.getByLabel("Strength for Consumer spending").selectOption("3");
+    await page.getByLabel("Reason for Consumer spending").fill("Most revenue is retail.");
+    await page.getByRole("button", { name: "Save blind scores" }).click();
+    await expect(page.getByRole("status")).toContainText("Blind scores saved for Grace Hopper");
+    // a second person's blind scores do not replace the first person's reviewed profile
+    await expect(page.getByRole("status")).toContainText("reviewed by Ada Lovelace");
+    await expect(page.getByRole("button", { name: "Save blind scores" })).toBeDisabled();
+  });
+});

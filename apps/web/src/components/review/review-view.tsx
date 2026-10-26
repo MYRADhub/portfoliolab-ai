@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PROVENANCE_LABEL } from "@/lib/provenance";
-import type { ReviewListItem, ReviewProfile, ReviewStatus } from "@/server/review";
+import type { ReviewFilter, ReviewListItem, ReviewProfile, ReviewStatus } from "@/server/review";
 
 const TOKEN_KEY = "pl-review-token";
 const REVIEWER_KEY = "pl-reviewer";
@@ -53,7 +53,7 @@ export function ReviewView() {
   const [error, setError] = useState<string | null>(null);
 
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
-  const [status, setStatus] = useState<ReviewStatus | "all">("draft");
+  const [status, setStatus] = useState<ReviewFilter>("draft");
   const [q, setQ] = useState("");
   const [list, setList] = useState<ReviewListItem[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -146,13 +146,14 @@ export function ReviewView() {
               <select
                 aria-label="Status filter"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as ReviewStatus | "all")}
+                onChange={(e) => setStatus(e.target.value as ReviewFilter)}
                 className="rounded-md border bg-background px-2 py-1.5"
               >
                 <option value="draft">AI drafts</option>
                 <option value="illustrative">Illustrative</option>
                 <option value="reviewed">Reviewed</option>
                 <option value="none">No profile</option>
+                <option value="gold">Gold set (score blind)</option>
                 <option value="all">All</option>
               </select>
               <input
@@ -181,7 +182,13 @@ export function ReviewView() {
                       <span className="font-medium">{c.ticker}</span>{" "}
                       <span className="text-muted-foreground">{c.name}</span>
                     </span>
-                    <span className="text-xs text-muted-foreground">{STATUS_TEXT[c.status]}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {status === "gold"
+                        ? c.blindBy.length
+                          ? `Blind: ${c.blindBy.join(", ")}`
+                          : "Not scored blind"
+                        : STATUS_TEXT[c.status]}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -194,9 +201,11 @@ export function ReviewView() {
 
         {selected ? (
           <Editor
-            key={selected}
+            key={`${selected}-${status === "gold"}`}
             token={token}
             ticker={selected}
+            blind={status === "gold" && !!list.find((c) => c.ticker === selected)?.gold}
+            blindBy={list.find((c) => c.ticker === selected)?.blindBy ?? []}
             onSaved={() => setVersion((v) => v + 1)}
           />
         ) : (
@@ -212,10 +221,15 @@ export function ReviewView() {
 function Editor({
   token,
   ticker,
+  blind,
+  blindBy,
   onSaved,
 }: {
   token: string;
   ticker: string;
+  /** Score without seeing the AI draft. The draft stays hidden until this reviewer has saved blind scores. */
+  blind: boolean;
+  blindBy: string[];
   onSaved: () => void;
 }) {
   const [profile, setProfile] = useState<ReviewProfile | null>(null);
@@ -225,10 +239,13 @@ function Editor({
   const [saved, setSaved] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [add, setAdd] = useState("");
+  // Fixed when the editor opens, so saving blind scores does not reload the profile in blind mode.
+  const [blindMode] = useState(blind);
+  const alreadyBlind = blindMode && blindBy.includes(reviewer.trim());
 
   useEffect(() => {
     let cancelled = false;
-    call<ReviewProfile>(token, `/api/review/companies/${ticker}`)
+    call<ReviewProfile>(token, `/api/review/companies/${ticker}${blindMode ? "?blind=1" : ""}`)
       .then((p) => {
         if (cancelled) return;
         setProfile(p);
@@ -241,7 +258,7 @@ function Editor({
     return () => {
       cancelled = true;
     };
-  }, [token, ticker]);
+  }, [token, ticker, blindMode]);
 
   if (error && !profile)
     return (
@@ -266,6 +283,7 @@ function Editor({
         method: "PUT",
         body: JSON.stringify({
           reviewer,
+          ...(blindMode ? { blind: true } : {}),
           rows: rows.map(({ slug, magnitude, direction, confidence, rationale }) => ({
             slug,
             magnitude,
@@ -277,7 +295,11 @@ function Editor({
       });
       setProfile(p);
       setRows(p.rows);
-      setSaved(`Saved as version ${p.version}, reviewed by ${p.reviewedBy}.`);
+      setSaved(
+        blindMode
+          ? `Blind scores saved for ${reviewer}. The profile now shows version ${p.version}, reviewed by ${p.reviewedBy}.`
+          : `Saved as version ${p.version}, reviewed by ${p.reviewedBy}.`,
+      );
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -302,7 +324,15 @@ function Editor({
         </p>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
-        {rows.length === 0 && (
+        {blindMode && !saved && (
+          <p className="rounded-lg border border-dashed p-3" data-testid="blind-note">
+            Blind scoring: the AI draft is hidden. Score this company from what you know and its
+            filings, without opening its page elsewhere in the app. Add every force that clearly
+            matters; leave out the rest. Your scores are stored as given and compared with the draft
+            on the Evidence page.
+          </p>
+        )}
+        {rows.length === 0 && !blindMode && (
           <p className="text-muted-foreground">
             No scores yet. Add the forces that clearly matter.
           </p>
@@ -427,17 +457,32 @@ function Editor({
             />
           </label>
           <Button
-            disabled={busy || reviewer.trim().length < 2 || rows.some((r) => !r.rationale.trim())}
+            disabled={
+              busy ||
+              reviewer.trim().length < 2 ||
+              rows.some((r) => !r.rationale.trim()) ||
+              (blindMode && (alreadyBlind || !!saved))
+            }
             onClick={() => void save()}
           >
-            {edited ? "Save changes as reviewed" : "Accept as reviewed"}
+            {blindMode
+              ? "Save blind scores"
+              : edited
+                ? "Save changes as reviewed"
+                : "Accept as reviewed"}
           </Button>
-          {edited && (
+          {edited && !blindMode && (
             <Button variant="ghost" onClick={() => setRows(profile.rows)}>
               Discard changes
             </Button>
           )}
         </div>
+        {alreadyBlind && !saved && (
+          <p role="status" className="text-muted-foreground">
+            {reviewer.trim()} has already scored this company blind. Choose another filter to edit
+            its reviewed profile.
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-destructive">
             {error}

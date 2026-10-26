@@ -16,3 +16,4 @@ export * from "./simulation";
 export * from "./benchmark";
 export * from "./factorreturns";
 export * from "./watch";
+export * from "./agreement";

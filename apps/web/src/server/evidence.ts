@@ -1,4 +1,6 @@
 import type { Db } from "@portfolio-lab/db";
+import type { RaterAgreement } from "@portfolio-lab/finance";
+import { getDraftAgreement } from "./agreement";
 import { EARNINGS_TYPES, getEventStudy } from "./events";
 import { estimateForces, FORCE_DAYS } from "./forces";
 import { getPooledSpilloverCached, type PooledReport } from "./spillover";
@@ -6,7 +8,7 @@ import { getPooledSpilloverCached, type PooledReport } from "./spillover";
 export type Verdict = "supported" | "not_supported" | "inconclusive" | "no_data";
 
 export interface Finding {
-  id: "spillover" | "sectors" | "earnings";
+  id: "spillover" | "sectors" | "earnings" | "drafts";
   question: string;
   verdict: Verdict;
   /** One plain sentence stating what was found. */
@@ -16,6 +18,8 @@ export interface Finding {
   /** What this does not show. */
   caveats: string[];
   href: string;
+  /** Text for the link; defaults to "See the full test". */
+  linkLabel?: string;
 }
 
 export interface Evidence {
@@ -55,6 +59,21 @@ export function judgeEarnings(events: number, unusualShare: number | null): Verd
   return unusualShare <= 0.07 ? "not_supported" : "inconclusive";
 }
 
+/** Companies scored blind before the reliability check is reported at all. */
+export const MIN_BLIND_COMPANIES = 10;
+
+/**
+ * Pure: can the AI-drafted scores be trusted? Uses the usual reading of kappa (0.6 and above is substantial agreement,
+ * below 0.4 is weak) and asks the lower end of the interval to clear 0.4 too.
+ */
+export function judgeDrafts(
+  a: Pick<RaterAgreement, "companies" | "weightedKappa" | "kappaInterval">,
+): Verdict {
+  if (a.companies < MIN_BLIND_COMPANIES || a.weightedKappa === null) return "no_data";
+  if (a.weightedKappa >= 0.6 && (a.kappaInterval?.[0] ?? -1) >= 0.4) return "supported";
+  return a.weightedKappa < 0.4 ? "not_supported" : "inconclusive";
+}
+
 /**
  * The product's central claims, each tested on real data right now and reported with its verdict, figures and
  * limits. Nothing here is written in advance: every sentence and number is produced from the same calculations the
@@ -62,11 +81,19 @@ export function judgeEarnings(events: number, unusualShare: number | null): Verd
  */
 export async function getEvidence(db: Db, opts: { now?: Date } = {}): Promise<Evidence> {
   const { now = new Date() } = opts;
-  const [pooled, forces, events] = await Promise.all([
+  const [pooled, forces, events, agreement] = await Promise.all([
     getPooledSpilloverCached(db),
     estimateForces(db, { now, days: FORCE_DAYS, held: [] }),
     getEventStudy(db, opts.now ? { now: opts.now } : {}),
+    getDraftAgreement(db),
   ]);
+
+  const a = agreement.ai;
+  const dj = judgeDrafts(a);
+  const draftCaveat =
+    dj === "no_data"
+      ? "The exposure scores are AI drafts that no person has reviewed."
+      : `The exposure scores are AI drafts; on ${a.companies} companies scored blind by a person, agreement was ${r3(a.weightedKappa!)} (weighted kappa).`;
 
   const findings: Finding[] = [];
 
@@ -106,7 +133,7 @@ export async function getEvidence(db: Db, opts: { now?: Date } = {}): Promise<Ev
     caveats: [
       "The effect is small.",
       "Calendar weeks are a coarse way to account for days that share market conditions.",
-      "The exposure scores are AI drafts that no person has reviewed.",
+      draftCaveat,
     ],
     href: "/events",
   });
@@ -136,7 +163,7 @@ export async function getEvidence(db: Db, opts: { now?: Date } = {}): Promise<Ev
       caveats: [
         "Both are fitted on the same day they are measured on, so this is not a forecast.",
         "Both figures are adjusted for how many columns each uses, and daily stock moves are mostly noise.",
-        "The exposure scores are AI drafts that no person has reviewed.",
+        draftCaveat,
       ],
       href: "/forces",
     });
@@ -189,6 +216,53 @@ export async function getEvidence(db: Db, opts: { now?: Date } = {}): Promise<Ev
       "Direction is not tested here: the average abnormal return is close to zero because good and bad news cancel.",
     ],
     href: "/events",
+  });
+
+  findings.push({
+    id: "drafts",
+    question:
+      "Do the AI-drafted exposure scores agree with a person who scored the same companies blind?",
+    verdict: dj,
+    result:
+      dj === "no_data"
+        ? `Only ${a.companies} of the ${agreement.goldSize} gold-set companies have been scored blind so far; at least ${MIN_BLIND_COMPANIES} are needed.`
+        : dj === "supported"
+          ? "Yes: the drafts agreed with the blind human scores far beyond chance."
+          : dj === "not_supported"
+            ? "No: the drafts agreed with the blind human scores only weakly."
+            : "Partly: agreement was moderate, so the drafts are a starting point, not a substitute for review.",
+    figures:
+      dj === "no_data"
+        ? [{ label: "Companies scored blind", value: `${a.companies} of ${agreement.goldSize}` }]
+        : [
+            { label: "Companies scored blind", value: `${a.companies} of ${agreement.goldSize}` },
+            {
+              label: "Weighted kappa (95% interval)",
+              value: `${r3(a.weightedKappa!)}${a.kappaInterval ? ` (${r3(a.kappaInterval[0])} to ${r3(a.kappaInterval[1])})` : ""}`,
+            },
+            {
+              label: "Same direction when both see a link",
+              value: a.signAgreement === null ? "n/a" : p1(a.signAgreement),
+            },
+            {
+              label: "Forces per company, AI and person",
+              value: `${a.aiForcesPerCompany.toFixed(1)} and ${a.humanForcesPerCompany.toFixed(1)}`,
+            },
+            {
+              label: "Person against person",
+              value:
+                agreement.humans === null || agreement.humans.weightedKappa === null
+                  ? "not measured yet"
+                  : `${r3(agreement.humans.weightedKappa)} on ${agreement.humans.companies} companies`,
+            },
+          ],
+    caveats: [
+      "The gold set is the most traded companies in each sector, which are likely the easiest for both the AI and a person.",
+      "A person's scores are judgements too, not measurements; agreement shows consistency, not truth.",
+      "Kappa counts every force for every company, including the many both leave at zero.",
+    ],
+    href: "/api/evidence/agreement",
+    linkLabel: "Download the scores (CSV)",
   });
 
   return { generatedFor: now.toISOString().slice(0, 10), findings };

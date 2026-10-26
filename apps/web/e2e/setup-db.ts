@@ -136,7 +136,7 @@ async function main() {
       rationale: ["AMZN", "NKE", "SBUX"].includes(ticker)
         ? "AI-drafted, not reviewed: e2e fixture"
         : "e2e fixture, not real data",
-      source: "manual",
+      source: ["AMZN", "NKE", "SBUX"].includes(ticker) ? "llm_seeded" : "manual",
     });
   }
 

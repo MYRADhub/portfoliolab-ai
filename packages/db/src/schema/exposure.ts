@@ -98,3 +98,25 @@ export const companyFactorExposures = pgTable(
     index("exposure_factor_idx").on(t.factorId),
   ],
 );
+
+/**
+ * A person's scores for one company, given without seeing the AI draft. Kept as written, even if the profile is
+ * edited later, so the AI-against-human comparison always uses the blind judgement. `aiVersion` is the draft version
+ * that was hidden from the reviewer.
+ */
+export const blindReviews = pgTable(
+  "blind_reviews",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    reviewer: text("reviewer").notNull(),
+    aiVersion: integer("ai_version").notNull(),
+    scores: jsonb("scores")
+      .$type<{ slug: string; magnitude: number; direction: number }[]>()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("blind_reviews_company_reviewer_idx").on(t.companyId, t.reviewer)],
+);

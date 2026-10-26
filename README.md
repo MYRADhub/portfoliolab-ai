@@ -42,7 +42,7 @@ When the second number is much smaller than the first, your portfolio is less di
 | **Watchlist**           | Companies I follow, with plain-language alerts: an unusual move, a sharp fall, or a price near its 52-week high or low.                                                                         |
 | **News**                | Stories ranked by how much they matter to _you_, with a "why am I seeing this" breakdown.                                                                                                       |
 | **Reactions**           | How did stocks actually move around earnings and SEC filings, after removing what the market did? Includes the pooled spillover test.                                                           |
-| **Evidence**            | Does the idea hold up? Three claims tested on the real data right now, each with a verdict, the numbers and what the test cannot show.                                                          |
+| **Evidence**            | Does the idea hold up? Four claims tested on the real data right now, including how well the AI-drafted scores agree with a person's blind scores, each with a verdict and its limits.          |
 | **Research**            | Look up any S&P 500 company, or ask the assistant a question about your portfolio.                                                                                                              |
 | **Report**              | A one-page summary of a portfolio you can print or save as a PDF.                                                                                                                               |
 | **Guide**               | Every term explained in plain language, plus a guided tour of the app.                                                                                                                          |
@@ -136,7 +136,7 @@ Copy `.env.example` to `.env`. Only the database URL is needed to start.
 
 ## Two special tools (both off by default)
 
-**Exposure review (`/review`)**: the AI-drafted exposure scores need a human check. This tool lists companies by status, lets a reviewer accept, edit, remove or add scores, and records who reviewed what and when. Every save is a new version and nothing is erased. Turn it on with `REVIEW_TOKEN`.
+**Exposure review (`/review`)**: the AI-drafted exposure scores need a human check. This tool lists companies by status, lets a reviewer accept, edit, remove or add scores, and records who reviewed what and when. Every save is a new version and nothing is erased. The **gold set** filter (33 companies, `pnpm data:gold`) hides the AI draft so a person can score a company blind; the Evidence page then measures how far the drafts agree with those scores. Turn it on with `REVIEW_TOKEN`.
 
 **Research study (`/experiment`)**: a built-in experiment that asks whether showing people their hidden exposures changes how they diversify. It has consent, random assignment to two groups, a control group that physically cannot reach exposure data, a data export, and a ready-made analysis. **Do not run it on real people until an ethics review has approved it.** The design, analysis plan and checklist are in `docs/experiment-design.md`.
 

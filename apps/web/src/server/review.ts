@@ -1,6 +1,13 @@
 import { timingSafeEqual } from "node:crypto";
-import { and, asc, eq, isNull, max } from "drizzle-orm";
-import { companies, companyFactorExposures, factors, type Db } from "@portfolio-lab/db";
+import { and, asc, eq, inArray, isNull, max } from "drizzle-orm";
+import {
+  blindReviews,
+  companies,
+  companyFactorExposures,
+  factors,
+  type Db,
+} from "@portfolio-lab/db";
+import { GOLD_SET } from "@portfolio-lab/shared";
 import { z } from "zod";
 import { exposureProvenance, type Provenance } from "@/lib/provenance";
 import { AppError } from "./errors";
@@ -20,13 +27,21 @@ export function assertReviewer(req: Request): void {
 
 export type ReviewStatus = Provenance | "none";
 
+export type ReviewFilter = ReviewStatus | "all" | "gold";
+
 export interface ReviewListItem {
   ticker: string;
   name: string;
   sector: string | null;
   status: ReviewStatus;
   forces: number;
+  /** In the gold set: scored blind to measure how reliable the AI drafts are. */
+  gold: boolean;
+  /** Reviewers who have already scored this company blind. */
+  blindBy: string[];
 }
+
+const LLM_SOURCES = ["llm_seeded", "llm_updated"] as const;
 
 function statusOf(rationales: (string | null)[]): ReviewStatus {
   if (rationales.length === 0) return "none";
@@ -58,13 +73,19 @@ export async function reviewSummary(db: Db) {
 
 export async function listForReview(
   db: Db,
-  opts: { status?: ReviewStatus | "all"; q?: string; limit?: number },
+  opts: { status?: ReviewFilter; q?: string; limit?: number; goldSet?: readonly string[] },
 ): Promise<ReviewListItem[]> {
-  const { status = "all", q = "", limit = 100 } = opts;
+  const { status = "all", q = "", limit = 100, goldSet = GOLD_SET } = opts;
+  const gold = new Set(goldSet);
   const all = await db.select().from(companies).orderBy(asc(companies.ticker));
   const rows = await currentRows(db);
   const by = new Map<number, (string | null)[]>();
   for (const r of rows) by.set(r.companyId, [...(by.get(r.companyId) ?? []), r.rationale]);
+  const blind = new Map<number, string[]>();
+  for (const b of await db
+    .select({ companyId: blindReviews.companyId, reviewer: blindReviews.reviewer })
+    .from(blindReviews))
+    blind.set(b.companyId, [...(blind.get(b.companyId) ?? []), b.reviewer]);
   const term = q.trim().toLowerCase();
   return all
     .map((c) => {
@@ -75,11 +96,13 @@ export async function listForReview(
         sector: c.sector,
         status: statusOf(r),
         forces: r.length,
+        gold: gold.has(c.ticker),
+        blindBy: blind.get(c.id) ?? [],
       };
     })
     .filter(
       (c) =>
-        (status === "all" || c.status === status) &&
+        (status === "all" || (status === "gold" ? c.gold : c.status === status)) &&
         (!term || c.ticker.toLowerCase().startsWith(term) || c.name.toLowerCase().includes(term)),
     )
     .slice(0, limit);
@@ -107,8 +130,31 @@ async function findCompany(db: Db, ticker: string) {
   return c;
 }
 
-export async function getReviewProfile(db: Db, ticker: string): Promise<ReviewProfile> {
+/** The latest AI-drafted version of a company's profile, open or closed, or null if it was never drafted. */
+async function latestDraftVersion(db: Pick<Db, "select">, companyId: number) {
+  const [v] = await db
+    .select({ v: max(companyFactorExposures.version) })
+    .from(companyFactorExposures)
+    .where(
+      and(
+        eq(companyFactorExposures.companyId, companyId),
+        inArray(companyFactorExposures.source, [...LLM_SOURCES]),
+      ),
+    );
+  return v?.v ?? null;
+}
+
+/**
+ * The review profile of one company. With `blind`, the scores are left out so a reviewer can score the company
+ * without being anchored by the AI draft; only gold-set companies that have a draft can be opened this way.
+ */
+export async function getReviewProfile(
+  db: Db,
+  ticker: string,
+  opts: { blind?: boolean; goldSet?: readonly string[] } = {},
+): Promise<ReviewProfile> {
   const c = await findCompany(db, ticker);
+  if (opts.blind) await assertBlindable(db, c, opts.goldSet ?? GOLD_SET);
   const rows = await db
     .select({
       slug: factors.slug,
@@ -128,7 +174,7 @@ export async function getReviewProfile(db: Db, ticker: string): Promise<ReviewPr
     status: statusOf(rows.map((r) => r.rationale)),
     version: rows.reduce((m, r) => Math.max(m, r.version), 0),
     reviewedBy: rows.find((r) => r.reviewedBy)?.reviewedBy ?? null,
-    rows: rows
+    rows: (opts.blind ? [] : rows)
       .map((r) => ({
         slug: r.slug,
         magnitude: r.magnitude,
@@ -142,8 +188,23 @@ export async function getReviewProfile(db: Db, ticker: string): Promise<ReviewPr
   };
 }
 
+async function assertBlindable(
+  db: Db,
+  c: { id: number; ticker: string },
+  goldSet: readonly string[],
+): Promise<number> {
+  if (!goldSet.includes(c.ticker))
+    throw new AppError("bad_request", "Only gold-set companies are scored blind");
+  const v = await latestDraftVersion(db, c.id);
+  if (v === null)
+    throw new AppError("bad_request", "This company has no AI draft to compare a blind score with");
+  return v;
+}
+
 export const saveSchema = z.object({
   reviewer: z.string().trim().min(2).max(80),
+  /** Scored without seeing the AI draft. Stored separately so later edits never change the comparison. */
+  blind: z.boolean().optional(),
   rows: z
     .array(
       z.object({
@@ -160,13 +221,19 @@ export const saveSchema = z.object({
 /**
  * Replaces a company's current profile with the reviewer's version. The old rows are closed, not deleted, so every
  * earlier version stays in the table. Saved rows are marked manual and carry the reviewer's name and the time.
+ *
+ * A blind save also records the scores in `blind_reviews`, once per reviewer and company. It replaces the profile
+ * only while the profile is still an AI draft: a second person's blind scores are kept for comparison but do not
+ * overwrite the first person's reviewed profile.
  */
 export async function saveReviewedProfile(
   db: Db,
   ticker: string,
   input: z.infer<typeof saveSchema>,
+  opts: { goldSet?: readonly string[] } = {},
 ) {
   const c = await findCompany(db, ticker);
+  const aiVersion = input.blind ? await assertBlindable(db, c, opts.goldSet ?? GOLD_SET) : null;
   const known = new Map(
     (await db.select({ id: factors.id, slug: factors.slug }).from(factors)).map((f) => [
       f.slug,
@@ -180,6 +247,31 @@ export async function saveReviewedProfile(
     seen.add(r.slug);
   }
   await db.transaction(async (tx) => {
+    if (aiVersion !== null) {
+      const [dup] = await tx
+        .select({ id: blindReviews.id })
+        .from(blindReviews)
+        .where(and(eq(blindReviews.companyId, c.id), eq(blindReviews.reviewer, input.reviewer)));
+      if (dup)
+        throw new AppError("conflict", `${input.reviewer} has already scored ${c.ticker} blind`);
+      await tx.insert(blindReviews).values({
+        companyId: c.id,
+        reviewer: input.reviewer,
+        aiVersion,
+        scores: input.rows.map(({ slug, magnitude, direction }) => ({
+          slug,
+          magnitude,
+          direction,
+        })),
+      });
+      const open = await tx
+        .select({ rationale: companyFactorExposures.rationale })
+        .from(companyFactorExposures)
+        .where(
+          and(eq(companyFactorExposures.companyId, c.id), isNull(companyFactorExposures.validTo)),
+        );
+      if (statusOf(open.map((r) => r.rationale)) === "reviewed") return;
+    }
     const [v] = await tx
       .select({ v: max(companyFactorExposures.version) })
       .from(companyFactorExposures)

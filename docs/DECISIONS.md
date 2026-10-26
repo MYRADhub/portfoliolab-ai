@@ -858,6 +858,31 @@ A real-data database built before this feature lacked its table, which made the 
 
 ---
 
+## 34. How far can the AI-drafted exposures be trusted? A blind gold set (added 2026-10-26)
+
+**34.1 The 24 demo profiles in the real database were replaced by AI drafts.** Final. Who: Me.
+The real-data database still held the hand-made demo profiles for 24 of the best-known companies (AAPL, MSFT, NVDA, JPM and others), because the drafting script skips any company that already has a profile. Those rows are made up and say so, but the real-data results in section 32.3 were computed partly on them. `pnpm data:exposures --replace-illustrative` now drafts companies whose current rows are all demo rows; the demo rows are closed, not deleted, and the draft becomes the next version. Reviewed and drafted rows are never touched. All 503 companies now have AI drafts. The section 32.3 figures predate this and are re-measured for the paper.
+
+**34.2 The gold set: the 3 most traded companies in each sector.** Final. Who: Me.
+`pnpm data:gold` picks 33 companies (11 sectors times 3) by median daily traded value over the last year, keeping one share class per issuer (GOOGL, not also GOOG), and writes them to `packages/shared/src/gold-set.ts`. There is no market capitalisation in the data, so traded value stands in for size and familiarity. Choosing the best-known companies makes hand scoring feasible and suits the study (participants recognise them), but they are probably the easiest companies for both the AI and a person, so agreement on them is likely an upper bound for the index. The same list is the study universe (section 21).
+
+**34.3 Scored blind, stored apart.** Final. Who: Me.
+Editing a draft anchors the editor on it, so agreement measured that way would be inflated. The Review page's "Gold set (score blind)" filter opens a gold company with the draft hidden; the reviewer adds the forces that matter from scratch. The scores go to a new `blind_reviews` table (migration 0009) exactly as given, with the draft version that was hidden, once per reviewer and company. The first blind save also becomes the company's reviewed profile; a second person's blind scores are kept for comparison but do not overwrite it. The app cannot stop a reviewer from opening the company page elsewhere, so the note on the editor asks them not to.
+
+**34.4 Agreement is weighted kappa over every company-force cell.** Final. Who: Me.
+Each company is compared on all 12 forces, an absent force counting as 0, on the signed scale from -3 to +3. The headline figure is Cohen's kappa with quadratic weights: 1 is perfect, 0 is what chance would give, a near miss (2 against 3) costs little and a sign error (-2 against +2) costs a lot. The 95% interval comes from resampling companies (2,000 seeded draws), so one company's forces stay together. Also reported: plain kappa for "does this force matter at all", direction agreement where both see a link, forces per company for each side (does the AI over-assign?), per-force breakdowns and, where two people scored the same company, person-against-person kappa as a ceiling. Raw exact agreement is reported but is inflated by the many cells both leave at 0.
+
+**34.5 The bar.** Final. Who: Me.
+The Evidence page adds a fourth finding. "Supported" needs kappa of at least 0.6 (the usual reading of "substantial") with the lower end of the interval at least 0.4; below 0.4 is "Not supported"; fewer than 10 blind companies is "Not enough data". The scores behind it download as CSV from `/api/evidence/agreement`.
+
+### Mistakes in this slice
+
+- The first gold-set pick contained both GOOGL and GOOG. I added the one-share-class rule.
+- The e2e fixture stored its "AI-drafted" rows with source `manual`, so a blind score could find no draft to compare with. The fixture now uses `llm_seeded` for them.
+- My first blind e2e test saved AMZN with a different confidence than the fixture, which changed a later stress-test result. The test now repeats the fixture's values exactly.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

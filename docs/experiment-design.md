@@ -52,11 +52,11 @@ Two-sided test, alpha 0.05, power 0.80, normal approximation, participants per a
 - [ ] A contact for questions or complaints added to the consent screen.
 - [ ] Debrief text written (explains the two arms) and shown after submission.
 - [ ] `EXPERIMENT_ADMIN_TOKEN` set to a long random value and kept private.
-- [ ] `EXPERIMENT_UNIVERSE` set to the fixed list of companies for the study (otherwise every company with exposure data is offered).
+- [ ] `EXPERIMENT_UNIVERSE` set to the fixed list of companies for the study (otherwise every company with exposure data is offered). Use the gold set in `packages/shared/src/gold-set.ts`, after it has been scored blind and reviewed.
 
 ## Known limitations
 
-- The exposure data is currently illustrative, not reviewed. A real study needs the reviewed taxonomy (docs/factor-taxonomy.md) and curated exposures, otherwise the treatment arm is shown made-up numbers.
+- The exposure data is currently AI-drafted, not reviewed. The study universe is the gold set, which is scored blind and reviewed by a person first (DECISIONS section 34), so the treatment arm sees reviewed numbers.
 - The primary outcome is computed from our own exposure model, so it measures concentration in our taxonomy, not in the real world. A secondary robustness check with a different measure (for example effective number of independent bets from return covariance) is advisable.
 - The study cookie is not signed; someone who deletes it can enroll again. Acceptable for an anonymous study, but it can inflate the sample slightly.
 - Self-selected online participants are not representative of retail investors.
