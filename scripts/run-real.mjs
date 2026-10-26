@@ -1,7 +1,7 @@
 // Usage: pnpm real
 // Starts the app on http://localhost:3000 against the real-data database (pl_real). Build it first with
 // `pnpm real:seed` (prices and illustrative exposures) and `pnpm data:sec` (SEC filings and fundamentals).
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -11,6 +11,13 @@ if (!process.env.DATABASE_URL) {
 }
 const url = new URL(process.env.DATABASE_URL);
 url.pathname = "/pl_real";
+
+// A database built before a later feature was added lacks that feature's tables; applying migrations is safe to repeat.
+const migrate = spawnSync("pnpm", ["db:migrate"], {
+  stdio: "inherit",
+  env: { ...process.env, DATABASE_URL: url.toString() },
+});
+if (migrate.status !== 0) process.exit(migrate.status ?? 1);
 
 console.log(
   "Starting the app on http://localhost:3000 with real prices, SEC filings and fundamentals ...",

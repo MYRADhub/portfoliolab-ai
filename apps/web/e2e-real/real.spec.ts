@@ -223,6 +223,24 @@ test.describe("real data through the API", () => {
     for (const f of b.findings) expect(f.caveats.length).toBeGreaterThan(0);
   });
 
+  test("the watchlist reports plausible figures for real companies", async ({ request }) => {
+    expect((await request.post("/api/session")).status()).toBe(200);
+    for (const t of ["AAPL", "NVDA", "XOM", "JPM"])
+      expect((await request.post("/api/watchlist", { data: { ticker: t } })).status()).toBe(201);
+    const w = (await (await request.get("/api/watchlist")).json()) as Json;
+    expect(w.items.map((i: Json) => i.ticker)).toEqual(["AAPL", "NVDA", "XOM", "JPM"]);
+    for (const i of w.items) {
+      expect(i.signals).not.toBeNull();
+      expect(i.signals.last).toBeGreaterThan(1);
+      expect(Math.abs(i.signals.d1)).toBeLessThan(0.3);
+      expect(i.signals.fromHigh).toBeLessThanOrEqual(0);
+      expect(i.signals.fromLow).toBeGreaterThanOrEqual(0);
+      expect(i.signals.high52).toBeGreaterThanOrEqual(i.signals.last);
+      expect(i.signals.z1).not.toBeNull();
+    }
+    for (const a of w.alerts) expect(a.alert.text).toMatch(/\d/);
+  });
+
   test("the review tool sees every company as drafted, illustrative or reviewed, none missing", async ({
     request,
   }) => {
@@ -368,6 +386,7 @@ test.describe("pages with real data", () => {
       "/benchmark",
       "/forces",
       "/evidence",
+      "/watchlist",
       "/compare",
       "/report",
       "/simulation",

@@ -4,6 +4,7 @@ import {
   Activity,
   BookOpen,
   Compass,
+  Eye,
   FlaskConical,
   Gauge,
   FileText,
@@ -56,6 +57,7 @@ const groups: { label: string; items: Item[] }[] = [
   {
     label: "Market",
     items: [
+      { href: "/watchlist", label: "Watchlist", icon: Eye, tour: "nav-watchlist" },
       { href: "/news", label: "News", icon: Newspaper, tour: "nav-news" },
       { href: "/events", label: "Reactions", icon: Activity, tour: "nav-events" },
       { href: "/research", label: "Research", icon: Search, tour: "nav-research" },

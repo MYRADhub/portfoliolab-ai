@@ -55,7 +55,7 @@ Tables (grouped):
 - **Market**: `companies` (with SEC `cik`), `prices_daily`, `benchmark_prices` (SPY), `data_sources`, `fundamentals` (annual SEC figures).
 - **Exposure model**: `factors`, `factor_relationships`, `company_factor_exposures` (versioned with `valid_from`/`valid_to`, `source` of manual or AI, `reviewed_by`/`reviewed_at`).
 - **News**: `news_articles`, `event_types`, `news_classifications`, `news_company_links`, `company_aliases`, `ingest_failures`, `llm_runs` (cache and audit log of every AI call).
-- **Users**: `sessions`, `portfolios`, `holdings`, `rate_limit_hits` (Postgres-backed limiter with advisory locks).
+- **Users**: `sessions`, `portfolios`, `holdings`, `watchlist_items`, `rate_limit_hits` (Postgres-backed limiter with advisory locks).
 - **Study**: `experiment_participants`, `experiment_responses`, `experiment_submissions`, `experiment_events`.
 
 Migrations are generated with `pnpm db:generate` and applied by `pnpm db:migrate`.
@@ -87,6 +87,7 @@ Compare            GET /api/compare?a=&b=  (two session-owned portfolios)
 Per portfolio      analytics  correlation  exposures  forces  terminal  insights  radar  export
                    move  move/explain  explain  explain-tool  assistant
                    stress (GET catalog, POST run)  discovery  whatif  rebalance  simulation  benchmark
+Watchlist          GET|POST /api/watchlist   DELETE /api/watchlist/:ticker
 Research           GET /api/research/:ticker   GET /api/evidence
 Reactions          GET /api/events   GET /api/events/spillover  (?ticker= single company, ?pooled=1 all)
 Review (token)     GET /api/review/summary|companies   GET|PUT /api/review/companies/:ticker
@@ -114,6 +115,7 @@ All handlers go through `route()` (`server/errors.ts`) which assigns a request i
 | What is an abnormal return?      | `finance/eventstudy.ts` (market model on days -250 to -30, no look-ahead)                                     |
 | Force returns, attribution       | `finance/factorreturns.ts` (daily cross-sectional ridge, exact split), `server/forces.ts`                     |
 | Evidence verdicts                | `server/evidence.ts` (pure `judge*` bars, tested)                                                             |
+| Watchlist signals and alerts     | `finance/watch.ts` (rules and thresholds), `server/watchlist.ts`                                              |
 | Spillover test                   | `finance/eventstudy.ts` `spilloverFigures`, `pooledSpillover` (week clusters, placebo), `server/spillover.ts` |
 | Stress impact                    | `finance/stress.ts` (linear, 3% per exposure point under a full shock)                                        |
 | Lowest-volatility mix            | `finance/optimize.ts` (accelerated projected gradient on a capped simplex)                                    |

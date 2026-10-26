@@ -14,6 +14,7 @@ const pages = [
   { path: "/discovery", heading: "Discovery", nav: "Discovery" },
   { path: "/rebalance", heading: "Rebalance Lab", nav: "Rebalance Lab" },
   { path: "/simulation", heading: "Simulation", nav: "Simulation" },
+  { path: "/watchlist", heading: "Watchlist", nav: "Watchlist" },
   { path: "/news", heading: "News", nav: "News" },
   { path: "/events", heading: "Reactions", nav: "Reactions" },
   { path: "/research", heading: "Research", nav: "Research" },

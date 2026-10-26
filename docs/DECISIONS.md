@@ -836,6 +836,28 @@ It needs no session and no portfolio. It re-runs three studies, so the result is
 
 ---
 
+## 33. Watchlist and alerts (added 2026-10-25)
+
+**33.1 A short list per visitor, with alerts from fixed rules.** Final. Who: Me.
+A new `watchlist_items` table (migration 0008) keeps up to 30 companies per anonymous session, independent of any portfolio. The Watchlist page shows each company's last price, 1-day, 5-day and 1-month moves, distance from its 52-week high, and how many relevant news stories appeared in the last 7 days (linking to the newest). Adding a company already on the list does nothing; removing one that is not listed does nothing; unknown tickers return 404; the 31st company returns a conflict.
+
+**33.2 Alert rules are few, fixed and stated.** Final. Who: Me.
+Four rules, in `packages/finance/src/watch.ts` with the thresholds in one place: the latest move is at least 2 times the stock's own normal daily swing (measured over the prior year, so a 3% move means more for a calm utility than for a volatile chip maker); a fall of at least 10% over 21 trading days; price within 3% of its 52-week low; price within 3% of its 52-week high. Each alert text states the figure that triggered it, and alerts describe what happened, not what to do. Users cannot yet set their own rules; that keeps the page simple and the behaviour testable, and is the obvious next step if it proves useful.
+
+**33.3 It is a status board, not a notifier.** Final. Who: Me.
+Alerts are computed when the page is opened. Nothing is sent by email or push, because that needs an account and a delivery service, which this project does not have.
+
+**33.4 `pnpm real` now applies migrations on start.** Final. Who: Me.
+A real-data database built before this feature lacked its table, which made the page fail with a server error. The launcher now runs the (repeatable) migrations first, as `pnpm demo` already did.
+
+### Mistakes in this slice
+
+- The new table was not in the existing real-data, demo and dev databases, so the real-data suite got server errors until I applied migration 0008 to them; that is what led to 33.4.
+- Two of my unit tests built price series that were unrealistically smooth (a straight line has almost no day-to-day noise), which made an ordinary day look like a huge move. I gave them realistic wiggle.
+- A leftover `cat > /tmp/x` in one of my shell commands waited for input and had to be killed. It created no file and changed nothing.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

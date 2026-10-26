@@ -62,3 +62,18 @@ export const rateLimitHits = pgTable(
   },
   (t) => [index("rate_limit_key_at_idx").on(t.key, t.at)],
 );
+
+/** Companies a visitor follows, independent of any portfolio. */
+export const watchlistItems = pgTable(
+  "watchlist_items",
+  {
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    companyId: integer("company_id")
+      .notNull()
+      .references(() => companies.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.companyId] })],
+);

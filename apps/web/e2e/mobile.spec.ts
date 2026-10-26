@@ -44,6 +44,7 @@ test.describe("mobile layout", () => {
       "Discovery",
       "Rebalance Lab",
       "Simulation",
+      "Watchlist",
       "News",
       "Reactions",
       "Research",

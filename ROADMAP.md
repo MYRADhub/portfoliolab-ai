@@ -392,6 +392,8 @@ Progress (2026-10-23): real-data end-to-end suite (`e2e:real`), portfolio import
 
 Progress (2026-10-25): a rebalancing strategy built on hidden exposures (smallest net exposure, with its trade-offs stated) and a Compare page for two portfolios. See docs/DECISIONS.md sections 28 and 29.
 
+Progress (2026-10-25, watchlist): a per-session watchlist of up to 30 companies with four stated alert rules, migration 0008 (docs/DECISIONS.md section 33).
+
 Progress (2026-10-25, evidence): a portfolio-free Evidence page tests the three central claims on real data with stated bars and caveats (docs/DECISIONS.md section 32).
 
 Progress (2026-10-25, forces): new page "What the forces did" estimates each hidden force's daily return from real prices, splits a portfolio's return into force, market and residual parts, and shows exposures explain 17.4% of daily stock differences against 13.1% for sector labels. See docs/DECISIONS.md section 31.
