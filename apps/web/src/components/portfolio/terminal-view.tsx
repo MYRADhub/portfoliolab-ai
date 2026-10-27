@@ -62,17 +62,17 @@ function Panel({
         className,
       )}
     >
-      <header className="flex shrink-0 items-center justify-between border-b bg-muted px-2 py-1">
-        <h2 className="text-xs font-semibold tracking-wider text-warn uppercase">{title}</h2>
+      <header className="flex shrink-0 items-center justify-between border-b bg-muted px-2 py-0.5">
+        <h2 className="text-[10px] font-semibold tracking-widest text-warn uppercase">{title}</h2>
         <Link
           href={`/guide#${about}`}
           aria-label={`About ${title}`}
-          className="rounded px-1.5 text-xs underline hover:text-warn"
+          className="rounded px-1.5 text-[10px] text-muted-foreground underline hover:text-warn"
         >
           ?
         </Link>
       </header>
-      <div className="min-h-0 flex-1 overflow-auto p-2">{children}</div>
+      <div className="min-h-0 flex-1 overflow-auto px-2 py-1">{children}</div>
     </section>
   );
 }
@@ -91,7 +91,7 @@ function Sparkline({ values }: { values: number[] }) {
   return (
     <svg
       viewBox="0 0 100 24"
-      className="h-5 w-20"
+      className="h-4 w-16"
       role="img"
       aria-label={`60-day price trend, ${up ? "up" : "down"}`}
     >
@@ -116,16 +116,16 @@ function Kv({
 }) {
   return (
     <tr className="border-b last:border-0">
-      <th scope="row" className="py-0.5 pr-2 text-left font-normal text-muted-foreground">
+      <th scope="row" className="py-px pr-2 text-left font-normal text-muted-foreground">
         {label}
       </th>
-      <td className={`py-0.5 text-right tabular-nums ${valueClass}`}>{value}</td>
+      <td className={`py-px text-right tabular-nums ${valueClass}`}>{value}</td>
     </tr>
   );
 }
 
 const ChartBox = ({ children }: { children: React.ReactElement }) => (
-  <div className="h-full min-h-[120px]">
+  <div className="h-full min-h-[100px]">
     <ResponsiveContainer width="100%" height="100%">
       {children}
     </ResponsiveContainer>
@@ -133,7 +133,7 @@ const ChartBox = ({ children }: { children: React.ReactElement }) => (
 );
 
 export function TerminalView() {
-  return <WithPortfolio>{(id) => <Content id={id} />}</WithPortfolio>;
+  return <WithPortfolio fill>{(id) => <Content id={id} />}</WithPortfolio>;
 }
 
 function Content({ id }: { id: string }) {
@@ -198,27 +198,51 @@ function Content({ id }: { id: string }) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 font-mono text-xs">
-      <header className="flex shrink-0 flex-wrap items-baseline gap-x-6 gap-y-1 rounded-md border bg-card px-3 py-2">
-        <span className="text-sm font-semibold tracking-wider text-warn uppercase">
+    // Always dark, like a market terminal, whatever the app's theme.
+    <div className="dark flex h-full min-h-0 flex-col gap-1 rounded-md border bg-background p-1 font-mono text-[11px] text-foreground">
+      <header className="flex shrink-0 flex-wrap items-baseline gap-x-4 gap-y-0.5 rounded-sm bg-card px-2 py-1">
+        <span className="text-xs font-semibold tracking-wider text-warn uppercase">
           {t.portfolio.name}
         </span>
-        <span className="text-2xl font-semibold tabular-nums" aria-label="Portfolio index">
+        <span
+          className="text-xl leading-none font-semibold tabular-nums"
+          aria-label="Portfolio index"
+        >
           {t.index.value.toFixed(2)}
         </span>
-        <span
-          className={`text-base tabular-nums ${tone(t.index.dayChange)}`}
-          aria-label="Day change"
-        >
+        <span className={`text-sm tabular-nums ${tone(t.index.dayChange)}`} aria-label="Day change">
           {signed(t.index.dayChange)}
         </span>
-        <span className="text-muted-foreground">
+        <dl className="flex flex-wrap gap-x-4 gap-y-0.5" aria-label="Key figures">
+          {[
+            ...t.performance
+              .filter((p) => ["1 month", "Year to date", "1 year"].includes(p.label))
+              .map((p) => ({
+                k: p.label === "Year to date" ? "YTD" : p.label === "1 month" ? "1M" : "1Y",
+                v: p.value === null ? "n/a" : signed(p.value, 1),
+                c: tone(p.value),
+              })),
+            { k: "VOL", v: pct(t.risk.volatility, 1), c: "" },
+            { k: "SHARPE", v: t.risk.sharpe.toFixed(2), c: "" },
+            { k: "MAX DD", v: signed(t.risk.maxDrawdown, 1), c: "text-loss" },
+          ].map((x) => (
+            <div key={x.k} className="flex gap-1.5">
+              <dt className="text-muted-foreground">{x.k}</dt>
+              <dd className={`tabular-nums ${x.c}`}>{x.v}</dd>
+            </div>
+          ))}
+        </dl>
+        <span className="ml-auto text-muted-foreground">
           As of {t.asOf} | {t.window.tradingDays} trading days from {t.window.from} | index = 100 at
           the start | constant target weights
         </span>
       </header>
 
-      <div role="tablist" aria-label="Terminal sections" className="flex shrink-0 gap-1 border-b">
+      <div
+        role="tablist"
+        aria-label="Terminal sections"
+        className="flex shrink-0 items-center gap-1 rounded-sm bg-card px-1 py-0.5"
+      >
         {TABS.map((x, i) => (
           <button
             key={x.id}
@@ -234,14 +258,17 @@ function Content({ id }: { id: string }) {
             onClick={() => select(x.id)}
             onKeyDown={(e) => onTabKey(e, i)}
             className={cn(
-              "-mb-px rounded-t-md border border-b-0 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase",
+              "flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase",
               tab === x.id
-                ? "border-border bg-card text-warn"
-                : "border-transparent text-muted-foreground hover:text-foreground",
+                ? "bg-warn text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <span
-              className="mr-1.5 rounded border px-1 text-[10px] font-normal text-muted-foreground"
+              className={cn(
+                "rounded-sm px-1 text-[10px]",
+                tab === x.id ? "bg-background/20" : "bg-muted text-warn",
+              )}
               aria-hidden="true"
             >
               {x.key}
@@ -249,9 +276,7 @@ function Content({ id }: { id: string }) {
             {x.label}
           </button>
         ))}
-        <span className="ml-auto self-center pr-1 text-muted-foreground">
-          Keys 1-4 switch sections
-        </span>
+        <span className="ml-auto pr-1 text-muted-foreground">Keys 1-4 switch sections</span>
       </div>
 
       <div
@@ -260,7 +285,7 @@ function Content({ id }: { id: string }) {
         aria-labelledby={`tab-${tab}`}
         className="min-h-0 flex-1"
       >
-        {tab === "overview" && <Overview t={t} />}
+        {tab === "overview" && <Overview t={t} radar={radar ?? null} />}
         {tab === "risk" && <RiskTab t={t} />}
         {tab === "calendar" && <CalendarTab t={t} />}
         {tab === "context" && <ContextTab t={t} radar={radar ?? null} />}
@@ -269,11 +294,11 @@ function Content({ id }: { id: string }) {
   );
 }
 
-const GRID = "grid h-full min-h-0 gap-2 lg:grid-cols-12";
+const GRID = "grid h-full min-h-0 gap-1 lg:grid-cols-12";
 
-function Overview({ t }: { t: Terminal }) {
+function Overview({ t, radar }: { t: Terminal; radar: Radar | null }) {
   return (
-    <div className={`${GRID} lg:grid-rows-[minmax(0,5fr)_minmax(0,4fr)]`}>
+    <div className={`${GRID} lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]`}>
       <Panel title="Portfolio index" about="terminal-index" className="min-h-[200px] lg:col-span-8">
         <ChartBox>
           <LineChart data={t.equity}>
@@ -291,7 +316,8 @@ function Overview({ t }: { t: Terminal }) {
               dataKey="value"
               dot={false}
               stroke={chartColors.warn}
-              strokeWidth={1.75}
+              strokeWidth={1.5}
+              isAnimationActive={false}
             />
           </LineChart>
         </ChartBox>
@@ -312,54 +338,111 @@ function Overview({ t }: { t: Terminal }) {
         </table>
       </Panel>
 
-      <Panel title="Holdings monitor" about="terminal-holdings" className="lg:col-span-12">
-        <table className="w-full min-w-[640px]" aria-label="Holdings monitor">
-          <thead>
+      <Panel title="Holdings monitor" about="terminal-holdings" className="lg:col-span-8">
+        <table className="w-full min-w-[640px] leading-tight" aria-label="Holdings monitor">
+          <thead className="sticky top-0 bg-card">
             <tr className="text-left text-muted-foreground">
-              <th className="py-0.5 font-normal">Ticker</th>
-              <th className="py-0.5 font-normal">Sector</th>
-              <th className="py-0.5 text-right font-normal">Weight</th>
-              <th className="py-0.5 text-right font-normal">Price</th>
-              <th className="py-0.5 text-right font-normal">1D</th>
-              <th className="py-0.5 text-right font-normal">1W</th>
-              <th className="py-0.5 text-right font-normal">1M</th>
-              <th className="py-0.5 text-right font-normal">Share of risk</th>
-              <th className="py-0.5 pl-3 font-normal">60 days</th>
+              <th className="py-px font-normal">Ticker</th>
+              <th className="py-px font-normal">Sector</th>
+              <th className="py-px text-right font-normal">Weight</th>
+              <th className="py-px text-right font-normal">Price</th>
+              <th className="py-px text-right font-normal">1D</th>
+              <th className="py-px text-right font-normal">1W</th>
+              <th className="py-px text-right font-normal">1M</th>
+              <th
+                className="py-px text-right font-normal"
+                title="Amber: the holding adds more than 25% above its weight to portfolio risk"
+              >
+                Share of risk
+              </th>
+              <th className="py-px pl-3 font-normal">60 days</th>
             </tr>
           </thead>
           <tbody>
             {t.holdings.map((h) => (
-              <tr key={h.ticker} className="border-t">
-                <th scope="row" className="py-0.5 text-left font-semibold text-warn">
+              <tr key={h.ticker} className="border-t border-border/60">
+                <th scope="row" className="py-px text-left font-semibold text-warn">
                   {h.ticker}
                 </th>
-                <td className="py-0.5 text-muted-foreground">{h.sector}</td>
-                <td className="py-0.5 text-right tabular-nums">{pct(h.weight)}</td>
-                <td className="py-0.5 text-right tabular-nums">{h.price.toFixed(2)}</td>
-                <td className={`py-0.5 text-right tabular-nums ${tone(h.d1)}`}>
+                <td className="max-w-40 truncate py-px text-muted-foreground">{h.sector}</td>
+                <td className="py-px text-right tabular-nums">{pct(h.weight)}</td>
+                <td className="py-px text-right tabular-nums">{h.price.toFixed(2)}</td>
+                <td className={`py-px text-right tabular-nums ${tone(h.d1)}`}>
                   {h.d1 === null ? "n/a" : signed(h.d1)}
                 </td>
-                <td className={`py-0.5 text-right tabular-nums ${tone(h.d5)}`}>
+                <td className={`py-px text-right tabular-nums ${tone(h.d5)}`}>
                   {h.d5 === null ? "n/a" : signed(h.d5)}
                 </td>
-                <td className={`py-0.5 text-right tabular-nums ${tone(h.m1)}`}>
+                <td className={`py-px text-right tabular-nums ${tone(h.m1)}`}>
                   {h.m1 === null ? "n/a" : signed(h.m1)}
                 </td>
                 <td
-                  className={`py-0.5 text-right tabular-nums ${h.riskShare > h.weight * 1.25 ? "font-semibold text-warn" : ""}`}
+                  className={`py-px text-right tabular-nums ${h.riskShare > h.weight * 1.25 ? "font-semibold text-warn" : ""}`}
                 >
                   {pct(h.riskShare)}
                 </td>
-                <td className="py-0.5 pl-3">
+                <td className="py-px pl-3">
                   <Sparkline values={h.sparkline} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="mt-1 text-muted-foreground">
-          Amber share of risk: the holding adds more than 25% above its weight to portfolio risk.
-        </p>
+      </Panel>
+
+      <Panel title="Snapshot" about="terminal-risk" className="lg:col-span-4">
+        <table className="w-full">
+          <tbody>
+            <Kv label="Annual volatility" value={pct(t.risk.volatility)} />
+            <Kv
+              label="1-day loss, 1 day in 20"
+              value={signed(t.risk.var95)}
+              valueClass="text-loss"
+            />
+            {t.correlation && (
+              <Kv label="Average correlation" value={t.correlation.average.toFixed(2)} />
+            )}
+            {t.exposures.available && (
+              <Kv
+                label="Effective sectors | forces"
+                value={`${t.exposures.effectiveSectors.toFixed(1)} | ${t.exposures.effectiveFactors === null ? "n/a" : t.exposures.effectiveFactors.toFixed(1)}`}
+              />
+            )}
+          </tbody>
+        </table>
+        {t.exposures.available && t.exposures.topFactors.length > 0 && (
+          <>
+            <h3 className="mt-1.5 text-[10px] tracking-widest text-muted-foreground uppercase">
+              Largest forces
+            </h3>
+            <ul aria-label="Largest forces">
+              {t.exposures.topFactors.slice(0, 3).map((f) => (
+                <li key={f.name} className="flex justify-between">
+                  <span className="truncate">{f.name}</span>
+                  <span className="tabular-nums">{pct(f.share, 0)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <h3 className="mt-1.5 text-[10px] tracking-widest text-muted-foreground uppercase">
+          Headlines, 7 days
+        </h3>
+        {radar === null ? (
+          <p className="text-muted-foreground">Loading</p>
+        ) : radar.items.length === 0 ? (
+          <p className="text-muted-foreground">None for these holdings.</p>
+        ) : (
+          <ul aria-label="Latest headlines">
+            {radar.items.slice(0, 3).map((n) => (
+              <li key={n.url} className="truncate">
+                <a href={n.url} target="_blank" rel="noreferrer" className="hover:text-warn">
+                  {n.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
       </Panel>
     </div>
   );
@@ -397,31 +480,31 @@ function RiskTab({ t }: { t: Terminal }) {
       </Panel>
 
       <Panel title="Risk versus weight" about="terminal-risk-weight" className="lg:col-span-4">
-        <ul className="space-y-1.5" aria-label="Risk versus weight">
-          {[...t.holdings]
-            .sort((a, b) => b.riskShare - a.riskShare)
-            .map((h) => (
-              <li key={h.ticker}>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-warn">{h.ticker}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    weight {pct(h.weight, 0)} | risk {pct(h.riskShare, 0)}
-                  </span>
-                </div>
-                <div className="mt-0.5 h-1.5 rounded bg-muted" aria-hidden="true">
-                  <div
-                    className="h-1.5 rounded bg-muted-foreground/60"
-                    style={{ width: `${Math.max(0, Math.min(100, h.weight * 100))}%` }}
+        <ul aria-label="Risk versus weight">
+          {(() => {
+            const sorted = [...t.holdings].sort((a, b) => b.riskShare - a.riskShare);
+            // Bars are scaled to the largest value so small weights stay visible.
+            const top = Math.max(...sorted.map((h) => Math.max(h.weight, h.riskShare)), 1e-9);
+            const w = (x: number) => `${Math.max(0, Math.min(100, (x / top) * 100))}%`;
+            return sorted.map((h) => (
+              <li
+                key={h.ticker}
+                className="grid grid-cols-[3.5rem_1fr_9.5rem] items-center gap-2 py-px"
+              >
+                <span className="font-semibold text-warn">{h.ticker}</span>
+                <span className="flex flex-col gap-px" aria-hidden="true">
+                  <span
+                    className="h-1 rounded-sm bg-muted-foreground/60"
+                    style={{ width: w(h.weight) }}
                   />
-                </div>
-                <div className="mt-0.5 h-1.5 rounded bg-muted" aria-hidden="true">
-                  <div
-                    className="h-1.5 rounded bg-warn"
-                    style={{ width: `${Math.max(0, Math.min(100, h.riskShare * 100))}%` }}
-                  />
-                </div>
+                  <span className="h-1 rounded-sm bg-warn" style={{ width: w(h.riskShare) }} />
+                </span>
+                <span className="text-right tabular-nums text-muted-foreground">
+                  weight {pct(h.weight, 0)} | risk {pct(h.riskShare, 0)}
+                </span>
               </li>
-            ))}
+            ));
+          })()}
         </ul>
         <p className="mt-1 text-muted-foreground">
           Grey is the weight, amber is the share of portfolio variance.

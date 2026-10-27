@@ -309,7 +309,43 @@ test.describe("terminal page", () => {
       }));
       expect(m.doc, `${name}: document scrolls`).toBeLessThanOrEqual(1);
       expect(m.body, `${name}: body scrolls`).toBeLessThanOrEqual(1);
+      // and no panel needs its own scroll bar: everything fits on the screen at once
+      const overflowing = await page.evaluate(() =>
+        [...document.querySelectorAll('[role="tabpanel"] section')]
+          .map((el) => {
+            const body = el.lastElementChild as HTMLElement;
+            return body.scrollHeight > body.clientHeight + 1
+              ? el.querySelector("h2")?.textContent
+              : null;
+          })
+          .filter(Boolean),
+      );
+      expect(overflowing, `${name}: panels that scroll`).toEqual([]);
     }
+  });
+
+  test("the sidebar folds to an icon rail on the Terminal, expands on request, and stays full elsewhere", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Terminal", EXAMPLE);
+    await page.goto("/terminal");
+    const aside = page.locator("aside");
+    await expect(aside).toHaveAttribute("data-rail", "true");
+    expect((await aside.boundingBox())!.width).toBeLessThan(80);
+    // the links keep their names for screen readers and show them on hover
+    await expect(page.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
+      "title",
+      "Dashboard",
+    );
+    await page.getByRole("button", { name: "Expand sidebar" }).click();
+    await expect(aside).toHaveAttribute("data-rail", "false");
+    expect((await aside.boundingBox())!.width).toBeGreaterThan(200);
+    await page.getByRole("button", { name: "Collapse sidebar" }).click();
+    await expect(aside).toHaveAttribute("data-rail", "true");
+    await page.getByRole("link", { name: "Dashboard" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(aside).toHaveAttribute("data-rail", "false");
   });
 
   test("every panel's question mark leads to a real section of the guide", async ({ page }) => {

@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { RAIL_LABEL } from "@/components/layout/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { THEME_KEY } from "./theme";
 
@@ -35,14 +36,15 @@ export function ThemeToggle() {
       size="sm"
       onClick={toggle}
       aria-pressed={dark}
-      className="w-full justify-start"
+      className="w-full justify-start md:group-data-[rail=true]/sidebar:justify-center"
+      title={`Dark mode: ${dark ? "on" : "off"}`}
     >
       {dark ? (
         <Moon className="size-3.5" aria-hidden="true" />
       ) : (
         <Sun className="size-3.5" aria-hidden="true" />
       )}
-      Dark mode: {dark ? "on" : "off"}
+      <span className={RAIL_LABEL}>Dark mode: {dark ? "on" : "off"}</span>
     </Button>
   );
 }

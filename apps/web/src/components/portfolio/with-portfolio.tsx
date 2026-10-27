@@ -13,11 +13,16 @@ interface Summary {
   name: string;
 }
 
-/** Loads the session's portfolios, lets the user pick one, and renders children for the selected id. */
+/**
+ * Loads the session's portfolios, lets the user pick one, and renders children for the selected id. With `fill` the
+ * children get all the height left under the toolbar, for full-screen pages.
+ */
 export function WithPortfolio({
   children,
+  fill = false,
 }: {
   children: (portfolioId: string) => React.ReactNode;
+  fill?: boolean;
 }) {
   const [list, setList] = useState<Summary[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -60,8 +65,11 @@ export function WithPortfolio({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3 print:hidden" data-tour="portfolio-toolbar">
+    <div className={fill ? "flex h-full min-h-0 flex-col gap-2" : "space-y-6"}>
+      <div
+        className={`flex shrink-0 flex-wrap items-center print:hidden ${fill ? "gap-2" : "gap-3"}`}
+        data-tour="portfolio-toolbar"
+      >
         {list.length > 1 && (
           <select
             aria-label="Portfolio"
@@ -94,7 +102,8 @@ export function WithPortfolio({
           <DeleteButton key={selected} id={selected} onDeleted={() => void reload(selected)} />
         )}
       </div>
-      {selected && children(selected)}
+      {selected &&
+        (fill ? <div className="min-h-0 flex-1">{children(selected)}</div> : children(selected))}
     </div>
   );
 }

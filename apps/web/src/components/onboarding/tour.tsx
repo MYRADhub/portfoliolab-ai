@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { RAIL_LABEL } from "@/components/layout/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { markVisited, updateOnboarding } from "@/lib/onboarding";
 import { TOUR_STEPS } from "./steps";
@@ -278,11 +279,12 @@ export function TourButton() {
       variant="ghost"
       size="sm"
       onClick={start}
-      className="w-full justify-start"
+      className="w-full justify-start md:group-data-[rail=true]/sidebar:justify-center"
       data-tour="tour-button"
+      title="Tutorial"
     >
       <CircleHelp aria-hidden="true" />
-      Tutorial
+      <span className={RAIL_LABEL}>Tutorial</span>
     </Button>
   );
 }

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Nav } from "@/components/layout/nav";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarShell } from "@/components/layout/sidebar-shell";
 import { ProgressTracker } from "@/components/onboarding/progress-tracker";
 import { TourButton, TourProvider } from "@/components/onboarding/tour";
@@ -11,8 +12,8 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "1";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TourProvider>
-      <div className="flex min-h-screen flex-col md:flex-row">
-        <aside className="flex shrink-0 flex-col gap-3 border-b bg-sidebar p-3 print:hidden text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-60 md:overflow-y-auto md:border-r md:border-b-0 md:p-4">
+      <div className="group/app flex min-h-screen flex-col md:flex-row">
+        <AppSidebar>
           <SidebarShell>
             <Suspense fallback={null}>
               <Nav />
@@ -22,8 +23,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <ThemeToggle />
             </div>
           </SidebarShell>
-        </aside>
-        <main className="flex min-w-0 flex-1 flex-col p-4 md:h-screen md:overflow-hidden md:px-8 md:py-6 print:h-auto print:overflow-visible print:p-0">
+        </AppSidebar>
+        <main className="flex min-w-0 flex-1 flex-col p-4 md:h-screen md:overflow-hidden md:px-8 md:py-6 md:group-has-[aside[data-rail=true]]/app:px-3 md:group-has-[aside[data-rail=true]]/app:py-3 print:h-auto print:overflow-visible print:p-0">
           {DEMO_MODE && (
             <p
               role="note"

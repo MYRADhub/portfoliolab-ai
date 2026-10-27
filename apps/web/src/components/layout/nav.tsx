@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { RAIL_HIDDEN, RAIL_LABEL } from "./app-sidebar";
 
 interface Item {
   href: string;
@@ -79,7 +80,12 @@ export function Nav() {
     <nav aria-label="Primary" className="flex flex-col gap-4">
       {groups.map((g) => (
         <div key={g.label} className="flex flex-col gap-0.5">
-          <p className="px-3 pb-1 text-[0.68rem] font-semibold tracking-wider text-muted-foreground uppercase">
+          <p
+            className={cn(
+              "px-3 pb-1 text-[0.68rem] font-semibold tracking-wider text-muted-foreground uppercase",
+              RAIL_HIDDEN,
+            )}
+          >
             {g.label}
           </p>
           {g.items.map((item) => {
@@ -90,14 +96,15 @@ export function Nav() {
                 key={item.href}
                 href={item.href}
                 data-tour={item.tour}
+                title={item.label}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                  "flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground md:group-data-[rail=true]/sidebar:justify-center md:group-data-[rail=true]/sidebar:px-2",
                   active && "bg-sidebar-accent text-sidebar-accent-foreground",
                 )}
               >
                 <Icon className="size-4 shrink-0" aria-hidden="true" />
-                {item.label}
+                <span className={RAIL_LABEL}>{item.label}</span>
               </Link>
             );
           })}

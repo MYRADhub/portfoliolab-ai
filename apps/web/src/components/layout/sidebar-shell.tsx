@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { RAIL_HIDDEN } from "./app-sidebar";
 import { BrandMark } from "./brand";
 
 /**
@@ -13,10 +14,10 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="flex items-center justify-between gap-2.5 md:mb-4">
+      <div className="flex items-center justify-between gap-2.5 md:mb-4 md:group-data-[rail=true]/sidebar:mb-1">
         <div className="flex items-center gap-2.5">
           <BrandMark />
-          <div className="leading-tight">
+          <div className={cn("leading-tight", RAIL_HIDDEN)}>
             <div className="text-base font-semibold tracking-tight">PortfolioLab</div>
             <div className="text-[0.7rem] text-muted-foreground">Research the hidden risks</div>
           </div>
