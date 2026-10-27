@@ -207,6 +207,42 @@ test.describe("real data through the API", () => {
     expect(net(fe, "oil_price")).toBeGreaterThan(net(ft, "oil_price"));
   });
 
+  test("the forces page explains its calculation and fades forces that did not move reliably", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    const portfolios = await session(page.request);
+    const shown = portfolios[0]!;
+    const f = (await (await page.request.get(`/api/portfolios/${shown.id}/forces`)).json()) as Json;
+    const faded = (f.forces as Json[]).filter(
+      (r) => r.portfolioNet !== 0 && !(r.t !== null && Math.abs(r.t) >= 2),
+    ).length;
+
+    await page.goto("/forces");
+    await expect(page.getByTestId("forces-summary")).toBeVisible({ timeout: 60_000 });
+    const method = page.getByTestId("forces-method");
+    await expect(method).toContainText("How this is calculated");
+    await expect(method).toContainText(`On each of the ${f.window.days} trading days`);
+    await expect(page.getByTestId("forces-legend")).toContainText("Faded bars");
+    const bars = page.locator(
+      '[aria-label="Contribution to return by force"] path.recharts-rectangle',
+    );
+    await expect(bars).toHaveCount(f.forces.filter((r: Json) => r.portfolioNet !== 0).length + 2);
+    await expect(
+      page.locator(
+        '[aria-label="Contribution to return by force"] path.recharts-rectangle[fill-opacity="0.3"]',
+      ),
+    ).toHaveCount(faded);
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .include("main")
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+          .analyze()
+      ).violations.map((v) => v.id),
+    ).toEqual([]);
+  });
+
   test("the evidence page reaches the verdicts the other pages' numbers imply", async ({
     request,
   }) => {

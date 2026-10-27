@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { axisTick, chartColors, tooltipStyle } from "@/lib/chart";
+import { isReliable, RELIABLE_T } from "@/lib/force-reliability";
 import { pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { ForceReturns } from "@/server/forces";
@@ -57,10 +58,12 @@ function Content({ id }: { id: string }) {
   const chart = [
     ...data.forces
       .filter((f) => f.portfolioNet !== 0)
-      .map((f) => ({ name: f.name, value: f.contribution })),
-    { name: "Market-wide", value: a.market },
-    { name: "Not explained", value: a.residual },
+      .map((f) => ({ name: f.name, value: f.contribution, reliable: isReliable(f.t) })),
+    { name: "Market-wide", value: a.market, reliable: true },
+    { name: "Not explained", value: a.residual, reliable: true },
   ];
+  const lead = data.forces.find((f) => f.portfolioNet !== 0);
+  const unreliable = data.forces.filter((f) => f.portfolioNet !== 0 && !isReliable(f.t)).length;
   const edge = data.fit.exposures - data.fit.sectors;
 
   return (
@@ -108,11 +111,93 @@ function Content({ id }: { id: string }) {
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => signedPct(Number(v), 1)} />
                 <Bar dataKey="value" isAnimationActive={false}>
                   {chart.map((c) => (
-                    <Cell key={c.name} fill={c.value >= 0 ? chartColors.gain : chartColors.loss} />
+                    <Cell
+                      key={c.name}
+                      fill={c.value >= 0 ? chartColors.gain : chartColors.loss}
+                      fillOpacity={c.reliable ? 1 : 0.3}
+                      stroke={c.value >= 0 ? chartColors.gain : chartColors.loss}
+                      strokeDasharray={c.reliable ? undefined : "3 2"}
+                    />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          <p
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+            data-testid="forces-legend"
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block h-3 w-5 rounded-sm border border-dashed border-current opacity-60"
+            />
+            Faded bars: the force did not move reliably over the year (t-statistic between -
+            {RELIABLE_T} and {RELIABLE_T}), so its contribution is mostly noise.
+            {unreliable > 0 && ` ${unreliable} of ${chart.length - 2} forces shown are faded.`}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card data-testid="forces-method">
+        <CardHeader>
+          <CardTitle>How this is calculated</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>
+              <span className="font-medium">A return for each force, every day.</span> On each of
+              the {data.window.days} trading days, the returns of all {data.universe.stocks}{" "}
+              profiled stocks are regressed on their exposure scores (-3 to +3 for each of the{" "}
+              {data.universe.forces} forces): stock return = market part + the sum of (force return
+              &times; the stock&apos;s score for that force) + leftover. The coefficient for a force
+              is how much more a stock moved that day for each extra point of exposure to it. A
+              light ridge penalty keeps forces that tend to appear together from taking extreme
+              opposite values.
+            </li>
+            <li>
+              <span className="font-medium">Your net exposure.</span> Each holding&apos;s score for
+              a force, weighted by its share of the portfolio and added up.
+            </li>
+            <li>
+              <span className="font-medium">Contribution to you.</span> Your net exposure times the
+              force&apos;s return, day by day, added up over the year
+              {lead && (
+                <>
+                  . For {lead.name}: {lead.portfolioNet.toFixed(2)} &times;{" "}
+                  {signedPct(lead.cumulative, 1)} &asymp; {signedPct(lead.contribution, 1)}
+                </>
+              )}
+              . A negative exposure to a force that fell is a positive contribution.
+            </li>
+            <li>
+              <span className="font-medium">Market-wide and not explained.</span> The market part is
+              each day&apos;s regression intercept, which every stock received whatever its scores,
+              added up. &ldquo;Not explained&rdquo; is what is left of your return after the forces
+              and the market part, so the three always add up exactly to your total.
+            </li>
+            <li>
+              <span className="font-medium">t-statistic.</span> A force&apos;s average daily return
+              divided by its standard error. Beyond {RELIABLE_T} in either direction the force
+              leaned clearly one way over the year; closer to zero its total could easily be luck.
+            </li>
+          </ol>
+          <div>
+            <p className="text-xs font-medium">Limits</p>
+            <ul className="list-disc pl-5 text-xs text-muted-foreground">
+              <li>
+                Daily returns are added up, not compounded, and the weights are held fixed every
+                day, so the total differs from a buy-and-hold return over the same year.
+              </li>
+              <li>
+                Forces that the same stocks score high on, such as AI infrastructure spending and
+                semiconductor demand, are hard to tell apart; their combined contribution is more
+                trustworthy than the split between them.
+              </li>
+              <li>
+                The exposure scores are AI drafts. The calculation can only be as good as the scores
+                it starts from.
+              </li>
+            </ul>
           </div>
         </CardContent>
       </Card>
@@ -153,6 +238,9 @@ function Content({ id }: { id: string }) {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {f.t === null ? "n/a" : f.t.toFixed(2)}
+                    {!isReliable(f.t) && (
+                      <span className="ml-1 text-xs text-muted-foreground">(noise)</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {signedPct(f.contribution, 1)}
