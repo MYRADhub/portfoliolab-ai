@@ -61,10 +61,16 @@ export interface ForceEstimate {
  */
 export async function estimateForces(
   db: Db,
-  opts: { now: Date; days: number; held: string[] },
+  opts: {
+    now: Date;
+    days: number;
+    held: string[];
+    /** Signed scores by company id to use instead of the current ones, for comparing score versions. */
+    profiles?: Map<number, Record<string, number>>;
+  },
 ): Promise<ForceEstimate | null> {
   const { now, days, held } = opts;
-  const profiles = await exposureMap(db);
+  const profiles = opts.profiles ?? (await exposureMap(db));
   const all = await db.select().from(companies);
   const universe = all.filter((c) => profiles.has(c.id));
   if (universe.length < MIN_UNIVERSE) return null;

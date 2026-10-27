@@ -191,6 +191,58 @@ with open(GEN / "force-returns-top.csv", "w", newline="") as f:
         if i % 5 == 0 or i == len(fr) - 1:
             w.writerow([i] + [round(float(r[k]) * 100, 4) for k in top4])
 
+# 3b. The same fit with the earlier scores from the model's general knowledge.
+mem = load_json("forces-fit-memory.json")
+macro("nGrounded", str(meta["grounded"]))
+macro("nMemoryCompared", str(mem["companiesWithEarlierDraft"]))
+if mem["fit"]:
+    macro("memExposures", pct(mem["fit"]["exposures"]))
+    macro("memSectors", pct(mem["fit"]["sectors"]))
+    macro("memDaysBetter", pct(mem["fit"]["daysExposuresBetter"], 0))
+
+# 3c. The price check, with each force's rank correlation recomputed from the per-company scores and sensitivities.
+pc = load_json("price-check.json")
+pc_rows = rows("price-check.csv")
+checked = [f for f in pc["forces"] if f["proxy"]]
+for f in checked:
+    pairs = [(float(r["score"]), float(r["t"])) for r in pc_rows if r["force"] == f["slug"]]
+    check(f"price-check companies {f['slug']}", len(pairs), f["companies"], 0)
+    rho = pearson(ranks([a for a, _ in pairs]), ranks([b for _, b in pairs]))
+    check(f"price-check spearman {f['slug']}", rho, f["spearman"], 1e-9)
+    rel = [(a, b) for a, b in pairs if a != 0 and abs(b) >= 2]
+    check(f"price-check reliable {f['slug']}", len(rel), f["reliable"], 0)
+macro("pcFrom", pc["window"]["from"])
+macro("pcTo", pc["window"]["to"])
+macro("pcDays", str(pc["window"]["days"]))
+macro("pcChecked", str(len(checked)))
+macro("pcPositive", str(sum(f["spearman"] > 0 for f in checked)))
+rhos = sorted(checked, key=lambda f: f["spearman"])
+macro("pcMedianRho", num(statistics.median(f["spearman"] for f in checked), 2))
+macro("pcBestForce", inline(names[rhos[-1]["slug"]]))
+macro("pcBestRho", num(rhos[-1]["spearman"], 2))
+macro("pcWorstForce", inline(names[rhos[0]["slug"]]))
+macro("pcWorstRho", num(rhos[0]["spearman"], 2))
+tot_rel = sum(f["reliable"] for f in checked)
+tot_agree = sum(round(f["signAgreement"] * f["reliable"]) for f in checked if f["signAgreement"] is not None)
+macro("pcReliable", f"{tot_rel:,}")
+macro("pcAgreement", pct(tot_agree / tot_rel, 0))
+low = [f for f in checked if f["signAgreement"] is not None and f["signAgreement"] < 0.6]
+low_names = [inline(names[f["slug"]]) for f in low]
+macro(
+    "pcLowAgreement",
+    "none" if not low_names else low_names[0] if len(low_names) == 1 else ", ".join(low_names[:-1]) + " and " + low_names[-1],
+)
+def tex(text: str) -> str:
+    return text.replace("&", "\\&").replace("%", "\\%")
+
+
+# The table body as one macro: an \\input inside a tabular breaks the rule that follows it.
+table_rows = []
+for x in sorted(checked, key=lambda x: -x["spearman"]):
+    agree = "n/a" if x["signAgreement"] is None else f"{pct(x['signAgreement'], 0)} of {x['reliable']}"
+    table_rows.append(f"{names[x['slug']]} & {tex(x['proxy'].split(',')[0])} & {num(x['spearman'], 2)} & {agree} \\\\")
+macro("pcTableRows", " ".join(table_rows))
+
 # 4. Earnings reactions, recomputed from every event.
 study = load_json("event-study.json")
 react = [r for r in rows("reactions.csv") if r["earnings"] == "true" and r["overlaps_earnings"] == "false"]

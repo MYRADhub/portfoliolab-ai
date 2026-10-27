@@ -12,6 +12,8 @@
 \usepackage[authoryear,round]{natbib}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xstring}
+\usepackage{caption}
+\captionsetup[table]{skip=6pt}
 \pgfplotsset{compat=1.18}
 
 % Every number below comes from generated/numbers.tex, which paper/check.py writes from paper/data.
@@ -27,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-\noindent Investors are told to diversify across industries, but companies in different industries can depend on the same economic forces. I build a dataset that scores every S\&P 500 company on twelve such forces (interest rates, oil prices, China demand, AI infrastructure spending and others) on a signed scale from $-3$ to $+3$, drafted by a large language model, and ask three questions. First, does spreading a portfolio across sectors spread it across forces? Across \nRandom{} random \randomSize-stock portfolios the rank correlation between the two is \spearmanSectorsForces: knowing a portfolio's sector spread says almost nothing about its spread across forces. Second, do the scores carry information about real price moves? In daily cross-sectional regressions over \fitDays{} trading days the scores explain \fitExposures{} of the differences between stocks' returns against \fitSectors{} for sector labels, and on \spEvents{} earnings days of \spCompanies{} large companies, stocks with similar exposures moved with the reporting company beyond what sharing its sector explains (sector-adjusted correlation \spClusteredPartial, $t = \spClusteredT$ with events in the same week counted once; none of \spShuffles{} placebo shuffles matched it). Third, can the AI drafts be trusted? I describe a blind human-scoring protocol on a \goldSize-company gold set and a pre-registered experiment on whether showing people these exposures changes how they diversify. All code, data exports and an independent re-implementation of the main figures are public.
+\noindent Investors are told to diversify across industries, but companies in different industries can depend on the same economic forces. I build a dataset that scores every S\&P 500 company on twelve such forces (interest rates, oil prices, China demand, AI infrastructure spending and others) on a signed scale from $-3$ to $+3$, drafted by a large language model from each company's own annual report, with every score backed by a quotation that is checked against the report, and ask three questions. First, does spreading a portfolio across sectors spread it across forces? Across \nRandom{} random \randomSize-stock portfolios the rank correlation between the two is \spearmanSectorsForces: knowing a portfolio's sector spread says almost nothing about its spread across forces. Second, do the scores carry information about real price moves? In daily cross-sectional regressions over \fitDays{} trading days the scores explain \fitExposures{} of the differences between stocks' returns against \fitSectors{} for sector labels (earlier drafts written from the model's general knowledge explained \memExposures, which suggests look-ahead); measured against market signals over the two years before the tested year, they order companies like prices do with a median rank correlation of \pcMedianRho; and on \spEvents{} earnings days of \spCompanies{} large companies, stocks with similar exposures moved with the reporting company beyond what sharing its sector explains (sector-adjusted correlation \spClusteredPartial, $t = \spClusteredT$ with events in the same week counted once; none of \spShuffles{} placebo shuffles matched it). Third, can the AI drafts be trusted? I describe a blind human-scoring protocol on a \goldSize-company gold set and a pre-registered experiment on whether showing people these exposures changes how they diversify. All code, data exports and an independent re-implementation of the main figures are public.
 \end{abstract}
 
 \section{Introduction}
@@ -38,7 +40,7 @@ Professional risk models capture this with statistical factors estimated from re
 
 The contributions are:
 \begin{enumerate}
-  \item A dataset of signed exposures of all \nProfiled{} S\&P 500 companies to twelve named economic forces, drafted by a large language model under a closed taxonomy, with provenance and versioning (Section~\ref{sec:data}).
+  \item A dataset of signed exposures of all \nProfiled{} S\&P 500 companies to twelve named economic forces, drafted by a large language model from each company's annual report under a closed taxonomy, each score backed by a verified quotation, with provenance and versioning (Section~\ref{sec:data}).
   \item A measure of \emph{hidden concentration}, the effective number of forces a portfolio depends on, and evidence from random portfolios that it is nearly unrelated to sector diversification (Section~\ref{sec:concentration}).
   \item Three tests of whether the scores carry real information: a cross-sectional comparison against sector labels, a pooled earnings-spillover test with clustering and a placebo, and an earnings event study that checks the data pipeline (Section~\ref{sec:tests}).
   \item A protocol for measuring how far AI-drafted scores agree with blind human judgment, and a pre-registered randomized experiment on whether showing people these exposures changes how they build portfolios (Sections~\ref{sec:agreement} and~\ref{sec:experiment}).
@@ -50,7 +52,7 @@ The contributions are:
 
 \paragraph{Earnings events.} Quarterly and annual reports filed with the SEC (EDGAR), stamped with the second the SEC accepted each filing. A filing accepted after the 4\,pm close is assigned to the next trading day, the first day prices could react.
 
-\paragraph{Exposure scores.} A closed list of twelve forces (Table~\ref{tab:forces}) each defined with an explicit meaning of ``rises'' (for example, \emph{interest rates}: long-term government yields rise). For every company a language model (\texttt{gpt-6-sol}, prompt version \texttt{expo-v1}) chooses the few forces with a clear mechanism, usually three to five and never more than six, and gives each a magnitude (1 minor, 2 meaningful, 3 central) and a direction ($+1$ if the company tends to gain when the force rises, $-1$ if it tends to lose). The signed score is magnitude times direction, in $\{-3,\dots,+3\}$, with 0 for forces not chosen. The model may only use names from the list, must give a one-sentence mechanism for each score, and its stated confidence is capped at 0.8, since a model's recollection of a business is not a measurement. Every score is stored with its source, rationale and version; a reviewed score never overwrites history.
+\paragraph{Exposure scores.} A closed list of twelve forces (Table~\ref{tab:forces}) each defined with an explicit meaning of ``rises'' (for example, \emph{interest rates}: long-term government yields rise). For every company I take its last annual report (Form 10-K) filed with the SEC before the year the tests below use, and extract the first 3{,}500 words of its business description and the first 2{,}500 of its risk factors. A language model (\texttt{gpt-6-sol}, prompt version \texttt{expo-v2}) is told to use only these excerpts, not what it remembers, and to choose the few forces the text shows to matter, usually three to five and never more than six. Each gets a magnitude (1 minor, 2 meaningful, 3 central) and a direction ($+1$ if the company tends to gain when the force rises, $-1$ if it tends to lose); the signed score is magnitude times direction, in $\{-3,\dots,+3\}$, with 0 for forces not chosen. Every score must quote a passage of at least six words from the excerpts, and the passage is searched for in the report text, ignoring only case and punctuation; a score whose passage is not there is discarded. The model scores each company five times, and the stored score for each force is the median of the five, counting a run that left the force out as 0, so a force must come up in most runs to survive. The share of runs that gave exactly the stored score sets its confidence, from 0.3 to 0.8. \nGrounded{} of the \nProfiled{} companies have such a profile; the rest, mostly recent spin-offs with no earlier annual report, keep a draft written from the model's general knowledge. Every score is stored with its source, quotation, rationale and version; earlier drafts are kept as history and a reviewed score never overwrites it.
 
 The resulting table has \nExposureRows{} non-zero scores, \forcesPerCompany{} forces per company on average. \shareNegative{} of the scores are negative and \shareStrong{} have the maximum magnitude of 3. The most common force is \topForce, chosen for \topForceCompanies{} companies.
 
@@ -120,7 +122,26 @@ Each trading day, every stock's return is regressed on its twelve exposure score
 \caption{Cumulative daily returns of the four forces that moved most over the year, estimated from the cross-section of S\&P 500 returns. A value of 10\% means a stock with a score of $+1$ gained about 10 percentage points more than an otherwise similar stock with a score of 0.}\label{fig:forces}
 \end{figure}
 
-Both models are fitted on the day they are evaluated, so this is not a forecast. It shows that the scores summarize real differences in how stocks moved, more compactly than industry labels.
+Both models are fitted on the day they are evaluated, so this is not a forecast. The advantage over sector labels is modest and not consistent from day to day, which is why the application calls this claim \verdictSectors{} against its stated bar (Table~\ref{tab:verdicts}).
+
+The earlier version of the dataset, drafted from the model's general knowledge rather than from filings, did better on the same regressions: over the same days and stocks, with the earlier drafts restored for the \nMemoryCompared{} companies that had one, those scores explain \memExposures{} against \memSectors{} for sectors and do better on \memDaysBetter{} of days. A model's memory of a company can include how its shares behaved during the very period tested, so a better fit from memory is what look-ahead would produce \citep{lopezlira2023, glasserman2023}. The report-grounded scores give up some fit in exchange for being checkable and dated before the test.
+
+\subsection{A price check from an earlier period}
+
+The regressions above use the scores to explain returns. A separate check asks whether each score agrees with how the company's own shares behaved, using prices from before the tested year so the two do not overlap. Each force with a clean market signal is matched to a traded fund, or the difference of two, that tends to rise with it (Table~\ref{tab:pricecheck}); bond prices are flipped for interest rates, and Taiwan stocks for Taiwan supply-chain risk. AI infrastructure spending has no clean signal and is not checked. For every company and signal, daily returns from \pcFrom{} to \pcTo{} (\pcDays{} days) are regressed on the market and on the part of the signal the market does not explain, and the $t$-statistic of the second coefficient is the company's measured sensitivity. Across companies, the rank correlation between score (0 where a force was not chosen) and measured sensitivity is positive for \pcPositive{} of the \pcChecked{} forces, with a median of \pcMedianRho, highest for \pcBestForce{} (\pcBestRho) and lowest for \pcWorstForce{} (\pcWorstRho). Among the \pcReliable{} scores whose measured sensitivity is reliable ($|t| \ge 2$), \pcAgreement{} point the same way. Agreement is poor for \pcLowAgreement, where the signal is a weak stand-in: a consumer-staples company can depend on consumer spending yet move against a discretionary-minus-staples fund. The check is computed by the application and recomputed independently, force by force, in the replication script.
+
+\begin{table}[t]
+\centering
+\caption{Scores against measured sensitivities to market signals, \pcFrom{} to \pcTo. Rank correlation is across all measured companies; direction agreement is among scored companies with a reliable measurement.}\label{tab:pricecheck}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{6.2cm}rr}
+\toprule
+Force & Market signal & Rank corr. & Direction agrees \\
+\midrule
+\pcTableRows
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Pooled earnings spillover}
 
@@ -170,7 +191,8 @@ The pre-registered primary outcome is the hidden concentration $H$ of the submit
 
 \begin{itemize}
   \item \textbf{The scores are model judgments.} They may reflect how companies are commonly described rather than how they actually earn money. The blind gold set addresses this only for its \goldSize{} companies.
-  \item \textbf{Look-ahead.} The language model was trained on text that may describe the very period tested, including which companies moved together. Its scores could therefore fit that period better than scores written in advance would, a known issue for language models in finance \citep{lopezlira2023, glasserman2023}. The tests here show the scores describe the period, not that they would have predicted it.
+  \item \textbf{Look-ahead.} The language model was trained on text that may describe the very period tested. Drafting from annual reports filed before that period, with verified quotations, limits this but cannot remove it: the model may still lean on what it remembers despite the instructions. The drop in fit from the memory-based drafts to the report-based ones (Section~\ref{sec:tests}) suggests the earlier drafts did benefit from it.
+  \item \textbf{Market signals are rough stand-ins.} Some funds in the price check hold the very companies being measured, and a difference of two sector funds measures more than one force.
   \item \textbf{In-sample fit.} The sector comparison fits and evaluates on the same day.
   \item \textbf{Proxies.} Prices come from an unofficial source; the market is an equal-weighted proxy; constituents are current ones; calendar-week clustering is coarse.
   \item \textbf{Twelve forces.} The taxonomy is a starting point; forces such as credit spreads or labour costs are not yet included.
@@ -178,7 +200,7 @@ The pre-registered primary outcome is the hidden concentration $H$ of the submit
 
 \section{Conclusion}
 
-Owning different stocks does not mean owning different risks, and the sector breakdown that investors usually look at does not reveal the difference: in random portfolios, sector spread and force spread are almost uncorrelated. AI-drafted exposure scores, constrained to a closed taxonomy and stored with provenance, explain more of how stocks moved than sector labels do and pick up real spillovers between companies. Whether each individual score is right, and whether showing these exposures changes behaviour, are the two open questions, and both now have a measurement in place.
+Owning different stocks does not mean owning different risks, and the sector breakdown that investors usually look at does not reveal the difference: in random portfolios, sector spread and force spread are almost uncorrelated. AI-drafted exposure scores, constrained to a closed taxonomy and stored with provenance, explain somewhat more of how stocks moved than sector labels do, agree in direction with sensitivities measured from earlier prices, and pick up real spillovers between companies. Whether each individual score is right, and whether showing these exposures changes behaviour, are the two open questions, and both now have a measurement in place.
 
 \paragraph{Reproducibility.} The application code, the exported data behind every number, and \path{paper/check.py}, which recomputes the random-portfolio measures, the earnings statistics and the agreement statistics independently in Python and stops if they differ from the application's, are in the repository. \texttt{pnpm paper} rebuilds the data, the checks and this document.
 

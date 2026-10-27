@@ -4,8 +4,8 @@
 // a number by hand: paper/check.py turns these files into LaTeX macros and re-derives the main ones independently.
 import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { sql } from "drizzle-orm";
-import { companies, createDb, factors } from "@portfolio-lab/db";
+import { and, isNotNull, sql } from "drizzle-orm";
+import { companies, companyFactorExposures, createDb, factors } from "@portfolio-lab/db";
 import {
   concentration,
   factorConcentration,
@@ -17,6 +17,7 @@ import { getEventStudy, EARNINGS_TYPES } from "../src/server/events";
 import { getEvidence } from "../src/server/evidence";
 import { estimateForces, FORCE_DAYS } from "../src/server/forces";
 import { exposureMap } from "../src/server/research";
+import { getPriceCheck } from "../src/server/price-check";
 import { getPooledSpillover } from "../src/server/spillover";
 
 const url = process.env.DATABASE_URL;
@@ -123,6 +124,74 @@ if (forces) {
   );
 }
 
+// 3b. The same fit with the earlier scores drafted from the model's general knowledge, where a company has them.
+// Those rows are kept as closed history when a report-grounded draft replaces them, so both versions can be compared.
+const history = await db
+  .select({
+    companyId: companyFactorExposures.companyId,
+    slug: factors.slug,
+    magnitude: companyFactorExposures.magnitude,
+    direction: companyFactorExposures.direction,
+    version: companyFactorExposures.version,
+    rationale: companyFactorExposures.rationale,
+    evidenceQuote: companyFactorExposures.evidenceQuote,
+  })
+  .from(companyFactorExposures)
+  .innerJoin(factors, sql`${factors.id} = ${companyFactorExposures.factorId}`)
+  .where(and(isNotNull(companyFactorExposures.validTo)));
+const memoryVersion = new Map<number, number>();
+for (const r of history)
+  if (!r.evidenceQuote && r.rationale?.startsWith("AI-drafted"))
+    memoryVersion.set(r.companyId, Math.max(memoryVersion.get(r.companyId) ?? 0, r.version));
+const grounded = new Set<number>();
+const groundedRows = await db
+  .select({ id: companyFactorExposures.companyId })
+  .from(companyFactorExposures)
+  .where(
+    and(
+      isNotNull(companyFactorExposures.evidenceQuote),
+      sql`${companyFactorExposures.validTo} is null`,
+    ),
+  );
+for (const r of groundedRows) grounded.add(r.id);
+const memoryProfiles = new Map<number, Record<string, number>>();
+for (const [id, v] of profiles) {
+  const old = memoryVersion.get(id);
+  if (!grounded.has(id) || old === undefined) {
+    memoryProfiles.set(id, v);
+    continue;
+  }
+  const p: Record<string, number> = {};
+  for (const r of history)
+    if (r.companyId === id && r.version === old) p[r.slug] = r.magnitude * r.direction;
+  memoryProfiles.set(id, p);
+}
+const memoryFit = await estimateForces(db, {
+  now,
+  days: FORCE_DAYS,
+  held: [],
+  profiles: memoryProfiles,
+});
+await json("forces-fit-memory.json", {
+  companiesWithEarlierDraft: [...grounded].filter((id) => memoryVersion.has(id)).length,
+  fit: memoryFit?.fit ?? null,
+});
+
+// 3c. The price check: each company's measured sensitivity to each force's market signal, before the tested year.
+const check = await getPriceCheck(db, { now });
+await json("price-check.json", {
+  window: check.window,
+  forces: check.forces,
+});
+const pcRows: (string | number)[][] = [];
+for (const [id, v] of profiles) {
+  const m = check.measured.get(tickerOf.get(id)!);
+  if (!m) continue;
+  for (const [slug, x] of Object.entries(m))
+    pcRows.push([tickerOf.get(id)!, slug, v[slug] ?? 0, +x.t.toFixed(6)]);
+}
+await csv("price-check.csv", ["ticker", "force", "score", "t"], pcRows);
+
 // 4. Event study: every reaction and the per-type summary.
 const events = await getEventStudy(db, { now, allReactions: true });
 await csv(
@@ -167,6 +236,7 @@ await json("meta.json", {
   companies: all.length,
   profiled: profiles.size,
   exposureRows: expoRows.length,
+  grounded: grounded.size,
   randomPortfolios: { n: N, size: SIZE, seed: 20261026 },
   placeboShuffles: PLACEBO_SHUFFLES,
 });

@@ -935,6 +935,45 @@ I first wrote that the Evidence bars were "set before seeing the result". They w
 
 ---
 
+## 37. Checkable exposure scores, a price check, and a denser Terminal (added 2026-10-27)
+
+**37.1 Scores drafted from each company's annual report, with a verified quote.** Final. Who: Me.
+Prompt version `expo-v2` gives the model the first 3,500 words of Item 1 (Business) and 2,500 of Item 1A (Risk Factors) of the company's last 10-K filed before 2025-10-24, the start of the year the forces page and Evidence tests use, and tells it to use only that text. Every score must quote a passage of at least six words; the passage is searched for in the report after lower-casing and removing punctuation, and a score whose passage is not there is dropped (60 of about 8,000 were). Section headings are only accepted on their own line, since the same words appear in cross-references; reports without body headings fall back to their first overview and "Risks related to" headings. Companies that file often have their 10-K on an older page of EDGAR's history, which is fetched when needed.
+Alternative considered: keep drafting from the company name. Rejected: nobody could check where a score came from, and the model's memory can include the tested period.
+
+**37.2 Five runs, median kept, stability as confidence.** Final. Who: Me.
+Each company is drafted five times. For each force the stored score is the median of the five, counting a run that left the force out as 0, so a force must come up in most runs. With an even number of usable runs the middle value closer to zero is taken, so the score is always one a run actually gave (a half-point median would have no quote behind it; the unit test caught this). Stability, the share of runs that gave exactly the stored score, replaces the model's self-reported confidence: confidence = 0.3 + 0.5 x stability. The first run warms the prompt cache and the other four reuse it (80% of input tokens were cached). 492 of 503 companies were grounded; the other 11 (spin-offs and new registrants with no earlier 10-K, and four where no score survived the checks) keep their memory draft, which the Exposures page counts separately. Cost: 18.2M input tokens (14.6M cached) and 1.8M output tokens.
+
+**37.3 A price check that never feeds back into the scores.** Final. Who: Me.
+Eleven forces are matched to a traded fund or a difference of two (`packages/shared/src/proxies.ts`); AI infrastructure spending has no clean signal and is not checked. For each company the signal is first stripped of what the market (SPY) explains, then the company's returns are regressed on the market and that remainder; the t-statistic of the second coefficient is its measured sensitivity. The window is the two years ending 370 days before today, so it never overlaps the tested year. Per force the page shows the rank correlation between score and sensitivity across about 500 companies, and the direction agreement where the measurement is reliable. Result: positive for all 11 (median 0.28), 69% direction agreement; consumer spending and economic growth agree poorly, because a difference of two sector funds is a weak stand-in. Using the measured sensitivities as scores was rejected: the "scores against sectors" test would then be fitted on the prices it is judged on.
+
+**37.4 What changed in the results, stated as found.** Final. Who: Me.
+With the grounded scores, the exposure regressions explain 15.5% against 13.2% for sectors and do better on 55% of days, below the 60% bar, so the Evidence verdict moved from supported to inconclusive. The same regressions with the earlier memory drafts restored give 17.5% and 65%. A better fit from memory is what look-ahead predicts, so this is reported as a finding, in the README and the paper, not hidden. The spillover test still clears its bar with a smaller effect (t = 2.42, placebo p < 0.001 in the paper's 2,000 shuffles).
+
+**37.5 The event study was crowding out earnings.** Final. Who: Me.
+Loading every 8-K item type (section 37.6) took the number of stories past the 10,000 cap, so the most recent 10,000 left only 3,479 earnings events. The cap is 30,000, which covers every story in the three-year window (about 16,900) and still runs in about 2 seconds.
+
+**37.6 The real-data database never had the event taxonomy.** Final. Who: Me.
+`pnpm real:seed` did not seed the event types, so the SEC importer silently dropped every 8-K that was not an earnings release, counting it as unmapped. The setup now seeds them and the importer reports filings dropped for a missing type separately. Re-importing added 10,859 events (leadership changes, contracts, acquisitions, restructurings).
+
+**37.7 Example data for new visitors.** Final. Who: Me.
+`EXAMPLE_DATA=1` gives every new session the samples, a 15-stock "Everyday investor" portfolio and an 8-company watchlist, so a fresh browser opens on a full app. Off by default and in the test servers, which create their own data.
+
+**37.8 The Terminal fits on one screen; the sidebar folds.** Final. Who: Me.
+The Terminal is always dark, with a strip of key figures, function-key style tabs, single-line rows and no panel that needs its own scroll bar at 1440 x 900, even with 15 holdings (tested). On the Terminal the sidebar folds to an icon rail with a button to expand it; labels stay for screen readers and show as tooltips.
+
+**37.9 The Evidence page leads with the verdicts.** Final. Who: Me.
+A one-line summary ("4 claims: 2 supported, 1 inconclusive and 1 not enough data"), then one compact card per claim: verdict, question, result and why it matters, with the figures and limits folded under "The numbers and the limits".
+
+### Mistakes in this slice
+
+- The first section extractor matched cross-references ("see Item 1A. Risk Factors") as section starts.
+- The median of an even number of runs could be a score no run gave, with no quote behind it.
+- Two real-data tests asserted old results (a "supported" sectors verdict and placeholder scores that no longer exist); they now check that the verdict follows its own figures by the stated bar.
+- The Evidence rewrite dropped the tutorial's spotlight target at first; the tour test caught it.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

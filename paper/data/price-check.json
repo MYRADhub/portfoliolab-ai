@@ -1,0 +1,129 @@
+{
+  "window": {
+    "from": "2023-10-24",
+    "to": "2025-10-22",
+    "days": 501
+  },
+  "forces": [
+    {
+      "slug": "enterprise_it_spending",
+      "name": "Enterprise IT spending",
+      "proxy": "software company fund (IGV)",
+      "companies": 499,
+      "scored": 90,
+      "spearman": 0.42536192434426107,
+      "reliable": 47,
+      "signAgreement": 0.7872340425531915
+    },
+    {
+      "slug": "semiconductor_demand",
+      "name": "Semiconductor demand",
+      "proxy": "semiconductor stock fund (SOXX)",
+      "companies": 499,
+      "scored": 38,
+      "spearman": 0.32769191274090914,
+      "reliable": 30,
+      "signAgreement": 0.8666666666666667
+    },
+    {
+      "slug": "healthcare_spending",
+      "name": "Healthcare spending",
+      "proxy": "health care stock fund (XLV)",
+      "companies": 499,
+      "scored": 82,
+      "spearman": 0.31840190025530857,
+      "reliable": 77,
+      "signAgreement": 0.8701298701298701
+    },
+    {
+      "slug": "china_demand",
+      "name": "China demand",
+      "proxy": "large Chinese companies fund (FXI)",
+      "companies": 499,
+      "scored": 49,
+      "spearman": 0.29070587124424635,
+      "reliable": 24,
+      "signAgreement": 1
+    },
+    {
+      "slug": "economic_growth",
+      "name": "Economic growth",
+      "proxy": "industrials minus utilities (XLI - XLU)",
+      "companies": 499,
+      "scored": 408,
+      "spearman": 0.2893500231245255,
+      "reliable": 228,
+      "signAgreement": 0.4780701754385965
+    },
+    {
+      "slug": "interest_rates",
+      "name": "Interest rates",
+      "proxy": "7-10 year Treasury bond fund (IEF), flipped: bond prices fall when rates rise",
+      "companies": 499,
+      "scored": 265,
+      "spearman": 0.2780578007486223,
+      "reliable": 144,
+      "signAgreement": 0.8402777777777778
+    },
+    {
+      "slug": "oil_price",
+      "name": "Oil price",
+      "proxy": "crude oil fund (USO)",
+      "companies": 499,
+      "scored": 94,
+      "spearman": 0.26627367102521043,
+      "reliable": 56,
+      "signAgreement": 0.8392857142857143
+    },
+    {
+      "slug": "taiwan_supply_chain_risk",
+      "name": "Taiwan supply chain risk",
+      "proxy": "Taiwan stock fund (EWT), flipped: Taiwan stocks fall when the risk rises",
+      "companies": 499,
+      "scored": 11,
+      "spearman": 0.17569689137240063,
+      "reliable": 6,
+      "signAgreement": 1
+    },
+    {
+      "slug": "inflation",
+      "name": "Inflation",
+      "proxy": "inflation-protected minus ordinary Treasury bonds (TIP - IEF)",
+      "companies": 499,
+      "scored": 385,
+      "spearman": 0.1693642248671219,
+      "reliable": 178,
+      "signAgreement": 0.7640449438202247
+    },
+    {
+      "slug": "consumer_spending",
+      "name": "Consumer spending",
+      "proxy": "consumer discretionary minus consumer staples (XLY - XLP)",
+      "companies": 499,
+      "scored": 198,
+      "spearman": 0.12071773394705375,
+      "reliable": 115,
+      "signAgreement": 0.3217391304347826
+    },
+    {
+      "slug": "usd_strength",
+      "name": "U.S. dollar strength",
+      "proxy": "U.S. dollar index fund (UUP)",
+      "companies": 499,
+      "scored": 100,
+      "spearman": 0.11492538846012473,
+      "reliable": 46,
+      "signAgreement": 0.9130434782608695
+    },
+    {
+      "slug": "ai_infrastructure_capex",
+      "name": "AI infrastructure spending",
+      "proxy": null,
+      "companies": 0,
+      "scored": 66,
+      "spearman": null,
+      "reliable": 0,
+      "signAgreement": null
+    }
+  ]
+}

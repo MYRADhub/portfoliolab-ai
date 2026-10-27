@@ -6,11 +6,12 @@
 
 ## What the research found
 
-Measured on real data for all 503 S&P 500 companies (prices through 2026-10-20):
+Measured on real data for all 503 S&P 500 companies (prices through 2026-10-26):
 
-- **Sector spread tells you almost nothing about economic spread.** Across 2,000 random 10-stock portfolios, the correlation between how many sectors a portfolio spans and how many economic forces it depends on is 0.03. Portfolios spread across eight or more sectors are no better spread across forces than the rest.
-- **The AI-drafted exposure scores carry real information.** Each day over a year, they explained 17.2% of the differences between stocks' returns, against 13.1% for sector labels, and did better on 65% of days.
-- **Similar companies move together on news, beyond their sector.** On 121 earnings days of 11 large companies, stocks with similar exposures moved with the reporting company even after removing what sharing its sector explains (t = 4.38 with days in the same week counted once; none of 2,000 shuffled placebos came close). The effect is small.
+- **Sector spread tells you almost nothing about economic spread.** Across 2,000 random 10-stock portfolios, the correlation between how many sectors a portfolio spans and how many economic forces it depends on is -0.03. Portfolios spread across eight or more sectors are no better spread across forces than the rest.
+- **The exposure scores carry real information, and they are checkable.** Each score is drafted from the company's own annual report, filed before the tested year, and quotes the passage behind it. Measured against market signals (oil, bonds, the dollar, chips and others) over the two years before, the scores order companies the way their prices did for all 11 forces that have a signal (median rank correlation 0.28), and 69% of reliably measured cases point the same way.
+- **They beat sector labels only a little.** Each day over a year they explained 15.5% of the differences between stocks' returns against 13.2% for sectors, better on 55% of days: short of the 60% bar, so the app calls it inconclusive. Earlier drafts written from the model's memory did better (17.5%, 65% of days), which is what look-ahead would produce: the model may remember how these stocks moved.
+- **Similar companies move together on news, beyond their sector.** On 119 earnings days of 11 large companies, stocks with similar exposures moved with the reporting company even after removing what sharing its sector explains (t = 2.42 with days in the same week counted once; none of 2,000 shuffled placebos came close). The effect is small.
 
 **Still open, with the measurement built:** how often the AI's scores agree with a person who scores the same 33 companies without seeing them (the blind gold set), and whether showing people their hidden exposures changes how they build a portfolio (a randomized study, pre-registered, waiting for approval; see `docs/study-protocol.md`).
 
@@ -41,7 +42,7 @@ The two numbers are measured on different scales, so compare each with what it c
 | Page                    | What it answers                                                                                                                                                                                 |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Dashboard**           | What changed, and what should I watch? Plain-language cards, most important first.                                                                                                              |
-| **Terminal**            | Every chart and table for one portfolio in four sections: performance, risk, calendar, context.                                                                                                 |
+| **Terminal**            | A dark, Bloomberg-style screen: every chart and table for one portfolio in four sections that each fit on one screen, keys 1-4 to switch, sidebar folded to an icon rail.                       |
 | **Exposures**           | Which hidden forces do my holdings share? An interactive map shows who is connected to what.                                                                                                    |
 | **Correlation**         | How closely do my holdings move together, and does that get worse when markets fall?                                                                                                            |
 | **Stress Lab**          | What if interest rates jump, oil spikes, or AI spending pulls back? Drag sliders and see the effect on each holding.                                                                            |
@@ -87,17 +88,19 @@ The "In plain English" and assistant buttons use OpenAI. They work once you put 
 ```sh
 pnpm real:seed          # 5 years of real prices for all 503 S&P 500 companies (about 10 minutes)
 SEC_USER_AGENT="Your Name you@school.edu" pnpm data:sec    # earnings filings and company financials from the SEC
-pnpm data:exposures     # AI-drafted hidden-exposure scores for every company (needs OPENAI_API_KEY, about 500 calls)
+SEC_USER_AGENT="Your Name you@school.edu" pnpm data:exposures --grounded --filed-before 2025-10-24
+                        # exposure scores drafted from each company's annual report, 5 runs each (needs OPENAI_API_KEY)
 pnpm real               # starts the app on real data at http://localhost:3000
 ```
 
-Each step can be repeated safely and picks up where it stopped. Real data lives in its own database (`pl_real`), separate from the demo data.
+Each step can be repeated safely and picks up where it stopped. Set `EXAMPLE_DATA=1` in `.env` to give every new browser the sample portfolios, an everyday example portfolio and a starter watchlist. Real data lives in its own database (`pl_real`), separate from the demo data.
 
 **Where the data comes from**
 
 - **Prices**: Yahoo Finance's public chart service. It is free but unofficial, so use it for research only.
 - **Earnings events and financials**: SEC EDGAR (free, official). Each earnings filing is stamped with the exact second the SEC accepted it.
-- **Hidden-exposure scores**: drafted by an AI model, clearly labelled "AI draft, not reviewed", and reviewable in the app (see below).
+- **Hidden-exposure scores**: drafted by an AI model from each company's last annual report (Form 10-K) filed before the period the app tests. Every score must quote the report, and the quote is checked to be there; the stored score is the median of five runs. They are labelled "AI draft, not reviewed" and reviewable in the app (see below).
+- **Price check of the scores**: 14 traded funds (oil, bonds, the dollar, chips, China, sectors) from Yahoo Finance, loaded by `pnpm real:seed`. The Exposures page compares each company's measured sensitivity to them, over the two years before the tested period, with its scores.
 
 ---
 
@@ -119,13 +122,13 @@ Each step can be repeated safely and picks up where it stopped. Real data lives 
 
 ## Does the idea hold up? A real test
 
-When a large company reports earnings, do stocks with similar hidden exposures move the same way, more than stocks with different exposures do? Over 121 real earnings days for 11 large companies:
+When a large company reports earnings, do stocks with similar hidden exposures move the same way, more than stocks with different exposures do? Over 119 real earnings days for 11 large companies:
 
-- The average correlation is **+0.059**.
-- After removing what "same sector" explains, it is **+0.046**, so exposures add something the sector label does not.
-- Earnings days in the same week are not independent, so they are counted once: 121 days become 70 independent weeks, and the result still holds (t = 4.38).
+- The average correlation is **+0.045**.
+- After removing what "same sector" explains, it is **+0.027**, so exposures add something the sector label does not.
+- Earnings days in the same week are not independent, so they are counted once: 119 days become 70 independent weeks, and the result still holds (t = 2.42).
 - A **placebo** reshuffles which stock gets which similarity score. Shuffled scores average zero; in the paper's run none of 2,000 shuffles matched the real figure.
-- It is small, it varies by company, and the scores are AI drafts. The language model may also know, from its training text, which companies moved together in this period, so this shows the scores describe the period, not that they would have predicted it.
+- It is small, it varies by company, and the scores are AI drafts. They are drafted from annual reports filed before the period, but the language model may still remember which companies moved together, so this shows the scores describe the period, not that they would have predicted it.
 
 So this is evidence, not proof. The method and caveats are in [the paper](docs/paper.pdf) (section 4) and `docs/DECISIONS.md` (sections 26 and 30), and the live test is on the **Evidence** and **Reactions** pages.
 

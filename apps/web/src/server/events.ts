@@ -21,7 +21,8 @@ import { latestClassifications, mergeClusters, type LinkRow } from "./news-links
 /** Events are studied over this many years; prices are loaded further back to fit each event's market model. */
 export const STUDY_YEARS = 3;
 export const ESTIMATION_LOOKBACK_DAYS = 400;
-export const MAX_EVENTS = 10000;
+/** Enough for every classified story of the S&P 500 over the study window, so no event type is crowded out. */
+export const MAX_EVENTS = 30000;
 const CACHE_MS = 5 * 60 * 1000;
 let cached: { at: number; report: EventStudyReport } | null = null;
 export const REACTIONS_SHOWN = 40;

@@ -1,1718 +1,1787 @@
 ticker,sector,force,score
-A,Health Care,china_demand,2
-A,Health Care,economic_growth,2
+A,Health Care,economic_growth,3
 A,Health Care,healthcare_spending,2
+A,Health Care,inflation,-2
+A,Health Care,interest_rates,-1
 A,Health Care,usd_strength,-2
-AAPL,Information Technology,china_demand,2
 AAPL,Information Technology,consumer_spending,3
-AAPL,Information Technology,taiwan_supply_chain_risk,-2
-AAPL,Information Technology,usd_strength,-2
+AAPL,Information Technology,economic_growth,2
+AAPL,Information Technology,inflation,-2
+AAPL,Information Technology,interest_rates,-1
+ABBV,Health Care,china_demand,1
+ABBV,Health Care,consumer_spending,2
 ABBV,Health Care,healthcare_spending,3
-ABBV,Health Care,interest_rates,-1
-ABBV,Health Care,usd_strength,-2
 ABNB,Consumer Discretionary,consumer_spending,3
 ABNB,Consumer Discretionary,economic_growth,2
-ABT,Health Care,china_demand,2
 ABT,Health Care,healthcare_spending,3
-ABT,Health Care,inflation,-1
-ABT,Health Care,usd_strength,-2
+ABT,Health Care,inflation,-2
+ABT,Health Care,interest_rates,-2
 ACGL,Financials,economic_growth,2
-ACGL,Financials,inflation,-2
-ACGL,Financials,interest_rates,2
+ACGL,Financials,inflation,-3
+ACGL,Financials,interest_rates,-2
 ACN,Information Technology,economic_growth,2
 ACN,Information Technology,enterprise_it_spending,3
-ACN,Information Technology,usd_strength,-2
-ADBE,Information Technology,economic_growth,2
+ACN,Information Technology,inflation,-1
+ADBE,Information Technology,consumer_spending,2
+ADBE,Information Technology,economic_growth,1
 ADBE,Information Technology,enterprise_it_spending,3
-ADBE,Information Technology,interest_rates,-1
-ADBE,Information Technology,usd_strength,-2
-ADI,Information Technology,ai_infrastructure_capex,1
-ADI,Information Technology,china_demand,2
+ADI,Information Technology,consumer_spending,2
 ADI,Information Technology,economic_growth,2
+ADI,Information Technology,inflation,-2
 ADI,Information Technology,semiconductor_demand,3
-ADM,Consumer Staples,china_demand,2
-ADM,Consumer Staples,interest_rates,-1
-ADM,Consumer Staples,oil_price,1
-ADM,Consumer Staples,usd_strength,-2
+ADI,Information Technology,taiwan_supply_chain_risk,-3
+ADM,Consumer Staples,consumer_spending,1
+ADM,Consumer Staples,economic_growth,2
+ADM,Consumer Staples,inflation,-2
+ADM,Consumer Staples,oil_price,-2
 ADP,Industrials,economic_growth,3
 ADP,Industrials,enterprise_it_spending,2
 ADP,Industrials,interest_rates,2
-ADSK,Information Technology,economic_growth,2
+ADSK,Information Technology,economic_growth,3
 ADSK,Information Technology,enterprise_it_spending,3
-ADSK,Information Technology,interest_rates,-2
-ADSK,Information Technology,usd_strength,-1
-AEE,Utilities,economic_growth,1
+ADSK,Information Technology,inflation,-1
+ADSK,Information Technology,usd_strength,-2
+AEE,Utilities,economic_growth,2
 AEE,Utilities,inflation,-2
-AEE,Utilities,interest_rates,-3
+AEE,Utilities,interest_rates,-2
 AEP,Utilities,ai_infrastructure_capex,2
 AEP,Utilities,economic_growth,2
 AEP,Utilities,inflation,-2
 AEP,Utilities,interest_rates,-3
-AES,Utilities,ai_infrastructure_capex,2
-AES,Utilities,economic_growth,1
-AES,Utilities,interest_rates,-3
+AES,Utilities,ai_infrastructure_capex,3
+AES,Utilities,economic_growth,2
+AES,Utilities,inflation,-2
+AES,Utilities,interest_rates,-2
 AES,Utilities,usd_strength,-2
-AFL,Financials,economic_growth,2
-AFL,Financials,interest_rates,2
+AFL,Financials,consumer_spending,2
+AFL,Financials,economic_growth,3
+AFL,Financials,interest_rates,3
 AFL,Financials,usd_strength,-3
 AIG,Financials,economic_growth,2
 AIG,Financials,inflation,-2
 AIG,Financials,interest_rates,3
 AIZ,Financials,consumer_spending,2
-AIZ,Financials,inflation,-2
-AIZ,Financials,interest_rates,2
-AJG,Financials,economic_growth,2
+AIZ,Financials,inflation,-3
+AIZ,Financials,interest_rates,-2
+AJG,Financials,economic_growth,3
 AJG,Financials,inflation,2
-AJG,Financials,interest_rates,1
-AKAM,Information Technology,consumer_spending,1
+AJG,Financials,interest_rates,2
+AKAM,Information Technology,ai_infrastructure_capex,2
 AKAM,Information Technology,economic_growth,2
 AKAM,Information Technology,enterprise_it_spending,3
-AKAM,Information Technology,usd_strength,-2
+AKAM,Information Technology,inflation,-1
 ALB,Materials,china_demand,3
-ALB,Materials,consumer_spending,2
 ALB,Materials,economic_growth,2
-ALB,Materials,interest_rates,-1
-ALGN,Health Care,china_demand,2
+ALB,Materials,inflation,-2
+ALB,Materials,interest_rates,-2
+ALB,Materials,usd_strength,-2
 ALGN,Health Care,consumer_spending,3
+ALGN,Health Care,economic_growth,2
 ALGN,Health Care,healthcare_spending,2
-ALGN,Health Care,usd_strength,-1
-ALL,Financials,economic_growth,1
+ALGN,Health Care,inflation,-2
+ALGN,Health Care,usd_strength,-2
+ALL,Financials,economic_growth,2
 ALL,Financials,inflation,-3
-ALL,Financials,interest_rates,2
-ALLE,Industrials,consumer_spending,1
+ALL,Financials,interest_rates,-2
+ALLE,Industrials,consumer_spending,2
 ALLE,Industrials,economic_growth,3
-ALLE,Industrials,inflation,-1
+ALLE,Industrials,inflation,-2
 ALLE,Industrials,interest_rates,-2
+ALLE,Industrials,usd_strength,-2
 AMAT,Information Technology,ai_infrastructure_capex,2
 AMAT,Information Technology,china_demand,2
+AMAT,Information Technology,consumer_spending,2
+AMAT,Information Technology,economic_growth,2
 AMAT,Information Technology,semiconductor_demand,3
-AMAT,Information Technology,usd_strength,-1
 AMCR,Materials,consumer_spending,2
-AMCR,Materials,healthcare_spending,1
-AMCR,Materials,oil_price,-2
-AMCR,Materials,usd_strength,-2
+AMCR,Materials,economic_growth,2
+AMCR,Materials,interest_rates,-3
 AMD,Information Technology,ai_infrastructure_capex,3
-AMD,Information Technology,china_demand,2
+AMD,Information Technology,consumer_spending,2
+AMD,Information Technology,economic_growth,2
 AMD,Information Technology,enterprise_it_spending,2
 AMD,Information Technology,semiconductor_demand,3
-AMD,Information Technology,taiwan_supply_chain_risk,-2
 AME,Industrials,economic_growth,3
-AME,Industrials,healthcare_spending,1
-AME,Industrials,semiconductor_demand,1
+AME,Industrials,healthcare_spending,2
+AME,Industrials,inflation,-2
+AME,Industrials,semiconductor_demand,2
 AME,Industrials,usd_strength,-2
-AMGN,Health Care,healthcare_spending,2
-AMGN,Health Care,inflation,-1
-AMGN,Health Care,interest_rates,-2
-AMGN,Health Care,usd_strength,-2
-AMP,Financials,economic_growth,3
-AMP,Financials,interest_rates,2
-AMT,Real Estate,ai_infrastructure_capex,2
+AMGN,Health Care,economic_growth,1
+AMGN,Health Care,healthcare_spending,3
+AMGN,Health Care,inflation,-2
+AMP,Financials,economic_growth,2
+AMP,Financials,interest_rates,-2
+AMT,Real Estate,consumer_spending,1
+AMT,Real Estate,economic_growth,2
+AMT,Real Estate,inflation,-2
 AMT,Real Estate,interest_rates,-3
 AMT,Real Estate,usd_strength,-2
-AMZN,Consumer Discretionary,ai_infrastructure_capex,2
 AMZN,Consumer Discretionary,consumer_spending,3
+AMZN,Consumer Discretionary,economic_growth,2
 AMZN,Consumer Discretionary,enterprise_it_spending,3
 AMZN,Consumer Discretionary,inflation,-2
-AMZN,Consumer Discretionary,usd_strength,-1
 ANET,Information Technology,ai_infrastructure_capex,3
-ANET,Information Technology,enterprise_it_spending,2
-AON,Financials,economic_growth,2
-AON,Financials,healthcare_spending,1
-AON,Financials,inflation,1
-AON,Financials,interest_rates,2
-AON,Financials,usd_strength,-2
+ANET,Information Technology,economic_growth,2
+ANET,Information Technology,enterprise_it_spending,3
+AON,Financials,economic_growth,3
+AON,Financials,inflation,-2
+AON,Financials,interest_rates,1
 AOS,Industrials,china_demand,2
+AOS,Industrials,consumer_spending,2
 AOS,Industrials,economic_growth,2
-AOS,Industrials,inflation,-1
-AOS,Industrials,interest_rates,-2
+AOS,Industrials,inflation,-2
 APA,Energy,economic_growth,2
-APA,Energy,interest_rates,-1
+APA,Energy,inflation,-2
 APA,Energy,oil_price,3
-APD,Materials,china_demand,2
-APD,Materials,economic_growth,3
+APD,Materials,economic_growth,2
+APD,Materials,inflation,-2
 APD,Materials,interest_rates,-2
-APD,Materials,usd_strength,-2
+APD,Materials,semiconductor_demand,2
+APD,Materials,usd_strength,-3
 APH,Information Technology,ai_infrastructure_capex,2
-APH,Information Technology,consumer_spending,1
-APH,Information Technology,economic_growth,2
-APH,Information Technology,enterprise_it_spending,2
-APH,Information Technology,usd_strength,-1
+APH,Information Technology,china_demand,2
+APH,Information Technology,consumer_spending,2
+APH,Information Technology,economic_growth,3
+APH,Information Technology,inflation,-2
+APO,Financials,consumer_spending,2
 APO,Financials,economic_growth,3
-APO,Financials,interest_rates,2
-APP,Communication Services,consumer_spending,3
+APO,Financials,inflation,-2
+APO,Financials,interest_rates,-3
+APP,Communication Services,consumer_spending,2
 APP,Communication Services,economic_growth,2
+APP,Communication Services,interest_rates,-1
 APTV,Consumer Discretionary,china_demand,2
-APTV,Consumer Discretionary,consumer_spending,2
-APTV,Consumer Discretionary,economic_growth,3
+APTV,Consumer Discretionary,consumer_spending,3
+APTV,Consumer Discretionary,economic_growth,2
+APTV,Consumer Discretionary,inflation,-2
 APTV,Consumer Discretionary,interest_rates,-2
-APTV,Consumer Discretionary,usd_strength,-1
-ARE,Real Estate,economic_growth,2
-ARE,Real Estate,healthcare_spending,2
+ARE,Real Estate,economic_growth,3
+ARE,Real Estate,inflation,-2
 ARE,Real Estate,interest_rates,-3
 ARES,Financials,economic_growth,3
-ARES,Financials,inflation,-1
-ARES,Financials,interest_rates,-2
-ATO,Utilities,economic_growth,1
+ARES,Financials,inflation,-2
+ARES,Financials,interest_rates,-3
+ATO,Utilities,economic_growth,2
 ATO,Utilities,inflation,-2
-ATO,Utilities,interest_rates,-3
+ATO,Utilities,interest_rates,-2
 AVGO,Information Technology,ai_infrastructure_capex,3
-AVGO,Information Technology,enterprise_it_spending,2
+AVGO,Information Technology,economic_growth,2
+AVGO,Information Technology,enterprise_it_spending,3
+AVGO,Information Technology,interest_rates,-2
 AVGO,Information Technology,semiconductor_demand,3
-AVGO,Information Technology,taiwan_supply_chain_risk,-2
 AVY,Materials,consumer_spending,2
 AVY,Materials,economic_growth,2
-AVY,Materials,inflation,-2
-AVY,Materials,oil_price,-2
+AVY,Materials,inflation,-3
 AVY,Materials,usd_strength,-2
 AWK,Utilities,inflation,-2
 AWK,Utilities,interest_rates,-3
 AXON,Industrials,economic_growth,2
-AXON,Industrials,inflation,-1
-AXON,Industrials,interest_rates,-2
+AXON,Industrials,inflation,-2
+AXON,Industrials,usd_strength,-1
 AXP,Financials,consumer_spending,3
-AXP,Financials,economic_growth,2
-AXP,Financials,interest_rates,-1
+AXP,Financials,economic_growth,3
+AXP,Financials,inflation,-2
 AZO,Consumer Discretionary,consumer_spending,2
-AZO,Consumer Discretionary,inflation,2
-AZO,Consumer Discretionary,interest_rates,2
-AZO,Consumer Discretionary,oil_price,-1
-BA,Industrials,china_demand,2
-BA,Industrials,consumer_spending,2
+AZO,Consumer Discretionary,inflation,-3
+AZO,Consumer Discretionary,interest_rates,-2
+AZO,Consumer Discretionary,oil_price,-2
 BA,Industrials,economic_growth,3
 BA,Industrials,inflation,-2
-BA,Industrials,interest_rates,-2
-BAC,Financials,consumer_spending,2
+BA,Industrials,oil_price,-2
 BAC,Financials,economic_growth,3
+BAC,Financials,inflation,-2
 BAC,Financials,interest_rates,3
-BALL,Materials,consumer_spending,2
+BALL,Materials,economic_growth,2
 BALL,Materials,inflation,-2
-BALL,Materials,usd_strength,-1
+BALL,Materials,interest_rates,-2
+BALL,Materials,usd_strength,-2
 BAX,Health Care,healthcare_spending,3
 BAX,Health Care,inflation,-2
+BAX,Health Care,interest_rates,-2
 BAX,Health Care,usd_strength,-2
 BBY,Consumer Discretionary,consumer_spending,3
 BBY,Consumer Discretionary,economic_growth,2
 BBY,Consumer Discretionary,inflation,-2
-BBY,Consumer Discretionary,interest_rates,-2
+BBY,Consumer Discretionary,interest_rates,-1
+BBY,Consumer Discretionary,taiwan_supply_chain_risk,-2
+BDX,Health Care,economic_growth,2
 BDX,Health Care,healthcare_spending,3
 BDX,Health Care,inflation,-2
+BDX,Health Care,interest_rates,-1
 BDX,Health Care,usd_strength,-2
 BE,Industrials,ai_infrastructure_capex,3
 BE,Industrials,economic_growth,2
+BE,Industrials,inflation,-2
 BE,Industrials,interest_rates,-2
-BEN,Financials,economic_growth,2
+BEN,Financials,economic_growth,3
 BEN,Financials,interest_rates,-2
-BEN,Financials,usd_strength,-1
 BF.B,Consumer Staples,consumer_spending,3
+BF.B,Consumer Staples,economic_growth,2
 BF.B,Consumer Staples,inflation,-2
 BF.B,Consumer Staples,usd_strength,-2
 BG,Consumer Staples,china_demand,2
-BG,Consumer Staples,interest_rates,-2
+BG,Consumer Staples,consumer_spending,1
+BG,Consumer Staples,economic_growth,3
+BG,Consumer Staples,inflation,-2
 BG,Consumer Staples,oil_price,2
-BG,Consumer Staples,usd_strength,-1
+BIIB,Health Care,china_demand,1
+BIIB,Health Care,economic_growth,1
 BIIB,Health Care,healthcare_spending,3
-BIIB,Health Care,interest_rates,-1
-BIIB,Health Care,usd_strength,-2
+BIIB,Health Care,inflation,-1
 BKNG,Consumer Discretionary,consumer_spending,3
 BKNG,Consumer Discretionary,economic_growth,2
-BKNG,Consumer Discretionary,oil_price,-1
 BKNG,Consumer Discretionary,usd_strength,-2
-BKR,Energy,ai_infrastructure_capex,1
-BKR,Energy,economic_growth,2
+BKR,Energy,enterprise_it_spending,1
+BKR,Energy,inflation,-2
+BKR,Energy,interest_rates,-1
 BKR,Energy,oil_price,3
 BLK,Financials,economic_growth,3
-BLK,Financials,enterprise_it_spending,1
+BLK,Financials,enterprise_it_spending,2
 BLK,Financials,interest_rates,-2
-BLK,Financials,usd_strength,-1
-BMY,Health Care,healthcare_spending,2
-BMY,Health Care,interest_rates,-2
-BMY,Health Care,usd_strength,-2
-BNY,Financials,economic_growth,2
-BNY,Financials,interest_rates,2
-BNY,Financials,usd_strength,-1
+BLK,Financials,usd_strength,-2
+BMY,Health Care,healthcare_spending,3
+BNY,Financials,inflation,-1
 BR,Industrials,economic_growth,2
-BR,Industrials,enterprise_it_spending,3
-BR,Industrials,inflation,-1
+BR,Industrials,enterprise_it_spending,2
+BR,Industrials,usd_strength,-1
 BRK.B,Financials,consumer_spending,2
 BRK.B,Financials,economic_growth,3
 BRK.B,Financials,interest_rates,2
 BRK.B,Financials,oil_price,1
 BRO,Financials,economic_growth,2
-BRO,Financials,healthcare_spending,1
 BRO,Financials,inflation,2
+BRO,Financials,usd_strength,-1
+BSX,Health Care,economic_growth,2
 BSX,Health Care,healthcare_spending,3
 BSX,Health Care,inflation,-2
-BSX,Health Care,usd_strength,-2
+BSX,Health Care,interest_rates,-2
+BX,Financials,consumer_spending,1
 BX,Financials,economic_growth,3
+BX,Financials,inflation,-2
 BX,Financials,interest_rates,-3
 BXP,Real Estate,economic_growth,3
-BXP,Real Estate,inflation,-1
+BXP,Real Estate,inflation,-2
 BXP,Real Estate,interest_rates,-3
-C,Financials,consumer_spending,2
-C,Financials,economic_growth,3
-C,Financials,interest_rates,2
-C,Financials,usd_strength,-2
+C,Financials,economic_growth,2
+C,Financials,inflation,-2
+C,Financials,interest_rates,-2
 CAH,Health Care,healthcare_spending,3
-CAH,Health Care,interest_rates,-1
-CARR,Industrials,consumer_spending,2
-CARR,Industrials,economic_growth,2
-CARR,Industrials,interest_rates,-2
-CARR,Industrials,usd_strength,-1
-CASY,Consumer Staples,consumer_spending,3
-CASY,Consumer Staples,economic_growth,1
-CASY,Consumer Staples,inflation,-2
+CAH,Health Care,inflation,-2
+CAH,Health Care,interest_rates,-2
+CARR,Industrials,economic_growth,3
+CARR,Industrials,inflation,-2
+CARR,Industrials,usd_strength,-2
+CASY,Consumer Staples,consumer_spending,2
+CASY,Consumer Staples,inflation,-3
 CASY,Consumer Staples,oil_price,-2
-CAT,Industrials,china_demand,2
 CAT,Industrials,economic_growth,3
+CAT,Industrials,inflation,-2
 CAT,Industrials,interest_rates,-2
 CAT,Industrials,oil_price,2
-CAT,Industrials,usd_strength,-2
+CAT,Industrials,usd_strength,-1
 CB,Financials,economic_growth,2
 CB,Financials,inflation,-2
 CB,Financials,interest_rates,2
 CBOE,Financials,economic_growth,2
-CBOE,Financials,interest_rates,-1
+CBOE,Financials,inflation,-1
 CBRE,Real Estate,economic_growth,3
+CBRE,Real Estate,inflation,-2
 CBRE,Real Estate,interest_rates,-3
 CBRE,Real Estate,usd_strength,-2
 CCI,Real Estate,economic_growth,2
-CCI,Real Estate,inflation,-1
+CCI,Real Estate,enterprise_it_spending,1
+CCI,Real Estate,inflation,-2
 CCI,Real Estate,interest_rates,-3
 CCL,Consumer Discretionary,consumer_spending,3
 CCL,Consumer Discretionary,economic_growth,2
+CCL,Consumer Discretionary,inflation,-2
 CCL,Consumer Discretionary,interest_rates,-2
 CCL,Consumer Discretionary,oil_price,-2
 CDNS,Information Technology,ai_infrastructure_capex,2
-CDNS,Information Technology,china_demand,2
+CDNS,Information Technology,economic_growth,2
+CDNS,Information Technology,inflation,-2
+CDNS,Information Technology,interest_rates,-1
 CDNS,Information Technology,semiconductor_demand,3
-CDW,Information Technology,ai_infrastructure_capex,1
 CDW,Information Technology,economic_growth,2
 CDW,Information Technology,enterprise_it_spending,3
-CEG,Utilities,ai_infrastructure_capex,3
+CDW,Information Technology,healthcare_spending,1
+CEG,Utilities,ai_infrastructure_capex,2
 CEG,Utilities,economic_growth,2
+CEG,Utilities,inflation,-2
 CEG,Utilities,interest_rates,-2
-CF,Materials,economic_growth,1
+CF,Materials,economic_growth,2
+CF,Materials,inflation,-2
 CF,Materials,usd_strength,-2
-CFG,Financials,consumer_spending,2
 CFG,Financials,economic_growth,3
-CFG,Financials,interest_rates,2
-CHD,Consumer Staples,consumer_spending,1
-CHD,Consumer Staples,inflation,-2
-CHD,Consumer Staples,oil_price,-1
-CHD,Consumer Staples,usd_strength,-1
+CFG,Financials,inflation,-2
+CFG,Financials,interest_rates,-3
+CHD,Consumer Staples,consumer_spending,2
+CHD,Consumer Staples,healthcare_spending,2
 CHRW,Industrials,consumer_spending,2
 CHRW,Industrials,economic_growth,3
-CHTR,Communication Services,consumer_spending,1
-CHTR,Communication Services,economic_growth,2
+CHRW,Industrials,inflation,-2
+CHRW,Industrials,oil_price,-1
+CHTR,Communication Services,consumer_spending,2
+CHTR,Communication Services,enterprise_it_spending,2
 CHTR,Communication Services,inflation,-2
-CHTR,Communication Services,interest_rates,-3
-CI,Health Care,economic_growth,2
-CI,Health Care,healthcare_spending,-2
+CI,Health Care,healthcare_spending,-3
 CI,Health Care,inflation,-2
-CI,Health Care,interest_rates,1
 CIEN,Information Technology,ai_infrastructure_capex,3
-CIEN,Information Technology,economic_growth,2
 CIEN,Information Technology,enterprise_it_spending,2
-CIEN,Information Technology,interest_rates,-1
+CIEN,Information Technology,semiconductor_demand,-1
 CINF,Financials,economic_growth,2
 CINF,Financials,inflation,-3
-CINF,Financials,interest_rates,2
-CL,Consumer Staples,consumer_spending,1
-CL,Consumer Staples,inflation,-2
+CINF,Financials,interest_rates,-2
+CL,Consumer Staples,consumer_spending,2
+CL,Consumer Staples,economic_growth,2
+CL,Consumer Staples,inflation,-3
 CL,Consumer Staples,oil_price,-1
-CL,Consumer Staples,usd_strength,-2
-CLX,Consumer Staples,inflation,-2
-CLX,Consumer Staples,oil_price,-2
-CLX,Consumer Staples,usd_strength,-1
+CL,Consumer Staples,usd_strength,-3
+CLX,Consumer Staples,consumer_spending,2
+CLX,Consumer Staples,economic_growth,1
+CLX,Consumer Staples,inflation,-3
 CMCSA,Communication Services,consumer_spending,2
 CMCSA,Communication Services,economic_growth,2
-CMCSA,Communication Services,inflation,-1
-CMCSA,Communication Services,interest_rates,-2
-CMCSA,Communication Services,usd_strength,-1
-CME,Financials,economic_growth,1
-CME,Financials,inflation,1
-CME,Financials,interest_rates,2
+CMCSA,Communication Services,enterprise_it_spending,2
+CMCSA,Communication Services,inflation,-2
+CME,Financials,economic_growth,2
 CMG,Consumer Discretionary,consumer_spending,3
-CMG,Consumer Discretionary,economic_growth,2
-CMG,Consumer Discretionary,inflation,-2
+CMG,Consumer Discretionary,inflation,-3
 CMI,Industrials,ai_infrastructure_capex,2
 CMI,Industrials,china_demand,2
 CMI,Industrials,economic_growth,3
-CMI,Industrials,inflation,-1
-CMI,Industrials,interest_rates,-2
-CMS,Utilities,economic_growth,1
+CMI,Industrials,inflation,-2
+CMS,Utilities,economic_growth,2
 CMS,Utilities,inflation,-2
 CMS,Utilities,interest_rates,-3
 CNC,Health Care,healthcare_spending,-3
 CNC,Health Care,inflation,-2
-CNC,Health Care,interest_rates,1
-CNP,Utilities,economic_growth,1
+CNP,Utilities,economic_growth,2
 CNP,Utilities,inflation,-2
-CNP,Utilities,interest_rates,-3
 COF,Financials,consumer_spending,3
 COF,Financials,economic_growth,3
 COF,Financials,interest_rates,-2
 COHR,Information Technology,ai_infrastructure_capex,3
-COHR,Information Technology,china_demand,1
+COHR,Information Technology,consumer_spending,1
 COHR,Information Technology,economic_growth,2
 COHR,Information Technology,semiconductor_demand,2
-COIN,Financials,consumer_spending,1
-COIN,Financials,economic_growth,2
 COIN,Financials,interest_rates,2
-COO,Health Care,consumer_spending,2
+COO,Health Care,china_demand,1
+COO,Health Care,economic_growth,2
 COO,Health Care,healthcare_spending,3
+COO,Health Care,inflation,-2
 COO,Health Care,usd_strength,-2
 COP,Energy,economic_growth,2
 COP,Energy,oil_price,3
-COP,Energy,usd_strength,-1
 COR,Health Care,healthcare_spending,3
-COR,Health Care,interest_rates,-1
+COR,Health Care,inflation,-2
+COR,Health Care,oil_price,-1
 COR,Health Care,usd_strength,-1
 COST,Consumer Staples,consumer_spending,3
 COST,Consumer Staples,economic_growth,2
+COST,Consumer Staples,inflation,-2
+CPAY,Financials,consumer_spending,2
 CPAY,Financials,economic_growth,3
-CPAY,Financials,oil_price,2
-CPAY,Financials,usd_strength,-1
-CPRT,Industrials,consumer_spending,2
-CPRT,Industrials,inflation,2
-CPRT,Industrials,usd_strength,-1
-CPT,Real Estate,economic_growth,2
-CPT,Real Estate,inflation,1
-CPT,Real Estate,interest_rates,-3
+CPAY,Financials,inflation,-1
+CPAY,Financials,interest_rates,-1
+CPAY,Financials,oil_price,-2
+CPRT,Industrials,interest_rates,-1
+CPRT,Industrials,oil_price,-2
+CPRT,Industrials,usd_strength,-2
+CPT,Real Estate,economic_growth,3
+CPT,Real Estate,inflation,-2
+CPT,Real Estate,interest_rates,-2
+CRH,Materials,consumer_spending,2
 CRH,Materials,economic_growth,3
+CRH,Materials,inflation,-2
 CRH,Materials,interest_rates,-2
 CRH,Materials,oil_price,-2
-CRH,Materials,usd_strength,-1
 CRL,Health Care,economic_growth,2
 CRL,Health Care,healthcare_spending,2
-CRL,Health Care,inflation,-1
-CRL,Health Care,interest_rates,-2
+CRL,Health Care,inflation,-2
 CRM,Information Technology,economic_growth,2
 CRM,Information Technology,enterprise_it_spending,3
-CRM,Information Technology,interest_rates,-2
 CRM,Information Technology,usd_strength,-2
-CRWD,Information Technology,economic_growth,2
+CRWD,Information Technology,ai_infrastructure_capex,1
 CRWD,Information Technology,enterprise_it_spending,3
-CRWD,Information Technology,interest_rates,-2
-CRWD,Information Technology,usd_strength,-1
-CSCO,Information Technology,ai_infrastructure_capex,2
+CSCO,Information Technology,ai_infrastructure_capex,3
 CSCO,Information Technology,economic_growth,2
 CSCO,Information Technology,enterprise_it_spending,3
-CSCO,Information Technology,usd_strength,-1
-CSGP,Real Estate,economic_growth,2
-CSGP,Real Estate,enterprise_it_spending,2
+CSCO,Information Technology,inflation,-2
+CSCO,Information Technology,taiwan_supply_chain_risk,-2
+CSGP,Real Estate,economic_growth,3
+CSGP,Real Estate,inflation,-2
 CSGP,Real Estate,interest_rates,-2
+CSGP,Real Estate,usd_strength,-1
 CSX,Industrials,consumer_spending,2
 CSX,Industrials,economic_growth,3
-CSX,Industrials,interest_rates,-1
-CSX,Industrials,usd_strength,-1
+CSX,Industrials,inflation,-2
+CSX,Industrials,interest_rates,-2
 CTAS,Industrials,economic_growth,3
 CTAS,Industrials,inflation,-2
-CTAS,Industrials,oil_price,-1
+CTAS,Industrials,interest_rates,-1
+CTAS,Industrials,oil_price,-2
 CTSH,Information Technology,economic_growth,2
 CTSH,Information Technology,enterprise_it_spending,3
-CTSH,Information Technology,healthcare_spending,1
-CTSH,Information Technology,usd_strength,1
+CTSH,Information Technology,inflation,-2
+CTSH,Information Technology,interest_rates,-2
 CVNA,Consumer Discretionary,consumer_spending,3
 CVNA,Consumer Discretionary,economic_growth,2
-CVNA,Consumer Discretionary,interest_rates,-3
-CVS,Health Care,economic_growth,1
+CVNA,Consumer Discretionary,inflation,-2
+CVNA,Consumer Discretionary,interest_rates,-2
+CVS,Health Care,economic_growth,2
 CVS,Health Care,healthcare_spending,-3
 CVS,Health Care,inflation,-2
-CVS,Health Care,interest_rates,-2
 CVX,Energy,economic_growth,2
 CVX,Energy,oil_price,3
-D,Utilities,ai_infrastructure_capex,2
+D,Utilities,ai_infrastructure_capex,3
+D,Utilities,economic_growth,2
 D,Utilities,inflation,-2
-D,Utilities,interest_rates,-3
+D,Utilities,usd_strength,1
+DAL,Industrials,china_demand,1
 DAL,Industrials,consumer_spending,3
-DAL,Industrials,economic_growth,2
-DAL,Industrials,inflation,-2
-DAL,Industrials,interest_rates,-1
 DAL,Industrials,oil_price,-3
 DASH,Consumer Discretionary,consumer_spending,3
-DASH,Consumer Discretionary,economic_growth,2
-DASH,Consumer Discretionary,inflation,-1
+DASH,Consumer Discretionary,inflation,-2
 DASH,Consumer Discretionary,oil_price,-1
-DD,Industrials,china_demand,1
-DD,Industrials,economic_growth,3
+DD,Industrials,economic_growth,2
+DD,Industrials,healthcare_spending,2
 DD,Industrials,inflation,-2
-DD,Industrials,semiconductor_demand,2
-DD,Industrials,usd_strength,-1
+DD,Industrials,interest_rates,-2
+DD,Industrials,semiconductor_demand,3
 DDOG,Information Technology,ai_infrastructure_capex,2
 DDOG,Information Technology,economic_growth,2
 DDOG,Information Technology,enterprise_it_spending,3
 DDOG,Information Technology,interest_rates,-2
-DE,Industrials,economic_growth,2
-DE,Industrials,inflation,-1
-DE,Industrials,interest_rates,-2
-DE,Industrials,usd_strength,-2
-DECK,Consumer Discretionary,consumer_spending,3
+DE,Industrials,consumer_spending,2
+DE,Industrials,economic_growth,3
+DE,Industrials,inflation,-2
+DE,Industrials,interest_rates,-3
 DECK,Consumer Discretionary,economic_growth,2
 DECK,Consumer Discretionary,inflation,-2
+DECK,Consumer Discretionary,interest_rates,-1
 DELL,Information Technology,ai_infrastructure_capex,3
-DELL,Information Technology,consumer_spending,2
+DELL,Information Technology,economic_growth,2
 DELL,Information Technology,enterprise_it_spending,3
-DELL,Information Technology,taiwan_supply_chain_risk,-2
-DELL,Information Technology,usd_strength,-1
-DG,Consumer Staples,consumer_spending,2
-DG,Consumer Staples,inflation,-2
-DG,Consumer Staples,oil_price,-1
-DGX,Health Care,economic_growth,1
+DELL,Information Technology,inflation,-2
+DELL,Information Technology,interest_rates,-2
+DG,Consumer Staples,consumer_spending,3
+DG,Consumer Staples,economic_growth,2
+DG,Consumer Staples,inflation,-3
+DG,Consumer Staples,interest_rates,-2
+DG,Consumer Staples,oil_price,-2
+DGX,Health Care,consumer_spending,1
 DGX,Health Care,healthcare_spending,3
 DGX,Health Care,inflation,-2
 DHI,Consumer Discretionary,consumer_spending,2
-DHI,Consumer Discretionary,economic_growth,2
+DHI,Consumer Discretionary,economic_growth,3
 DHI,Consumer Discretionary,inflation,-2
 DHI,Consumer Discretionary,interest_rates,-3
 DHR,Health Care,china_demand,2
+DHR,Health Care,economic_growth,2
 DHR,Health Care,healthcare_spending,3
-DHR,Health Care,interest_rates,-2
-DHR,Health Care,usd_strength,-2
-DIS,Communication Services,china_demand,1
+DHR,Health Care,inflation,-2
+DHR,Health Care,interest_rates,-1
+DHR,Health Care,oil_price,-1
 DIS,Communication Services,consumer_spending,3
-DIS,Communication Services,economic_growth,2
+DIS,Communication Services,economic_growth,3
 DIS,Communication Services,inflation,-2
+DIS,Communication Services,interest_rates,-1
 DIS,Communication Services,usd_strength,-2
-DLR,Real Estate,ai_infrastructure_capex,3
+DLR,Real Estate,ai_infrastructure_capex,2
+DLR,Real Estate,economic_growth,2
 DLR,Real Estate,enterprise_it_spending,3
+DLR,Real Estate,inflation,-2
 DLR,Real Estate,interest_rates,-3
-DLR,Real Estate,usd_strength,-1
 DLTR,Consumer Staples,consumer_spending,2
-DLTR,Consumer Staples,inflation,-2
-DLTR,Consumer Staples,oil_price,-1
-DLTR,Consumer Staples,usd_strength,2
-DOC,Real Estate,economic_growth,1
+DLTR,Consumer Staples,inflation,-3
+DLTR,Consumer Staples,oil_price,-2
+DOC,Real Estate,economic_growth,2
 DOC,Real Estate,healthcare_spending,3
+DOC,Real Estate,inflation,-2
 DOC,Real Estate,interest_rates,-3
+DOV,Industrials,ai_infrastructure_capex,1
+DOV,Industrials,consumer_spending,1
 DOV,Industrials,economic_growth,3
-DOV,Industrials,inflation,-1
-DOV,Industrials,interest_rates,-2
-DOV,Industrials,usd_strength,-2
-DOW,Materials,china_demand,2
+DOV,Industrials,healthcare_spending,1
+DOV,Industrials,inflation,-2
+DOV,Industrials,semiconductor_demand,1
+DOW,Materials,consumer_spending,2
 DOW,Materials,economic_growth,3
+DOW,Materials,inflation,-2
 DOW,Materials,interest_rates,-2
-DOW,Materials,usd_strength,-2
 DPZ,Consumer Discretionary,consumer_spending,3
+DPZ,Consumer Discretionary,economic_growth,2
 DPZ,Consumer Discretionary,inflation,-2
-DPZ,Consumer Discretionary,oil_price,-1
+DPZ,Consumer Discretionary,interest_rates,-3
 DRI,Consumer Discretionary,consumer_spending,3
 DRI,Consumer Discretionary,economic_growth,2
-DRI,Consumer Discretionary,inflation,-2
+DRI,Consumer Discretionary,inflation,-3
+DRI,Consumer Discretionary,interest_rates,-2
+DRI,Consumer Discretionary,oil_price,-1
 DTE,Utilities,economic_growth,2
 DTE,Utilities,inflation,-2
-DTE,Utilities,interest_rates,-3
-DUK,Utilities,ai_infrastructure_capex,2
 DUK,Utilities,economic_growth,2
 DUK,Utilities,inflation,-2
-DUK,Utilities,interest_rates,-3
+DUK,Utilities,interest_rates,-2
+DVA,Health Care,economic_growth,2
 DVA,Health Care,healthcare_spending,3
-DVA,Health Care,inflation,-2
-DVA,Health Care,interest_rates,-2
-DVN,Energy,economic_growth,1
+DVA,Health Care,inflation,-3
+DVN,Energy,inflation,-2
+DVN,Energy,interest_rates,-1
 DVN,Energy,oil_price,3
 DXCM,Health Care,consumer_spending,1
 DXCM,Health Care,healthcare_spending,3
+DXCM,Health Care,inflation,-2
 EBAY,Consumer Discretionary,consumer_spending,3
 EBAY,Consumer Discretionary,economic_growth,2
+EBAY,Consumer Discretionary,inflation,-2
+EBAY,Consumer Discretionary,interest_rates,-2
 EBAY,Consumer Discretionary,usd_strength,-2
 ECHO,Communication Services,consumer_spending,2
 ECHO,Communication Services,enterprise_it_spending,1
-ECHO,Communication Services,inflation,-1
-ECHO,Communication Services,interest_rates,-3
+ECHO,Communication Services,inflation,-2
+ECHO,Communication Services,interest_rates,-2
 ECL,Materials,consumer_spending,2
-ECL,Materials,economic_growth,2
-ECL,Materials,healthcare_spending,1
+ECL,Materials,economic_growth,3
+ECL,Materials,healthcare_spending,2
 ECL,Materials,inflation,-2
+ECL,Materials,usd_strength,-2
 ED,Utilities,inflation,-2
 ED,Utilities,interest_rates,-3
 EFX,Industrials,consumer_spending,2
-EFX,Industrials,economic_growth,2
+EFX,Industrials,economic_growth,3
+EFX,Industrials,inflation,-2
 EFX,Industrials,interest_rates,-3
 EG,Financials,economic_growth,2
-EG,Financials,inflation,-2
-EG,Financials,interest_rates,2
-EIX,Utilities,ai_infrastructure_capex,1
-EIX,Utilities,economic_growth,1
+EG,Financials,interest_rates,-2
 EIX,Utilities,inflation,-2
-EIX,Utilities,interest_rates,-3
-EL,Consumer Staples,china_demand,3
+EIX,Utilities,interest_rates,-2
+EL,Consumer Staples,china_demand,2
 EL,Consumer Staples,consumer_spending,3
-EL,Consumer Staples,usd_strength,-2
-ELV,Health Care,economic_growth,1
+EL,Consumer Staples,economic_growth,2
+EL,Consumer Staples,inflation,-2
+ELV,Health Care,economic_growth,2
 ELV,Health Care,healthcare_spending,-3
 ELV,Health Care,inflation,-2
-ELV,Health Care,interest_rates,1
 EME,Industrials,ai_infrastructure_capex,2
 EME,Industrials,economic_growth,3
+EME,Industrials,inflation,-2
 EME,Industrials,interest_rates,-2
-EMR,Industrials,economic_growth,3
+EME,Industrials,oil_price,2
+EMR,Industrials,china_demand,2
+EMR,Industrials,enterprise_it_spending,2
+EMR,Industrials,inflation,-2
 EMR,Industrials,interest_rates,-1
-EMR,Industrials,oil_price,2
-EMR,Industrials,usd_strength,-2
 EOG,Energy,economic_growth,2
-EOG,Energy,interest_rates,-1
+EOG,Energy,inflation,-2
+EOG,Energy,interest_rates,-2
 EOG,Energy,oil_price,3
-EQIX,Real Estate,ai_infrastructure_capex,2
+EQIX,Real Estate,ai_infrastructure_capex,3
+EQIX,Real Estate,economic_growth,2
 EQIX,Real Estate,enterprise_it_spending,3
+EQIX,Real Estate,inflation,-2
 EQIX,Real Estate,interest_rates,-2
-EQIX,Real Estate,usd_strength,-2
-EQT,Energy,ai_infrastructure_capex,1
-EQT,Energy,economic_growth,2
+EQT,Energy,inflation,-2
 EQT,Energy,interest_rates,-2
-ERIE,Financials,consumer_spending,1
+EQT,Energy,oil_price,1
 ERIE,Financials,economic_growth,2
-ERIE,Financials,inflation,2
-ES,Utilities,economic_growth,1
+ERIE,Financials,inflation,-2
+ERIE,Financials,interest_rates,-1
 ES,Utilities,inflation,-2
-ES,Utilities,interest_rates,-3
 ESS,Real Estate,economic_growth,3
-ESS,Real Estate,inflation,1
-ESS,Real Estate,interest_rates,-3
+ESS,Real Estate,inflation,-2
+ESS,Real Estate,interest_rates,-2
 ETN,Industrials,ai_infrastructure_capex,3
 ETN,Industrials,economic_growth,2
-ETN,Industrials,interest_rates,-2
+ETN,Industrials,inflation,-2
+ETR,Utilities,ai_infrastructure_capex,2
 ETR,Utilities,economic_growth,2
 ETR,Utilities,inflation,-2
-ETR,Utilities,interest_rates,-3
+ETR,Utilities,interest_rates,-2
 EVRG,Utilities,economic_growth,2
 EVRG,Utilities,inflation,-2
 EVRG,Utilities,interest_rates,-3
 EW,Health Care,healthcare_spending,3
-EW,Health Care,interest_rates,-1
-EXC,Utilities,ai_infrastructure_capex,2
-EXC,Utilities,economic_growth,1
+EW,Health Care,inflation,-2
 EXC,Utilities,inflation,-2
-EXC,Utilities,interest_rates,-3
+EXC,Utilities,interest_rates,-2
 EXE,Energy,economic_growth,2
-EXE,Energy,interest_rates,-2
+EXE,Energy,inflation,-2
 EXE,Energy,oil_price,1
 EXPD,Industrials,consumer_spending,2
 EXPD,Industrials,economic_growth,3
-EXPD,Industrials,usd_strength,-1
 EXPE,Consumer Discretionary,consumer_spending,3
-EXPE,Consumer Discretionary,economic_growth,2
-EXPE,Consumer Discretionary,oil_price,-1
 EXR,Real Estate,economic_growth,2
-EXR,Real Estate,inflation,1
 EXR,Real Estate,interest_rates,-3
 F,Consumer Discretionary,consumer_spending,3
-F,Consumer Discretionary,economic_growth,2
+F,Consumer Discretionary,economic_growth,3
 F,Consumer Discretionary,inflation,-2
 F,Consumer Discretionary,interest_rates,-3
-F,Consumer Discretionary,oil_price,-2
-FANG,Energy,economic_growth,2
-FANG,Energy,interest_rates,-1
+F,Consumer Discretionary,usd_strength,-2
+FANG,Energy,inflation,-2
+FANG,Energy,interest_rates,-2
 FANG,Energy,oil_price,3
 FAST,Industrials,economic_growth,3
-FAST,Industrials,interest_rates,-2
-FCX,Materials,ai_infrastructure_capex,1
+FAST,Industrials,inflation,-2
+FCX,Materials,ai_infrastructure_capex,2
 FCX,Materials,china_demand,3
 FCX,Materials,economic_growth,2
-FCX,Materials,usd_strength,-2
-FDS,Financials,economic_growth,2
+FCX,Materials,inflation,-2
+FCX,Materials,oil_price,-2
 FDS,Financials,enterprise_it_spending,3
 FDS,Financials,usd_strength,-1
 FDX,Industrials,consumer_spending,2
 FDX,Industrials,economic_growth,3
-FDX,Industrials,inflation,-1
+FDX,Industrials,inflation,-2
+FDX,Industrials,interest_rates,-2
 FDX,Industrials,oil_price,-2
 FDXF,Industrials,consumer_spending,2
 FDXF,Industrials,economic_growth,3
 FDXF,Industrials,oil_price,-2
-FE,Utilities,ai_infrastructure_capex,1
 FE,Utilities,economic_growth,2
 FE,Utilities,inflation,-2
 FE,Utilities,interest_rates,-3
-FERG,Industrials,consumer_spending,2
 FERG,Industrials,economic_growth,3
-FERG,Industrials,interest_rates,-2
+FERG,Industrials,inflation,-2
+FERG,Industrials,interest_rates,-3
+FERG,Industrials,oil_price,-1
 FFIV,Information Technology,ai_infrastructure_capex,1
 FFIV,Information Technology,economic_growth,2
 FFIV,Information Technology,enterprise_it_spending,3
-FFIV,Information Technology,usd_strength,-1
-FICO,Information Technology,economic_growth,2
+FICO,Information Technology,economic_growth,3
 FICO,Information Technology,enterprise_it_spending,2
-FICO,Information Technology,interest_rates,-3
+FICO,Information Technology,interest_rates,-2
 FIS,Financials,consumer_spending,2
-FIS,Financials,economic_growth,2
+FIS,Financials,economic_growth,3
 FIS,Financials,enterprise_it_spending,3
+FIS,Financials,inflation,-1
+FIS,Financials,interest_rates,-1
 FISV,Financials,consumer_spending,3
 FISV,Financials,economic_growth,2
 FISV,Financials,enterprise_it_spending,2
-FITB,Financials,consumer_spending,2
 FITB,Financials,economic_growth,3
-FITB,Financials,interest_rates,2
-FIX,Industrials,ai_infrastructure_capex,3
-FIX,Industrials,economic_growth,2
+FITB,Financials,inflation,-2
+FITB,Financials,interest_rates,-3
+FIX,Industrials,economic_growth,3
+FIX,Industrials,inflation,-3
 FIX,Industrials,interest_rates,-2
-FLEX,Information Technology,ai_infrastructure_capex,2
+FIX,Industrials,oil_price,-1
+FLEX,Information Technology,ai_infrastructure_capex,3
+FLEX,Information Technology,consumer_spending,2
 FLEX,Information Technology,economic_growth,2
-FLEX,Information Technology,enterprise_it_spending,2
-FLEX,Information Technology,healthcare_spending,1
-FOX,Communication Services,consumer_spending,2
+FLEX,Information Technology,inflation,-2
+FLEX,Information Technology,interest_rates,-1
 FOX,Communication Services,economic_growth,3
-FOXA,Communication Services,consumer_spending,2
+FOX,Communication Services,inflation,-2
+FOX,Communication Services,interest_rates,-1
 FOXA,Communication Services,economic_growth,3
 FOXA,Communication Services,inflation,-2
-FRT,Real Estate,consumer_spending,2
+FOXA,Communication Services,interest_rates,-1
+FRT,Real Estate,consumer_spending,3
 FRT,Real Estate,economic_growth,2
+FRT,Real Estate,inflation,-2
 FRT,Real Estate,interest_rates,-3
-FSLR,Information Technology,ai_infrastructure_capex,1
+FSLR,Information Technology,ai_infrastructure_capex,3
 FSLR,Information Technology,inflation,-2
-FSLR,Information Technology,interest_rates,-3
 FTNT,Information Technology,economic_growth,2
 FTNT,Information Technology,enterprise_it_spending,3
-FTNT,Information Technology,usd_strength,-2
-FTV,Industrials,economic_growth,2
-FTV,Industrials,enterprise_it_spending,1
+FTNT,Information Technology,inflation,-2
+FTNT,Information Technology,taiwan_supply_chain_risk,-2
+FTV,Industrials,economic_growth,3
 FTV,Industrials,healthcare_spending,2
+FTV,Industrials,inflation,-2
+FTV,Industrials,interest_rates,-2
+FTV,Industrials,oil_price,-1
 GD,Industrials,economic_growth,2
 GD,Industrials,inflation,-2
+GD,Industrials,interest_rates,-1
 GD,Industrials,usd_strength,-1
-GDDY,Information Technology,economic_growth,2
+GDDY,Information Technology,economic_growth,3
 GDDY,Information Technology,enterprise_it_spending,2
-GDDY,Information Technology,interest_rates,-1
-GDDY,Information Technology,usd_strength,-1
 GE,Industrials,consumer_spending,2
 GE,Industrials,economic_growth,3
 GE,Industrials,interest_rates,-1
 GE,Industrials,usd_strength,-1
 GEHC,Health Care,china_demand,2
+GEHC,Health Care,economic_growth,2
 GEHC,Health Care,healthcare_spending,3
-GEHC,Health Care,interest_rates,-2
-GEHC,Health Care,usd_strength,-2
-GEN,Information Technology,consumer_spending,3
-GEN,Information Technology,interest_rates,-2
-GEN,Information Technology,usd_strength,-2
-GEV,Industrials,ai_infrastructure_capex,2
+GEHC,Health Care,inflation,-2
+GEN,Information Technology,consumer_spending,2
 GEV,Industrials,economic_growth,2
-GEV,Industrials,interest_rates,-2
-GILD,Health Care,healthcare_spending,2
-GILD,Health Care,interest_rates,-1
-GILD,Health Care,usd_strength,-1
-GIS,Consumer Staples,consumer_spending,1
-GIS,Consumer Staples,inflation,-2
-GIS,Consumer Staples,oil_price,-1
-GIS,Consumer Staples,usd_strength,-1
-GL,Financials,consumer_spending,2
-GL,Financials,economic_growth,1
-GL,Financials,interest_rates,3
-GLW,Information Technology,ai_infrastructure_capex,2
-GLW,Information Technology,china_demand,2
+GEV,Industrials,inflation,-2
+GILD,Health Care,economic_growth,1
+GILD,Health Care,healthcare_spending,3
+GIS,Consumer Staples,consumer_spending,2
+GIS,Consumer Staples,inflation,-3
+GIS,Consumer Staples,usd_strength,-2
+GL,Financials,economic_growth,2
+GL,Financials,healthcare_spending,-2
+GL,Financials,interest_rates,-3
+GLW,Information Technology,ai_infrastructure_capex,3
 GLW,Information Technology,consumer_spending,2
-GLW,Information Technology,economic_growth,2
-GLW,Information Technology,usd_strength,-1
-GM,Consumer Discretionary,china_demand,1
+GLW,Information Technology,enterprise_it_spending,2
+GLW,Information Technology,inflation,-2
+GLW,Information Technology,semiconductor_demand,2
+GM,Consumer Discretionary,china_demand,2
 GM,Consumer Discretionary,consumer_spending,3
 GM,Consumer Discretionary,economic_growth,2
 GM,Consumer Discretionary,inflation,-2
-GM,Consumer Discretionary,interest_rates,-3
+GM,Consumer Discretionary,interest_rates,-2
+GM,Consumer Discretionary,oil_price,-3
 GNRC,Industrials,consumer_spending,3
 GNRC,Industrials,economic_growth,2
-GNRC,Industrials,inflation,-1
-GNRC,Industrials,interest_rates,-2
-GOOG,Communication Services,consumer_spending,2
+GNRC,Industrials,inflation,-2
+GOOG,Communication Services,ai_infrastructure_capex,2
+GOOG,Communication Services,consumer_spending,1
 GOOG,Communication Services,economic_growth,3
 GOOG,Communication Services,enterprise_it_spending,2
-GOOG,Communication Services,usd_strength,-2
 GOOGL,Communication Services,ai_infrastructure_capex,2
-GOOGL,Communication Services,consumer_spending,2
+GOOGL,Communication Services,consumer_spending,1
 GOOGL,Communication Services,economic_growth,3
 GOOGL,Communication Services,enterprise_it_spending,2
-GOOGL,Communication Services,usd_strength,-2
-GPC,Consumer Discretionary,consumer_spending,1
-GPC,Consumer Discretionary,economic_growth,2
-GPC,Consumer Discretionary,oil_price,-1
+GPC,Consumer Discretionary,consumer_spending,2
+GPC,Consumer Discretionary,economic_growth,3
+GPC,Consumer Discretionary,inflation,-2
+GPC,Consumer Discretionary,interest_rates,-2
+GPC,Consumer Discretionary,oil_price,-2
 GPN,Financials,consumer_spending,3
 GPN,Financials,economic_growth,2
-GPN,Financials,enterprise_it_spending,1
-GPN,Financials,usd_strength,-1
+GPN,Financials,enterprise_it_spending,2
+GPN,Financials,interest_rates,-2
 GRMN,Consumer Discretionary,consumer_spending,3
 GRMN,Consumer Discretionary,economic_growth,2
-GRMN,Consumer Discretionary,usd_strength,-2
+GRMN,Consumer Discretionary,inflation,-2
 GS,Financials,economic_growth,3
+GS,Financials,inflation,-2
 GS,Financials,interest_rates,-2
 GWW,Industrials,economic_growth,3
-GWW,Industrials,interest_rates,-1
-HAL,Energy,economic_growth,2
+GWW,Industrials,inflation,-3
+GWW,Industrials,oil_price,-2
+GWW,Industrials,usd_strength,-2
+HAL,Energy,inflation,-2
 HAL,Energy,oil_price,3
-HAL,Energy,usd_strength,-1
 HAS,Consumer Discretionary,consumer_spending,3
 HAS,Consumer Discretionary,economic_growth,2
-HAS,Consumer Discretionary,inflation,-2
-HAS,Consumer Discretionary,usd_strength,-2
+HBAN,Financials,consumer_spending,2
 HBAN,Financials,economic_growth,3
-HBAN,Financials,interest_rates,2
+HBAN,Financials,inflation,-2
+HBAN,Financials,interest_rates,-3
 HCA,Health Care,economic_growth,2
 HCA,Health Care,healthcare_spending,3
 HCA,Health Care,inflation,-2
-HCA,Health Care,interest_rates,-1
+HCA,Health Care,interest_rates,-2
 HD,Consumer Discretionary,consumer_spending,3
-HD,Consumer Discretionary,economic_growth,2
+HD,Consumer Discretionary,inflation,-2
 HD,Consumer Discretionary,interest_rates,-3
+HIG,Financials,consumer_spending,1
 HIG,Financials,economic_growth,2
-HIG,Financials,inflation,-2
+HIG,Financials,inflation,-3
 HIG,Financials,interest_rates,3
 HII,Industrials,inflation,-2
-HII,Industrials,interest_rates,-1
-HLT,Consumer Discretionary,consumer_spending,3
+HLT,Consumer Discretionary,consumer_spending,2
 HLT,Consumer Discretionary,economic_growth,3
+HLT,Consumer Discretionary,inflation,-2
 HLT,Consumer Discretionary,interest_rates,-2
-HON,Industrials,china_demand,1
-HON,Industrials,economic_growth,3
+HON,Industrials,economic_growth,2
+HON,Industrials,inflation,-3
 HON,Industrials,interest_rates,-2
-HON,Industrials,oil_price,1
-HON,Industrials,usd_strength,-2
 HONA,Industrials,consumer_spending,2
 HONA,Industrials,economic_growth,2
 HONA,Industrials,inflation,-1
 HONA,Industrials,interest_rates,-1
 HOOD,Financials,economic_growth,2
 HOOD,Financials,interest_rates,3
-HPE,Information Technology,ai_infrastructure_capex,2
-HPE,Information Technology,economic_growth,2
+HPE,Information Technology,ai_infrastructure_capex,3
 HPE,Information Technology,enterprise_it_spending,3
-HPE,Information Technology,taiwan_supply_chain_risk,-2
-HPE,Information Technology,usd_strength,-1
+HPE,Information Technology,interest_rates,-2
 HPQ,Information Technology,consumer_spending,2
-HPQ,Information Technology,economic_growth,2
 HPQ,Information Technology,enterprise_it_spending,3
-HPQ,Information Technology,usd_strength,-2
-HRL,Consumer Staples,consumer_spending,1
-HRL,Consumer Staples,inflation,-2
-HRL,Consumer Staples,oil_price,-1
-HSIC,Health Care,consumer_spending,2
+HPQ,Information Technology,inflation,-2
+HPQ,Information Technology,semiconductor_demand,-2
+HRL,Consumer Staples,consumer_spending,2
+HRL,Consumer Staples,economic_growth,2
+HRL,Consumer Staples,inflation,-3
+HRL,Consumer Staples,interest_rates,-1
+HRL,Consumer Staples,oil_price,-2
+HSIC,Health Care,economic_growth,2
 HSIC,Health Care,healthcare_spending,3
-HSIC,Health Care,interest_rates,-1
-HST,Real Estate,consumer_spending,3
+HSIC,Health Care,inflation,-2
+HST,Real Estate,consumer_spending,2
 HST,Real Estate,economic_growth,3
+HST,Real Estate,inflation,-2
 HST,Real Estate,interest_rates,-2
 HSY,Consumer Staples,consumer_spending,2
-HSY,Consumer Staples,inflation,-2
-HUBB,Industrials,ai_infrastructure_capex,2
+HSY,Consumer Staples,inflation,-3
+HSY,Consumer Staples,oil_price,-1
 HUBB,Industrials,economic_growth,2
-HUBB,Industrials,inflation,-1
+HUBB,Industrials,inflation,-3
 HUBB,Industrials,interest_rates,-2
+HUBB,Industrials,usd_strength,-1
 HUM,Health Care,healthcare_spending,-3
-HUM,Health Care,inflation,-2
-HWM,Industrials,consumer_spending,2
-HWM,Industrials,economic_growth,2
-HWM,Industrials,inflation,-1
+HUM,Health Care,inflation,-3
+HWM,Industrials,economic_growth,3
+HWM,Industrials,inflation,-2
 HWM,Industrials,interest_rates,-1
-IBKR,Financials,economic_growth,2
+HWM,Industrials,oil_price,-2
+IBKR,Financials,economic_growth,1
 IBKR,Financials,interest_rates,3
-IBM,Information Technology,ai_infrastructure_capex,1
 IBM,Information Technology,economic_growth,2
 IBM,Information Technology,enterprise_it_spending,3
 IBM,Information Technology,usd_strength,-2
 ICE,Financials,economic_growth,2
 ICE,Financials,enterprise_it_spending,2
 ICE,Financials,interest_rates,-2
-ICE,Financials,usd_strength,-1
-IDXX,Health Care,consumer_spending,3
-IDXX,Health Care,inflation,-1
-IDXX,Health Care,usd_strength,-2
-IEX,Industrials,economic_growth,3
+IDXX,Health Care,consumer_spending,2
+IDXX,Health Care,enterprise_it_spending,1
+IDXX,Health Care,healthcare_spending,3
+IDXX,Health Care,inflation,-2
+IEX,Industrials,economic_growth,2
 IEX,Industrials,healthcare_spending,2
-IEX,Industrials,semiconductor_demand,1
+IEX,Industrials,inflation,-2
+IEX,Industrials,semiconductor_demand,2
 IFF,Materials,consumer_spending,2
-IFF,Materials,inflation,-2
+IFF,Materials,economic_growth,2
+IFF,Materials,inflation,-3
+IFF,Materials,interest_rates,-3
 IFF,Materials,usd_strength,-2
 ILMN,Health Care,china_demand,2
 ILMN,Health Care,healthcare_spending,2
-ILMN,Health Care,usd_strength,-2
-INCY,Health Care,healthcare_spending,2
+INCY,Health Care,healthcare_spending,3
+INCY,Health Care,inflation,-1
 INCY,Health Care,interest_rates,-1
-INCY,Health Care,usd_strength,-1
 INTC,Information Technology,ai_infrastructure_capex,2
-INTC,Information Technology,consumer_spending,2
+INTC,Information Technology,economic_growth,2
 INTC,Information Technology,enterprise_it_spending,2
-INTC,Information Technology,interest_rates,-2
+INTC,Information Technology,inflation,-1
 INTC,Information Technology,semiconductor_demand,3
-INTU,Information Technology,consumer_spending,1
-INTU,Information Technology,economic_growth,2
+INTU,Information Technology,consumer_spending,2
+INTU,Information Technology,economic_growth,3
 INTU,Information Technology,enterprise_it_spending,3
-INVH,Real Estate,economic_growth,2
-INVH,Real Estate,inflation,1
+INVH,Real Estate,economic_growth,3
+INVH,Real Estate,inflation,-2
 INVH,Real Estate,interest_rates,-3
-IP,Materials,consumer_spending,2
 IP,Materials,economic_growth,3
+IP,Materials,inflation,-3
+IP,Materials,interest_rates,-1
 IP,Materials,oil_price,-1
-IP,Materials,usd_strength,-1
+IP,Materials,usd_strength,-2
+IQV,Health Care,economic_growth,2
 IQV,Health Care,enterprise_it_spending,2
-IQV,Health Care,healthcare_spending,2
-IQV,Health Care,interest_rates,-1
-IQV,Health Care,usd_strength,-1
+IQV,Health Care,healthcare_spending,3
+IQV,Health Care,interest_rates,-2
 IR,Industrials,economic_growth,3
-IR,Industrials,inflation,-1
-IR,Industrials,interest_rates,-2
+IR,Industrials,healthcare_spending,2
+IR,Industrials,inflation,-2
 IR,Industrials,usd_strength,-2
-IRM,Real Estate,ai_infrastructure_capex,2
 IRM,Real Estate,enterprise_it_spending,2
-IRM,Real Estate,interest_rates,-2
-ISRG,Health Care,china_demand,1
+IRM,Real Estate,inflation,-2
+IRM,Real Estate,usd_strength,-2
+ISRG,Health Care,china_demand,2
 ISRG,Health Care,healthcare_spending,3
-ISRG,Health Care,interest_rates,-2
 ISRG,Health Care,usd_strength,-2
 IT,Information Technology,economic_growth,2
-IT,Information Technology,enterprise_it_spending,3
-ITW,Industrials,china_demand,1
+IT,Information Technology,enterprise_it_spending,2
+IT,Information Technology,inflation,-2
 ITW,Industrials,economic_growth,3
+ITW,Industrials,inflation,-2
 ITW,Industrials,interest_rates,-2
 ITW,Industrials,usd_strength,-2
-IVZ,Financials,economic_growth,3
+IVZ,Financials,china_demand,1
+IVZ,Financials,economic_growth,2
 IVZ,Financials,interest_rates,-2
-IVZ,Financials,usd_strength,-1
-J,Industrials,ai_infrastructure_capex,2
-J,Industrials,economic_growth,2
+IVZ,Financials,usd_strength,-2
+J,Industrials,economic_growth,3
+J,Industrials,enterprise_it_spending,2
+J,Industrials,inflation,-2
 J,Industrials,interest_rates,-2
-J,Industrials,semiconductor_demand,2
-JBHT,Industrials,consumer_spending,2
+JBHT,Industrials,consumer_spending,1
 JBHT,Industrials,economic_growth,3
-JBHT,Industrials,oil_price,-1
-JBL,Information Technology,ai_infrastructure_capex,2
+JBHT,Industrials,inflation,-2
+JBHT,Industrials,oil_price,-2
+JBL,Information Technology,ai_infrastructure_capex,3
 JBL,Information Technology,economic_growth,2
 JBL,Information Technology,enterprise_it_spending,2
-JBL,Information Technology,healthcare_spending,1
+JBL,Information Technology,inflation,-2
+JBL,Information Technology,semiconductor_demand,1
 JCI,Industrials,ai_infrastructure_capex,2
-JCI,Industrials,economic_growth,3
-JCI,Industrials,interest_rates,-2
-JKHY,Financials,consumer_spending,2
-JKHY,Financials,economic_growth,2
+JCI,Industrials,economic_growth,2
+JCI,Industrials,inflation,-2
 JKHY,Financials,enterprise_it_spending,3
+JKHY,Financials,inflation,-2
 JNJ,Health Care,healthcare_spending,3
-JNJ,Health Care,inflation,-1
-JNJ,Health Care,usd_strength,-2
 JPM,Financials,consumer_spending,2
 JPM,Financials,economic_growth,3
-JPM,Financials,interest_rates,2
+JPM,Financials,interest_rates,-2
 KDP,Consumer Staples,consumer_spending,2
-KDP,Consumer Staples,inflation,-2
-KDP,Consumer Staples,oil_price,-1
+KDP,Consumer Staples,inflation,-3
+KDP,Consumer Staples,oil_price,-2
 KEY,Financials,economic_growth,3
+KEY,Financials,inflation,-2
 KEY,Financials,interest_rates,-3
-KEYS,Information Technology,ai_infrastructure_capex,2
-KEYS,Information Technology,china_demand,2
-KEYS,Information Technology,economic_growth,2
+KEYS,Information Technology,economic_growth,3
+KEYS,Information Technology,enterprise_it_spending,2
+KEYS,Information Technology,inflation,-2
 KEYS,Information Technology,semiconductor_demand,2
-KHC,Consumer Staples,inflation,-2
+KHC,Consumer Staples,economic_growth,2
+KHC,Consumer Staples,inflation,-3
 KHC,Consumer Staples,oil_price,-1
-KHC,Consumer Staples,usd_strength,-2
 KIM,Real Estate,consumer_spending,2
-KIM,Real Estate,economic_growth,2
-KIM,Real Estate,interest_rates,-3
-KKR,Financials,ai_infrastructure_capex,1
+KIM,Real Estate,economic_growth,3
+KIM,Real Estate,inflation,-2
+KIM,Real Estate,interest_rates,-2
 KKR,Financials,economic_growth,3
+KKR,Financials,inflation,-2
 KKR,Financials,interest_rates,-3
 KLAC,Information Technology,ai_infrastructure_capex,2
 KLAC,Information Technology,china_demand,2
+KLAC,Information Technology,economic_growth,2
+KLAC,Information Technology,interest_rates,-2
 KLAC,Information Technology,semiconductor_demand,3
-KLAC,Information Technology,taiwan_supply_chain_risk,-2
-KMB,Consumer Staples,inflation,-2
-KMB,Consumer Staples,interest_rates,-1
-KMB,Consumer Staples,oil_price,-1
-KMB,Consumer Staples,usd_strength,-2
-KMI,Energy,ai_infrastructure_capex,1
+KMB,Consumer Staples,china_demand,1
+KMB,Consumer Staples,inflation,-3
+KMB,Consumer Staples,oil_price,-2
+KMB,Consumer Staples,usd_strength,-3
 KMI,Energy,economic_growth,2
+KMI,Energy,inflation,-2
 KMI,Energy,interest_rates,-2
-KMI,Energy,oil_price,1
-KO,Consumer Staples,consumer_spending,2
-KO,Consumer Staples,inflation,-2
-KO,Consumer Staples,usd_strength,-2
-KR,Consumer Staples,consumer_spending,1
-KR,Consumer Staples,inflation,2
-KR,Consumer Staples,interest_rates,-1
+KMI,Energy,oil_price,2
+KO,Consumer Staples,china_demand,2
+KO,Consumer Staples,consumer_spending,3
+KO,Consumer Staples,economic_growth,2
+KO,Consumer Staples,inflation,-3
+KO,Consumer Staples,oil_price,-2
+KR,Consumer Staples,consumer_spending,2
+KR,Consumer Staples,healthcare_spending,1
+KR,Consumer Staples,inflation,-2
 KVUE,Consumer Staples,consumer_spending,2
+KVUE,Consumer Staples,economic_growth,2
+KVUE,Consumer Staples,healthcare_spending,2
 KVUE,Consumer Staples,inflation,-2
-KVUE,Consumer Staples,usd_strength,-2
 L,Financials,consumer_spending,1
 L,Financials,economic_growth,2
-L,Financials,inflation,-2
+L,Financials,inflation,-3
 L,Financials,interest_rates,2
-LDOS,Industrials,healthcare_spending,1
-LEN,Consumer Discretionary,consumer_spending,2
-LEN,Consumer Discretionary,economic_growth,2
-LEN,Consumer Discretionary,inflation,-2
+LDOS,Industrials,economic_growth,1
+LDOS,Industrials,healthcare_spending,2
+LDOS,Industrials,inflation,-2
+LEN,Consumer Discretionary,economic_growth,3
+LEN,Consumer Discretionary,inflation,-3
 LEN,Consumer Discretionary,interest_rates,-3
-LH,Health Care,economic_growth,1
+LH,Health Care,economic_growth,2
 LH,Health Care,healthcare_spending,3
 LH,Health Care,inflation,-2
-LHX,Industrials,inflation,-2
-LHX,Industrials,interest_rates,-1
+LH,Health Care,interest_rates,-1
+LH,Health Care,usd_strength,-1
+LHX,Industrials,inflation,-3
+LHX,Industrials,oil_price,1
 LII,Industrials,consumer_spending,2
 LII,Industrials,economic_growth,2
-LII,Industrials,inflation,-1
+LII,Industrials,inflation,-2
 LII,Industrials,interest_rates,-2
-LIN,Materials,china_demand,1
-LIN,Materials,economic_growth,3
-LIN,Materials,healthcare_spending,1
-LIN,Materials,semiconductor_demand,2
+LIN,Materials,economic_growth,2
+LIN,Materials,inflation,-2
+LIN,Materials,usd_strength,-2
 LITE,Information Technology,ai_infrastructure_capex,3
 LITE,Information Technology,consumer_spending,1
 LITE,Information Technology,economic_growth,2
+LITE,Information Technology,inflation,-2
+LITE,Information Technology,interest_rates,-1
+LITE,Information Technology,semiconductor_demand,1
+LLY,Health Care,economic_growth,1
 LLY,Health Care,healthcare_spending,3
-LLY,Health Care,interest_rates,-1
-LLY,Health Care,usd_strength,-2
 LMT,Industrials,inflation,-2
-LMT,Industrials,taiwan_supply_chain_risk,2
-LMT,Industrials,usd_strength,-1
-LNT,Utilities,economic_growth,1
+LNT,Utilities,ai_infrastructure_capex,2
+LNT,Utilities,economic_growth,2
 LNT,Utilities,inflation,-2
-LNT,Utilities,interest_rates,-3
+LNT,Utilities,interest_rates,-2
 LOW,Consumer Discretionary,consumer_spending,3
 LOW,Consumer Discretionary,economic_growth,2
-LOW,Consumer Discretionary,interest_rates,-3
+LOW,Consumer Discretionary,inflation,-2
 LRCX,Information Technology,ai_infrastructure_capex,2
-LRCX,Information Technology,china_demand,2
+LRCX,Information Technology,economic_growth,2
 LRCX,Information Technology,semiconductor_demand,3
 LULU,Consumer Discretionary,china_demand,2
 LULU,Consumer Discretionary,consumer_spending,3
+LULU,Consumer Discretionary,economic_growth,2
 LULU,Consumer Discretionary,inflation,-2
-LULU,Consumer Discretionary,usd_strength,-1
 LUV,Industrials,consumer_spending,3
-LUV,Industrials,economic_growth,2
+LUV,Industrials,economic_growth,3
 LUV,Industrials,inflation,-2
 LUV,Industrials,oil_price,-3
 LVS,Consumer Discretionary,china_demand,3
 LVS,Consumer Discretionary,consumer_spending,3
-LVS,Consumer Discretionary,interest_rates,-2
-LYB,Materials,china_demand,2
-LYB,Materials,consumer_spending,2
+LVS,Consumer Discretionary,inflation,-2
+LVS,Consumer Discretionary,oil_price,-1
 LYB,Materials,economic_growth,3
-LYB,Materials,oil_price,-2
-LYB,Materials,usd_strength,-2
+LYB,Materials,inflation,-2
+LYB,Materials,interest_rates,-2
+LYB,Materials,oil_price,3
 LYV,Communication Services,consumer_spending,3
 LYV,Communication Services,economic_growth,2
+LYV,Communication Services,inflation,-2
 LYV,Communication Services,interest_rates,-1
-LYV,Communication Services,usd_strength,-2
+MA,Financials,china_demand,1
 MA,Financials,consumer_spending,3
 MA,Financials,economic_growth,2
-MA,Financials,inflation,1
-MA,Financials,usd_strength,-2
-MAA,Real Estate,economic_growth,2
-MAA,Real Estate,inflation,1
+MAA,Real Estate,economic_growth,3
+MAA,Real Estate,inflation,-2
 MAA,Real Estate,interest_rates,-3
+MAR,Consumer Discretionary,china_demand,2
 MAR,Consumer Discretionary,consumer_spending,3
-MAR,Consumer Discretionary,economic_growth,2
-MAR,Consumer Discretionary,interest_rates,-1
-MAR,Consumer Discretionary,usd_strength,-2
+MAR,Consumer Discretionary,economic_growth,3
+MAR,Consumer Discretionary,interest_rates,-2
 MAS,Industrials,consumer_spending,3
 MAS,Industrials,economic_growth,2
-MAS,Industrials,inflation,-1
+MAS,Industrials,inflation,-2
 MAS,Industrials,interest_rates,-2
-MCD,Consumer Discretionary,consumer_spending,2
+MAS,Industrials,oil_price,-2
+MAS,Industrials,usd_strength,-2
+MCD,Consumer Discretionary,china_demand,1
+MCD,Consumer Discretionary,consumer_spending,3
 MCD,Consumer Discretionary,inflation,-2
-MCD,Consumer Discretionary,interest_rates,-1
 MCD,Consumer Discretionary,usd_strength,-2
-MCHP,Information Technology,china_demand,2
-MCHP,Information Technology,economic_growth,2
+MCHP,Information Technology,ai_infrastructure_capex,1
+MCHP,Information Technology,economic_growth,3
+MCHP,Information Technology,inflation,-2
+MCHP,Information Technology,interest_rates,-1
 MCHP,Information Technology,semiconductor_demand,3
-MCHP,Information Technology,usd_strength,-1
 MCK,Health Care,healthcare_spending,3
-MCK,Health Care,interest_rates,-2
-MCO,Financials,economic_growth,2
+MCK,Health Care,inflation,-2
+MCK,Health Care,interest_rates,-1
+MCO,Financials,economic_growth,3
 MCO,Financials,enterprise_it_spending,2
 MCO,Financials,interest_rates,-3
-MCO,Financials,usd_strength,-1
 MDLZ,Consumer Staples,consumer_spending,2
-MDLZ,Consumer Staples,inflation,-2
+MDLZ,Consumer Staples,inflation,-3
 MDLZ,Consumer Staples,usd_strength,-2
-MDT,Health Care,china_demand,1
 MDT,Health Care,healthcare_spending,3
 MDT,Health Care,inflation,-2
-MDT,Health Care,usd_strength,-2
+MDT,Health Care,interest_rates,-2
+MDT,Health Care,oil_price,-1
+MET,Financials,consumer_spending,2
 MET,Financials,economic_growth,2
+MET,Financials,inflation,-2
 MET,Financials,interest_rates,3
 MET,Financials,usd_strength,-2
-META,Communication Services,consumer_spending,2
+META,Communication Services,ai_infrastructure_capex,-2
+META,Communication Services,consumer_spending,1
 META,Communication Services,economic_growth,3
-META,Communication Services,interest_rates,-2
-META,Communication Services,usd_strength,-2
-MGM,Consumer Discretionary,china_demand,2
 MGM,Consumer Discretionary,consumer_spending,3
 MGM,Consumer Discretionary,economic_growth,2
+MGM,Consumer Discretionary,inflation,-2
 MGM,Consumer Discretionary,interest_rates,-2
-MKC,Consumer Staples,consumer_spending,1
-MKC,Consumer Staples,inflation,-2
+MKC,Consumer Staples,consumer_spending,2
+MKC,Consumer Staples,economic_growth,2
+MKC,Consumer Staples,inflation,-3
+MKC,Consumer Staples,interest_rates,-1
 MKC,Consumer Staples,usd_strength,-2
 MLM,Materials,economic_growth,3
+MLM,Materials,inflation,-2
 MLM,Materials,interest_rates,-2
-MLM,Materials,oil_price,-2
-MMM,Industrials,consumer_spending,1
+MLM,Materials,oil_price,-1
+MMM,Industrials,consumer_spending,2
 MMM,Industrials,economic_growth,3
 MMM,Industrials,inflation,-2
-MMM,Industrials,usd_strength,-2
-MNST,Consumer Staples,consumer_spending,3
-MNST,Consumer Staples,inflation,-2
-MNST,Consumer Staples,usd_strength,-1
-MO,Consumer Staples,consumer_spending,1
-MO,Consumer Staples,inflation,-1
-MO,Consumer Staples,interest_rates,-2
-MOS,Materials,china_demand,2
-MOS,Materials,oil_price,-1
+MMM,Industrials,semiconductor_demand,1
+MMM,Industrials,usd_strength,-3
+MNST,Consumer Staples,consumer_spending,2
+MNST,Consumer Staples,economic_growth,2
+MNST,Consumer Staples,inflation,-3
+MNST,Consumer Staples,oil_price,-1
+MO,Consumer Staples,consumer_spending,2
+MO,Consumer Staples,economic_growth,2
+MO,Consumer Staples,inflation,-3
+MOS,Materials,china_demand,1
+MOS,Materials,inflation,-2
 MOS,Materials,usd_strength,-2
-MPC,Energy,consumer_spending,2
-MPC,Energy,economic_growth,3
-MPC,Energy,oil_price,-1
+MPC,Energy,economic_growth,2
+MPC,Energy,oil_price,-3
 MPWR,Information Technology,ai_infrastructure_capex,3
 MPWR,Information Technology,china_demand,2
-MPWR,Information Technology,consumer_spending,1
-MPWR,Information Technology,semiconductor_demand,3
+MPWR,Information Technology,enterprise_it_spending,2
+MPWR,Information Technology,semiconductor_demand,2
+MPWR,Information Technology,taiwan_supply_chain_risk,-2
+MPWR,Information Technology,usd_strength,-2
 MRK,Health Care,china_demand,2
-MRK,Health Care,healthcare_spending,2
-MRK,Health Care,usd_strength,-2
-MRNA,Health Care,healthcare_spending,2
-MRNA,Health Care,interest_rates,-2
+MRK,Health Care,economic_growth,2
+MRK,Health Care,healthcare_spending,3
+MRNA,Health Care,healthcare_spending,3
 MRSH,Financials,economic_growth,3
-MRSH,Financials,inflation,2
+MRSH,Financials,inflation,-2
 MRSH,Financials,interest_rates,2
 MRVL,Information Technology,ai_infrastructure_capex,3
+MRVL,Information Technology,economic_growth,2
 MRVL,Information Technology,enterprise_it_spending,2
 MRVL,Information Technology,semiconductor_demand,3
 MRVL,Information Technology,taiwan_supply_chain_risk,-2
-MS,Financials,economic_growth,3
+MS,Financials,economic_growth,2
 MS,Financials,interest_rates,-2
 MSCI,Financials,economic_growth,2
-MSCI,Financials,interest_rates,-2
-MSCI,Financials,usd_strength,-1
-MSFT,Information Technology,ai_infrastructure_capex,2
+MSCI,Financials,enterprise_it_spending,2
+MSFT,Information Technology,ai_infrastructure_capex,3
+MSFT,Information Technology,consumer_spending,2
 MSFT,Information Technology,enterprise_it_spending,3
-MSFT,Information Technology,interest_rates,-2
-MSFT,Information Technology,usd_strength,-2
-MSI,Information Technology,economic_growth,2
+MSI,Information Technology,economic_growth,1
 MSI,Information Technology,enterprise_it_spending,2
-MSI,Information Technology,inflation,-1
-MSI,Information Technology,interest_rates,-1
+MSI,Information Technology,inflation,-2
 MTB,Financials,economic_growth,3
-MTB,Financials,interest_rates,3
-MTD,Health Care,china_demand,2
+MTB,Financials,inflation,-2
+MTB,Financials,interest_rates,-3
+MTD,Health Care,china_demand,3
 MTD,Health Care,economic_growth,2
-MTD,Health Care,healthcare_spending,2
-MTD,Health Care,usd_strength,-2
+MTD,Health Care,inflation,-2
+MTD,Health Care,interest_rates,-1
 MU,Information Technology,ai_infrastructure_capex,3
-MU,Information Technology,china_demand,2
-MU,Information Technology,consumer_spending,2
+MU,Information Technology,enterprise_it_spending,2
+MU,Information Technology,inflation,-2
 MU,Information Technology,semiconductor_demand,3
-MU,Information Technology,taiwan_supply_chain_risk,-2
+MU,Information Technology,taiwan_supply_chain_risk,-3
 NCLH,Consumer Discretionary,consumer_spending,3
 NCLH,Consumer Discretionary,economic_growth,2
-NCLH,Consumer Discretionary,inflation,-1
-NCLH,Consumer Discretionary,interest_rates,-2
+NCLH,Consumer Discretionary,interest_rates,-3
 NCLH,Consumer Discretionary,oil_price,-2
-NDAQ,Financials,economic_growth,2
+NDAQ,Financials,economic_growth,3
 NDAQ,Financials,enterprise_it_spending,2
-NDAQ,Financials,interest_rates,-2
-NDAQ,Financials,usd_strength,-1
-NDSN,Industrials,china_demand,1
 NDSN,Industrials,economic_growth,3
 NDSN,Industrials,healthcare_spending,2
+NDSN,Industrials,inflation,-2
 NDSN,Industrials,semiconductor_demand,2
-NEE,Utilities,ai_infrastructure_capex,2
-NEE,Utilities,economic_growth,1
+NDSN,Industrials,usd_strength,-2
 NEE,Utilities,inflation,-2
 NEE,Utilities,interest_rates,-3
-NEM,Materials,inflation,2
-NEM,Materials,interest_rates,-3
-NEM,Materials,oil_price,-1
+NEM,Materials,inflation,-2
+NEM,Materials,interest_rates,-2
+NEM,Materials,oil_price,-2
 NEM,Materials,usd_strength,-2
 NFLX,Communication Services,consumer_spending,3
 NFLX,Communication Services,economic_growth,2
-NFLX,Communication Services,inflation,-1
-NFLX,Communication Services,usd_strength,-2
-NI,Utilities,economic_growth,1
+NFLX,Communication Services,inflation,-2
+NI,Utilities,ai_infrastructure_capex,2
+NI,Utilities,economic_growth,2
 NI,Utilities,inflation,-2
-NI,Utilities,interest_rates,-3
-NKE,Consumer Discretionary,china_demand,2
+NI,Utilities,interest_rates,-2
 NKE,Consumer Discretionary,consumer_spending,3
+NKE,Consumer Discretionary,economic_growth,2
 NKE,Consumer Discretionary,inflation,-2
-NKE,Consumer Discretionary,usd_strength,-2
-NOC,Industrials,inflation,-2
-NOC,Industrials,interest_rates,-1
+NKE,Consumer Discretionary,interest_rates,-1
+NKE,Consumer Discretionary,usd_strength,-3
+NOC,Industrials,economic_growth,1
+NOC,Industrials,inflation,-3
+NOC,Industrials,interest_rates,-2
 NOW,Information Technology,economic_growth,2
 NOW,Information Technology,enterprise_it_spending,3
-NOW,Information Technology,interest_rates,-2
-NOW,Information Technology,usd_strength,-1
+NOW,Information Technology,usd_strength,-2
 NRG,Utilities,ai_infrastructure_capex,2
 NRG,Utilities,economic_growth,2
-NRG,Utilities,interest_rates,-2
+NRG,Utilities,inflation,-2
+NRG,Utilities,oil_price,-1
 NSC,Industrials,consumer_spending,2
 NSC,Industrials,economic_growth,3
-NSC,Industrials,inflation,-1
-NSC,Industrials,interest_rates,-1
+NSC,Industrials,inflation,-2
+NSC,Industrials,oil_price,-1
 NTAP,Information Technology,ai_infrastructure_capex,2
+NTAP,Information Technology,economic_growth,2
 NTAP,Information Technology,enterprise_it_spending,3
-NTAP,Information Technology,usd_strength,-1
-NTRS,Financials,economic_growth,2
+NTAP,Information Technology,inflation,-2
+NTRS,Financials,economic_growth,3
 NTRS,Financials,interest_rates,2
-NTRS,Financials,usd_strength,-1
 NUE,Materials,ai_infrastructure_capex,1
 NUE,Materials,economic_growth,3
+NUE,Materials,inflation,-2
 NUE,Materials,interest_rates,-2
 NUE,Materials,usd_strength,-2
 NVDA,Information Technology,ai_infrastructure_capex,3
-NVDA,Information Technology,china_demand,2
-NVDA,Information Technology,semiconductor_demand,3
-NVDA,Information Technology,taiwan_supply_chain_risk,-3
+NVDA,Information Technology,consumer_spending,2
+NVDA,Information Technology,enterprise_it_spending,2
+NVDA,Information Technology,semiconductor_demand,2
+NVDA,Information Technology,taiwan_supply_chain_risk,-2
 NVR,Consumer Discretionary,consumer_spending,2
-NVR,Consumer Discretionary,economic_growth,2
+NVR,Consumer Discretionary,economic_growth,3
 NVR,Consumer Discretionary,inflation,-2
 NVR,Consumer Discretionary,interest_rates,-3
 NWS,Communication Services,consumer_spending,2
-NWS,Communication Services,economic_growth,2
-NWS,Communication Services,interest_rates,-2
-NWS,Communication Services,usd_strength,-2
+NWS,Communication Services,economic_growth,3
+NWS,Communication Services,inflation,-2
+NWS,Communication Services,interest_rates,-3
 NWSA,Communication Services,consumer_spending,2
-NWSA,Communication Services,economic_growth,2
+NWSA,Communication Services,economic_growth,3
+NWSA,Communication Services,inflation,-2
 NWSA,Communication Services,interest_rates,-2
-NWSA,Communication Services,usd_strength,-2
-NXPI,Information Technology,china_demand,2
 NXPI,Information Technology,consumer_spending,2
-NXPI,Information Technology,economic_growth,2
+NXPI,Information Technology,inflation,-1
 NXPI,Information Technology,semiconductor_demand,3
-NXPI,Information Technology,taiwan_supply_chain_risk,-2
 O,Real Estate,consumer_spending,2
 O,Real Estate,economic_growth,2
-O,Real Estate,inflation,-1
+O,Real Estate,inflation,2
 O,Real Estate,interest_rates,-3
-ODFL,Industrials,consumer_spending,2
 ODFL,Industrials,economic_growth,3
-ODFL,Industrials,oil_price,-1
+ODFL,Industrials,inflation,-2
+ODFL,Industrials,oil_price,-2
 OKE,Energy,economic_growth,2
+OKE,Energy,inflation,-2
 OKE,Energy,interest_rates,-2
 OKE,Energy,oil_price,2
-OMC,Communication Services,consumer_spending,2
 OMC,Communication Services,economic_growth,3
+OMC,Communication Services,inflation,-2
+OMC,Communication Services,interest_rates,-1
 OMC,Communication Services,usd_strength,-2
-ON,Information Technology,china_demand,2
+ON,Information Technology,ai_infrastructure_capex,2
 ON,Information Technology,economic_growth,2
-ON,Information Technology,interest_rates,-1
+ON,Information Technology,inflation,-2
 ON,Information Technology,semiconductor_demand,3
-ORCL,Information Technology,ai_infrastructure_capex,3
+ORCL,Information Technology,ai_infrastructure_capex,2
 ORCL,Information Technology,enterprise_it_spending,3
-ORCL,Information Technology,interest_rates,-2
-ORCL,Information Technology,usd_strength,-2
+ORCL,Information Technology,inflation,-1
+ORCL,Information Technology,interest_rates,-1
 ORLY,Consumer Discretionary,consumer_spending,2
-ORLY,Consumer Discretionary,economic_growth,1
-ORLY,Consumer Discretionary,oil_price,-1
+ORLY,Consumer Discretionary,economic_growth,2
+ORLY,Consumer Discretionary,inflation,-2
+ORLY,Consumer Discretionary,interest_rates,-1
+ORLY,Consumer Discretionary,usd_strength,-1
 OTIS,Industrials,china_demand,2
 OTIS,Industrials,economic_growth,2
+OTIS,Industrials,inflation,-2
 OTIS,Industrials,interest_rates,-2
-OTIS,Industrials,usd_strength,-2
+OTIS,Industrials,usd_strength,-3
 OXY,Energy,economic_growth,2
+OXY,Energy,inflation,-1
 OXY,Energy,interest_rates,-2
 OXY,Energy,oil_price,3
 P,Information Technology,ai_infrastructure_capex,2
+P,Information Technology,economic_growth,2
 P,Information Technology,enterprise_it_spending,3
-PANW,Information Technology,ai_infrastructure_capex,2
-PANW,Information Technology,economic_growth,1
+P,Information Technology,inflation,-1
+P,Information Technology,interest_rates,-1
+PANW,Information Technology,economic_growth,2
 PANW,Information Technology,enterprise_it_spending,3
-PANW,Information Technology,usd_strength,-1
+PANW,Information Technology,usd_strength,-2
 PAYX,Industrials,economic_growth,3
 PAYX,Industrials,enterprise_it_spending,2
-PAYX,Industrials,interest_rates,2
+PAYX,Industrials,healthcare_spending,-2
 PCAR,Industrials,consumer_spending,2
 PCAR,Industrials,economic_growth,3
 PCAR,Industrials,interest_rates,-2
 PCAR,Industrials,usd_strength,-2
-PCG,Utilities,economic_growth,1
+PCG,Utilities,economic_growth,2
 PCG,Utilities,inflation,-2
-PCG,Utilities,interest_rates,-3
-PEG,Utilities,economic_growth,1
-PEG,Utilities,inflation,-2
-PEG,Utilities,interest_rates,-3
+PCG,Utilities,interest_rates,-2
+PEG,Utilities,economic_growth,2
+PEG,Utilities,inflation,1
 PEP,Consumer Staples,consumer_spending,2
-PEP,Consumer Staples,inflation,-2
-PEP,Consumer Staples,oil_price,-1
-PEP,Consumer Staples,usd_strength,-2
+PEP,Consumer Staples,inflation,-3
+PEP,Consumer Staples,oil_price,-2
+PFE,Health Care,china_demand,1
+PFE,Health Care,economic_growth,1
 PFE,Health Care,healthcare_spending,3
-PFE,Health Care,interest_rates,-1
 PFE,Health Care,usd_strength,-2
-PFG,Financials,economic_growth,2
-PFG,Financials,interest_rates,3
-PFG,Financials,usd_strength,-1
-PG,Consumer Staples,china_demand,1
-PG,Consumer Staples,inflation,-2
-PG,Consumer Staples,oil_price,-1
-PG,Consumer Staples,usd_strength,-2
-PGR,Financials,economic_growth,1
+PFG,Financials,china_demand,1
+PFG,Financials,economic_growth,3
+PFG,Financials,interest_rates,-3
+PFG,Financials,usd_strength,-2
+PG,Consumer Staples,economic_growth,2
+PG,Consumer Staples,inflation,-3
+PG,Consumer Staples,interest_rates,-2
+PG,Consumer Staples,oil_price,-2
+PG,Consumer Staples,usd_strength,-3
+PGR,Financials,consumer_spending,1
+PGR,Financials,economic_growth,2
 PGR,Financials,inflation,-3
-PGR,Financials,interest_rates,2
 PH,Industrials,economic_growth,3
-PH,Industrials,inflation,-1
-PH,Industrials,interest_rates,-2
-PH,Industrials,oil_price,1
+PH,Industrials,inflation,-2
+PH,Industrials,interest_rates,-1
 PH,Industrials,usd_strength,-2
 PHM,Consumer Discretionary,consumer_spending,2
 PHM,Consumer Discretionary,economic_growth,2
-PHM,Consumer Discretionary,inflation,-2
+PHM,Consumer Discretionary,inflation,-3
 PHM,Consumer Discretionary,interest_rates,-3
 PKG,Materials,consumer_spending,2
 PKG,Materials,economic_growth,3
+PKG,Materials,inflation,-2
+PKG,Materials,interest_rates,-2
 PKG,Materials,oil_price,-1
 PLD,Real Estate,consumer_spending,2
 PLD,Real Estate,economic_growth,3
-PLD,Real Estate,interest_rates,-3
-PLTR,Information Technology,ai_infrastructure_capex,2
+PLD,Real Estate,inflation,-2
+PLD,Real Estate,interest_rates,-2
+PLD,Real Estate,usd_strength,-2
+PLTR,Information Technology,economic_growth,2
 PLTR,Information Technology,enterprise_it_spending,3
-PLTR,Information Technology,interest_rates,-2
-PM,Consumer Staples,consumer_spending,1
-PM,Consumer Staples,interest_rates,-2
-PM,Consumer Staples,usd_strength,-3
+PLTR,Information Technology,interest_rates,-1
+PM,Consumer Staples,consumer_spending,2
+PM,Consumer Staples,economic_growth,2
+PM,Consumer Staples,inflation,-1
+PNC,Financials,consumer_spending,2
 PNC,Financials,economic_growth,3
-PNC,Financials,inflation,-1
-PNC,Financials,interest_rates,-2
-PNR,Industrials,consumer_spending,3
-PNR,Industrials,economic_growth,2
+PNC,Financials,inflation,-2
+PNC,Financials,interest_rates,-3
+PNR,Industrials,consumer_spending,2
+PNR,Industrials,economic_growth,3
+PNR,Industrials,inflation,-3
 PNR,Industrials,interest_rates,-2
-PNW,Utilities,ai_infrastructure_capex,1
+PNR,Industrials,usd_strength,-2
 PNW,Utilities,economic_growth,2
 PNW,Utilities,inflation,-2
-PNW,Utilities,interest_rates,-3
+PNW,Utilities,oil_price,-1
+PODD,Health Care,economic_growth,2
 PODD,Health Care,healthcare_spending,3
-PODD,Health Care,inflation,-2
-PODD,Health Care,interest_rates,-2
-PODD,Health Care,usd_strength,-1
 PPG,Materials,consumer_spending,2
-PPG,Materials,economic_growth,3
-PPG,Materials,interest_rates,-2
+PPG,Materials,economic_growth,2
+PPG,Materials,inflation,-3
 PPG,Materials,oil_price,-2
-PPG,Materials,usd_strength,-2
+PPG,Materials,usd_strength,-3
 PPL,Utilities,economic_growth,1
 PPL,Utilities,inflation,-2
-PPL,Utilities,interest_rates,-3
-PRU,Financials,consumer_spending,2
+PPL,Utilities,interest_rates,-2
 PRU,Financials,economic_growth,2
-PRU,Financials,interest_rates,3
-PRU,Financials,usd_strength,-2
+PRU,Financials,healthcare_spending,-1
+PRU,Financials,interest_rates,2
 PSA,Real Estate,economic_growth,2
-PSA,Real Estate,inflation,2
+PSA,Real Estate,inflation,-2
 PSA,Real Estate,interest_rates,-3
-PSX,Energy,consumer_spending,1
-PSX,Energy,economic_growth,2
-PSX,Energy,interest_rates,-1
-PSX,Energy,oil_price,-2
+PSA,Real Estate,usd_strength,-1
+PSX,Energy,economic_growth,3
+PSX,Energy,inflation,-2
+PSX,Energy,oil_price,2
 PTC,Information Technology,economic_growth,2
 PTC,Information Technology,enterprise_it_spending,3
 PTC,Information Technology,usd_strength,-2
-PWR,Industrials,ai_infrastructure_capex,2
+PWR,Industrials,ai_infrastructure_capex,3
 PWR,Industrials,economic_growth,2
+PWR,Industrials,inflation,-2
 PWR,Industrials,interest_rates,-2
-PWR,Industrials,oil_price,1
 PYPL,Financials,consumer_spending,3
 PYPL,Financials,economic_growth,2
-PYPL,Financials,usd_strength,-1
+PYPL,Financials,interest_rates,1
 Q,Information Technology,ai_infrastructure_capex,2
 Q,Information Technology,semiconductor_demand,3
 Q,Information Technology,taiwan_supply_chain_risk,-2
-QCOM,Information Technology,china_demand,2
-QCOM,Information Technology,consumer_spending,2
+QCOM,Information Technology,china_demand,3
+QCOM,Information Technology,consumer_spending,3
+QCOM,Information Technology,economic_growth,2
 QCOM,Information Technology,semiconductor_demand,3
-QCOM,Information Technology,taiwan_supply_chain_risk,-2
 RCL,Consumer Discretionary,consumer_spending,3
 RCL,Consumer Discretionary,economic_growth,2
+RCL,Consumer Discretionary,inflation,-2
 RCL,Consumer Discretionary,interest_rates,-2
 RCL,Consumer Discretionary,oil_price,-2
 RDDT,Communication Services,consumer_spending,2
 RDDT,Communication Services,economic_growth,3
-RDDT,Communication Services,interest_rates,-2
-REG,Real Estate,consumer_spending,2
-REG,Real Estate,economic_growth,2
+REG,Real Estate,inflation,-2
 REG,Real Estate,interest_rates,-3
 REGN,Health Care,healthcare_spending,3
-REGN,Health Care,interest_rates,-1
-RF,Financials,consumer_spending,2
 RF,Financials,economic_growth,3
-RF,Financials,inflation,-1
-RF,Financials,interest_rates,2
-RJF,Financials,economic_growth,3
-RJF,Financials,interest_rates,2
-RL,Consumer Discretionary,china_demand,2
+RF,Financials,inflation,-2
+RF,Financials,interest_rates,3
+RJF,Financials,economic_growth,2
+RJF,Financials,interest_rates,-3
 RL,Consumer Discretionary,consumer_spending,3
+RL,Consumer Discretionary,economic_growth,2
 RL,Consumer Discretionary,inflation,-2
+RL,Consumer Discretionary,interest_rates,-2
 RL,Consumer Discretionary,usd_strength,-2
+RMD,Health Care,economic_growth,2
 RMD,Health Care,enterprise_it_spending,2
 RMD,Health Care,healthcare_spending,3
-RMD,Health Care,inflation,-1
-RMD,Health Care,usd_strength,-2
-ROK,Industrials,china_demand,1
+RMD,Health Care,inflation,-2
 ROK,Industrials,economic_growth,3
-ROK,Industrials,enterprise_it_spending,2
-ROK,Industrials,interest_rates,-2
-ROK,Industrials,usd_strength,-1
-ROL,Industrials,consumer_spending,2
+ROK,Industrials,inflation,-2
+ROK,Industrials,oil_price,2
+ROK,Industrials,semiconductor_demand,2
+ROK,Industrials,usd_strength,-2
 ROL,Industrials,economic_growth,2
-ROL,Industrials,inflation,-2
-ROL,Industrials,oil_price,-1
-ROP,Information Technology,economic_growth,2
+ROL,Industrials,inflation,-3
+ROL,Industrials,interest_rates,-1
+ROL,Industrials,usd_strength,-1
 ROP,Information Technology,enterprise_it_spending,3
-ROP,Information Technology,healthcare_spending,1
-ROP,Information Technology,interest_rates,-2
+ROP,Information Technology,healthcare_spending,2
+ROP,Information Technology,inflation,-1
+ROP,Information Technology,interest_rates,-3
+ROP,Information Technology,usd_strength,-1
 ROST,Consumer Discretionary,consumer_spending,3
 ROST,Consumer Discretionary,economic_growth,2
+ROST,Consumer Discretionary,inflation,-3
+ROST,Consumer Discretionary,interest_rates,-1
+ROST,Consumer Discretionary,usd_strength,2
 RSG,Industrials,economic_growth,2
+RSG,Industrials,inflation,-2
 RSG,Industrials,interest_rates,-2
-RSG,Industrials,oil_price,-1
-RTX,Industrials,consumer_spending,2
+RSG,Industrials,oil_price,-2
+RTX,Industrials,consumer_spending,1
 RTX,Industrials,economic_growth,2
-RTX,Industrials,inflation,-2
-RVTY,Health Care,china_demand,2
+RTX,Industrials,inflation,-3
+RTX,Industrials,interest_rates,-2
+RTX,Industrials,usd_strength,2
 RVTY,Health Care,economic_growth,2
 RVTY,Health Care,healthcare_spending,3
-RVTY,Health Care,interest_rates,-1
-RVTY,Health Care,usd_strength,-2
+RVTY,Health Care,inflation,-2
+SBAC,Real Estate,inflation,1
 SBAC,Real Estate,interest_rates,-3
 SBAC,Real Estate,usd_strength,-2
 SBUX,Consumer Discretionary,china_demand,2
 SBUX,Consumer Discretionary,consumer_spending,3
-SBUX,Consumer Discretionary,inflation,-2
-SBUX,Consumer Discretionary,usd_strength,-2
+SBUX,Consumer Discretionary,economic_growth,2
+SBUX,Consumer Discretionary,inflation,-3
 SCHW,Financials,economic_growth,2
 SCHW,Financials,interest_rates,-3
 SHW,Materials,consumer_spending,2
 SHW,Materials,economic_growth,3
-SHW,Materials,interest_rates,-2
+SHW,Materials,inflation,-3
+SHW,Materials,interest_rates,-3
 SHW,Materials,oil_price,-2
 SJM,Consumer Staples,consumer_spending,2
-SJM,Consumer Staples,inflation,-2
-SJM,Consumer Staples,oil_price,-1
+SJM,Consumer Staples,economic_growth,2
+SJM,Consumer Staples,inflation,-3
+SJM,Consumer Staples,interest_rates,-1
 SKYD,Communication Services,consumer_spending,3
 SKYD,Communication Services,economic_growth,2
 SKYD,Communication Services,inflation,-2
+SLB,Energy,ai_infrastructure_capex,1
 SLB,Energy,economic_growth,2
+SLB,Energy,enterprise_it_spending,2
 SLB,Energy,oil_price,3
-SLB,Energy,usd_strength,-1
 SMCI,Information Technology,ai_infrastructure_capex,3
+SMCI,Information Technology,economic_growth,2
 SMCI,Information Technology,enterprise_it_spending,2
-SMCI,Information Technology,semiconductor_demand,2
-SMCI,Information Technology,taiwan_supply_chain_risk,-2
+SMCI,Information Technology,inflation,-1
 SNA,Industrials,economic_growth,2
-SNA,Industrials,inflation,-1
-SNA,Industrials,interest_rates,-2
-SNDK,Information Technology,ai_infrastructure_capex,1
+SNA,Industrials,inflation,-2
+SNA,Industrials,oil_price,-2
+SNDK,Information Technology,ai_infrastructure_capex,2
 SNDK,Information Technology,consumer_spending,2
+SNDK,Information Technology,economic_growth,2
 SNDK,Information Technology,enterprise_it_spending,2
 SNDK,Information Technology,semiconductor_demand,3
 SNPS,Information Technology,ai_infrastructure_capex,2
-SNPS,Information Technology,china_demand,1
+SNPS,Information Technology,economic_growth,2
+SNPS,Information Technology,inflation,-1
+SNPS,Information Technology,interest_rates,-1
 SNPS,Information Technology,semiconductor_demand,3
-SO,Utilities,ai_infrastructure_capex,1
 SO,Utilities,economic_growth,2
-SO,Utilities,inflation,-1
-SO,Utilities,interest_rates,-3
-SOLV,Health Care,enterprise_it_spending,1
+SO,Utilities,inflation,-2
+SOLV,Health Care,economic_growth,2
+SOLV,Health Care,enterprise_it_spending,2
 SOLV,Health Care,healthcare_spending,3
-SOLV,Health Care,interest_rates,-1
+SOLV,Health Care,interest_rates,-2
 SPG,Real Estate,consumer_spending,3
 SPG,Real Estate,economic_growth,2
+SPG,Real Estate,inflation,-2
 SPG,Real Estate,interest_rates,-3
+SPGI,Financials,consumer_spending,1
 SPGI,Financials,economic_growth,2
-SPGI,Financials,interest_rates,-3
-SRE,Utilities,ai_infrastructure_capex,2
+SPGI,Financials,enterprise_it_spending,2
+SPGI,Financials,interest_rates,-2
 SRE,Utilities,economic_growth,2
-SRE,Utilities,inflation,-1
 SRE,Utilities,interest_rates,-3
+STE,Health Care,economic_growth,2
 STE,Health Care,healthcare_spending,3
-STE,Health Care,inflation,-1
-STE,Health Care,interest_rates,-1
+STE,Health Care,inflation,-2
 STLD,Materials,economic_growth,3
+STLD,Materials,inflation,-2
 STLD,Materials,interest_rates,-2
+STLD,Materials,oil_price,-1
 STLD,Materials,usd_strength,-2
 STT,Financials,economic_growth,2
-STT,Financials,interest_rates,2
-STT,Financials,usd_strength,-1
-STX,Information Technology,ai_infrastructure_capex,2
+STT,Financials,enterprise_it_spending,2
+STX,Information Technology,ai_infrastructure_capex,3
+STX,Information Technology,consumer_spending,1
 STX,Information Technology,economic_growth,2
 STX,Information Technology,enterprise_it_spending,3
-STX,Information Technology,usd_strength,-1
+STX,Information Technology,inflation,-2
 STZ,Consumer Staples,consumer_spending,3
+STZ,Consumer Staples,economic_growth,2
 STZ,Consumer Staples,inflation,-2
-STZ,Consumer Staples,usd_strength,1
 SW,Materials,consumer_spending,2
 SW,Materials,economic_growth,3
 SW,Materials,inflation,-2
-SW,Materials,usd_strength,-2
+SW,Materials,interest_rates,-2
 SWK,Industrials,consumer_spending,2
 SWK,Industrials,economic_growth,3
 SWK,Industrials,inflation,-2
-SWK,Industrials,interest_rates,-2
 SWK,Industrials,usd_strength,-2
+SWKS,Information Technology,ai_infrastructure_capex,2
 SWKS,Information Technology,china_demand,2
 SWKS,Information Technology,consumer_spending,3
 SWKS,Information Technology,semiconductor_demand,3
+SWKS,Information Technology,taiwan_supply_chain_risk,-2
 SYF,Financials,consumer_spending,3
-SYF,Financials,economic_growth,3
-SYF,Financials,inflation,-2
+SYF,Financials,healthcare_spending,2
 SYF,Financials,interest_rates,-2
+SYK,Health Care,economic_growth,2
 SYK,Health Care,healthcare_spending,3
 SYK,Health Care,inflation,-2
 SYK,Health Care,interest_rates,-2
-SYK,Health Care,usd_strength,-2
 SYY,Consumer Staples,consumer_spending,3
 SYY,Consumer Staples,economic_growth,2
+SYY,Consumer Staples,inflation,-3
 SYY,Consumer Staples,oil_price,-2
-T,Communication Services,consumer_spending,1
-T,Communication Services,enterprise_it_spending,1
+T,Communication Services,consumer_spending,2
+T,Communication Services,economic_growth,2
+T,Communication Services,enterprise_it_spending,2
 T,Communication Services,inflation,-2
-T,Communication Services,interest_rates,-3
-TDG,Industrials,consumer_spending,2
+T,Communication Services,interest_rates,-2
 TDG,Industrials,economic_growth,2
-TDG,Industrials,interest_rates,-2
-TDY,Information Technology,economic_growth,2
-TDY,Information Technology,healthcare_spending,1
-TDY,Information Technology,oil_price,1
-TDY,Information Technology,semiconductor_demand,1
+TDG,Industrials,inflation,-2
+TDG,Industrials,interest_rates,-3
+TDY,Information Technology,china_demand,1
+TDY,Information Technology,economic_growth,3
+TDY,Information Technology,inflation,-2
+TDY,Information Technology,interest_rates,-2
+TDY,Information Technology,usd_strength,-2
 TECH,Health Care,china_demand,1
+TECH,Health Care,economic_growth,2
 TECH,Health Care,healthcare_spending,2
-TECH,Health Care,interest_rates,-2
-TEL,Information Technology,ai_infrastructure_capex,2
-TEL,Information Technology,consumer_spending,2
+TECH,Health Care,inflation,-2
+TECH,Health Care,interest_rates,-1
+TEL,Information Technology,ai_infrastructure_capex,1
+TEL,Information Technology,china_demand,2
 TEL,Information Technology,economic_growth,3
+TEL,Information Technology,inflation,-2
+TEL,Information Technology,usd_strength,-3
 TER,Information Technology,ai_infrastructure_capex,2
-TER,Information Technology,consumer_spending,2
-TER,Information Technology,economic_growth,2
 TER,Information Technology,semiconductor_demand,3
-TFC,Financials,consumer_spending,1
+TER,Information Technology,usd_strength,-2
+TFC,Financials,consumer_spending,2
 TFC,Financials,economic_growth,3
-TFC,Financials,interest_rates,2
+TFC,Financials,inflation,-2
+TFC,Financials,interest_rates,-3
 TGT,Consumer Staples,consumer_spending,3
 TGT,Consumer Staples,economic_growth,2
 TGT,Consumer Staples,inflation,-2
-TGT,Consumer Staples,oil_price,-1
 TJX,Consumer Discretionary,consumer_spending,3
-TJX,Consumer Discretionary,economic_growth,2
+TJX,Consumer Discretionary,inflation,-2
 TKO,Communication Services,consumer_spending,3
 TKO,Communication Services,economic_growth,2
+TKO,Communication Services,inflation,-2
 TKO,Communication Services,interest_rates,-1
-TMO,Health Care,china_demand,2
 TMO,Health Care,economic_growth,2
 TMO,Health Care,healthcare_spending,2
-TMO,Health Care,interest_rates,-1
+TMO,Health Care,inflation,-2
+TMO,Health Care,semiconductor_demand,1
 TMO,Health Care,usd_strength,-2
-TMUS,Communication Services,consumer_spending,2
-TMUS,Communication Services,economic_growth,1
-TMUS,Communication Services,interest_rates,-2
+TMUS,Communication Services,consumer_spending,1
+TMUS,Communication Services,inflation,-2
 TPL,Energy,economic_growth,1
-TPL,Energy,interest_rates,-1
+TPL,Energy,inflation,-2
 TPL,Energy,oil_price,3
 TPR,Consumer Discretionary,china_demand,2
 TPR,Consumer Discretionary,consumer_spending,3
+TPR,Consumer Discretionary,economic_growth,2
 TPR,Consumer Discretionary,inflation,-2
-TPR,Consumer Discretionary,usd_strength,-2
+TPR,Consumer Discretionary,oil_price,-1
 TRGP,Energy,economic_growth,2
+TRGP,Energy,inflation,-2
 TRGP,Energy,interest_rates,-2
 TRGP,Energy,oil_price,3
 TRMB,Information Technology,economic_growth,3
-TRMB,Information Technology,enterprise_it_spending,2
-TRMB,Information Technology,interest_rates,-2
-TRMB,Information Technology,usd_strength,-1
-TROW,Financials,economic_growth,3
+TRMB,Information Technology,enterprise_it_spending,3
+TRMB,Information Technology,inflation,-2
+TROW,Financials,economic_growth,2
 TROW,Financials,interest_rates,-2
-TROW,Financials,usd_strength,-1
-TRV,Financials,economic_growth,2
-TRV,Financials,healthcare_spending,-1
+TRV,Financials,healthcare_spending,-2
 TRV,Financials,inflation,-3
-TRV,Financials,interest_rates,2
+TRV,Financials,interest_rates,-1
 TSCO,Consumer Discretionary,consumer_spending,3
 TSCO,Consumer Discretionary,economic_growth,2
 TSCO,Consumer Discretionary,inflation,-2
-TSCO,Consumer Discretionary,interest_rates,-1
-TSLA,Consumer Discretionary,china_demand,2
 TSLA,Consumer Discretionary,consumer_spending,3
-TSLA,Consumer Discretionary,interest_rates,-3
-TSLA,Consumer Discretionary,oil_price,2
-TSN,Consumer Staples,consumer_spending,2
-TSN,Consumer Staples,economic_growth,2
-TSN,Consumer Staples,inflation,-2
-TSN,Consumer Staples,oil_price,-1
-TT,Industrials,ai_infrastructure_capex,2
-TT,Industrials,consumer_spending,1
-TT,Industrials,economic_growth,3
+TSLA,Consumer Discretionary,economic_growth,2
+TSLA,Consumer Discretionary,inflation,-2
+TSLA,Consumer Discretionary,interest_rates,-2
+TSLA,Consumer Discretionary,oil_price,1
+TSN,Consumer Staples,china_demand,1
+TSN,Consumer Staples,inflation,-3
+TSN,Consumer Staples,usd_strength,-2
+TT,Industrials,economic_growth,2
+TT,Industrials,inflation,-3
 TT,Industrials,interest_rates,-2
+TT,Industrials,usd_strength,-2
+TTWO,Communication Services,china_demand,1
 TTWO,Communication Services,consumer_spending,3
 TTWO,Communication Services,economic_growth,2
 TTWO,Communication Services,inflation,-1
-TTWO,Communication Services,usd_strength,-2
-TWLO,Information Technology,consumer_spending,1
+TWLO,Information Technology,consumer_spending,2
 TWLO,Information Technology,economic_growth,2
 TWLO,Information Technology,enterprise_it_spending,3
-TWLO,Information Technology,interest_rates,-2
 TXN,Information Technology,china_demand,2
-TXN,Information Technology,consumer_spending,1
+TXN,Information Technology,consumer_spending,2
 TXN,Information Technology,economic_growth,2
+TXN,Information Technology,inflation,-2
 TXN,Information Technology,semiconductor_demand,3
+TXT,Industrials,consumer_spending,1
 TXT,Industrials,economic_growth,3
 TXT,Industrials,inflation,-2
-TXT,Industrials,interest_rates,-2
-TXT,Industrials,usd_strength,-1
-TYL,Information Technology,economic_growth,2
-TYL,Information Technology,inflation,-1
-TYL,Information Technology,interest_rates,-2
+TYL,Information Technology,economic_growth,1
+TYL,Information Technology,enterprise_it_spending,3
 UAL,Industrials,consumer_spending,3
 UAL,Industrials,economic_growth,2
-UAL,Industrials,interest_rates,-2
+UAL,Industrials,inflation,-2
 UAL,Industrials,oil_price,-3
 UBER,Industrials,consumer_spending,3
 UBER,Industrials,economic_growth,2
-UBER,Industrials,oil_price,-2
-UBER,Industrials,usd_strength,-1
-UDR,Real Estate,economic_growth,2
-UDR,Real Estate,inflation,2
+UDR,Real Estate,economic_growth,3
+UDR,Real Estate,inflation,-2
 UDR,Real Estate,interest_rates,-3
-UHS,Health Care,economic_growth,1
+UHS,Health Care,economic_growth,2
 UHS,Health Care,healthcare_spending,3
-UHS,Health Care,inflation,-2
-UHS,Health Care,interest_rates,-1
+UHS,Health Care,inflation,-3
+UHS,Health Care,interest_rates,-2
 ULTA,Consumer Discretionary,consumer_spending,3
-ULTA,Consumer Discretionary,economic_growth,2
-ULTA,Consumer Discretionary,inflation,-2
-UNH,Health Care,economic_growth,2
+UNH,Health Care,enterprise_it_spending,2
 UNH,Health Care,healthcare_spending,-3
 UNH,Health Care,inflation,-2
-UNH,Health Care,interest_rates,1
 UNP,Industrials,consumer_spending,2
 UNP,Industrials,economic_growth,3
-UNP,Industrials,interest_rates,-1
+UNP,Industrials,inflation,-1
 UPS,Industrials,consumer_spending,2
 UPS,Industrials,economic_growth,3
+UPS,Industrials,healthcare_spending,2
 UPS,Industrials,inflation,-2
-UPS,Industrials,oil_price,-2
-URI,Industrials,ai_infrastructure_capex,1
 URI,Industrials,economic_growth,3
-URI,Industrials,interest_rates,-2
-URI,Industrials,oil_price,1
+URI,Industrials,inflation,-2
+URI,Industrials,interest_rates,-3
+URI,Industrials,oil_price,2
 USB,Financials,consumer_spending,2
 USB,Financials,economic_growth,3
-USB,Financials,interest_rates,2
+USB,Financials,inflation,-2
 V,Financials,consumer_spending,3
 V,Financials,economic_growth,2
-V,Financials,inflation,1
-V,Financials,usd_strength,-1
+VEEV,Health Care,economic_growth,2
 VEEV,Health Care,enterprise_it_spending,3
-VEEV,Health Care,healthcare_spending,2
-VEEV,Health Care,interest_rates,-1
-VICI,Real Estate,consumer_spending,2
+VEEV,Health Care,inflation,-1
+VICI,Real Estate,consumer_spending,3
+VICI,Real Estate,economic_growth,2
 VICI,Real Estate,inflation,2
-VICI,Real Estate,interest_rates,-3
-VLO,Energy,consumer_spending,2
+VICI,Real Estate,interest_rates,-2
 VLO,Energy,economic_growth,3
+VLO,Energy,inflation,-2
+VLO,Energy,interest_rates,-1
 VLO,Energy,oil_price,-2
-VLTO,Industrials,consumer_spending,1
 VLTO,Industrials,economic_growth,2
+VLTO,Industrials,inflation,-2
 VLTO,Industrials,interest_rates,-1
-VLTO,Industrials,usd_strength,-2
+VLTO,Industrials,oil_price,-1
 VMC,Materials,economic_growth,3
+VMC,Materials,inflation,-2
 VMC,Materials,interest_rates,-2
-VMC,Materials,oil_price,-1
-VMRK,Real Estate,economic_growth,2
-VMRK,Real Estate,inflation,1
-VMRK,Real Estate,interest_rates,-3
-VRSK,Industrials,economic_growth,1
-VRSK,Industrials,enterprise_it_spending,3
-VRSK,Industrials,inflation,2
+VMC,Materials,oil_price,-2
+VMRK,Real Estate,economic_growth,3
+VMRK,Real Estate,inflation,-2
+VMRK,Real Estate,interest_rates,-2
+VRSK,Industrials,economic_growth,2
+VRSK,Industrials,enterprise_it_spending,2
+VRSK,Industrials,interest_rates,-1
 VRSN,Information Technology,economic_growth,2
-VRSN,Information Technology,interest_rates,-2
-VRSN,Information Technology,usd_strength,-1
-VRT,Industrials,ai_infrastructure_capex,3
+VRSN,Information Technology,inflation,-2
+VRT,Industrials,economic_growth,2
 VRT,Industrials,enterprise_it_spending,2
-VRT,Industrials,inflation,-1
-VRT,Industrials,interest_rates,-1
-VRTX,Health Care,healthcare_spending,2
-VRTX,Health Care,interest_rates,-1
-VST,Utilities,ai_infrastructure_capex,3
+VRT,Industrials,inflation,-2
+VRTX,Health Care,healthcare_spending,3
 VST,Utilities,economic_growth,2
-VST,Utilities,interest_rates,-2
+VST,Utilities,inflation,-2
+VST,Utilities,oil_price,-1
+VTR,Real Estate,consumer_spending,2
 VTR,Real Estate,economic_growth,2
 VTR,Real Estate,healthcare_spending,2
+VTR,Real Estate,inflation,-3
 VTR,Real Estate,interest_rates,-3
-VTRS,Health Care,healthcare_spending,2
+VTRS,Health Care,healthcare_spending,3
+VTRS,Health Care,inflation,-2
 VTRS,Health Care,interest_rates,-2
-VTRS,Health Care,usd_strength,-2
 VYLR,Consumer Staples,inflation,-1
 VYLR,Consumer Staples,interest_rates,-1
 VYLR,Consumer Staples,oil_price,-1
-VZ,Communication Services,consumer_spending,1
+VZ,Communication Services,consumer_spending,2
+VZ,Communication Services,economic_growth,2
+VZ,Communication Services,enterprise_it_spending,2
 VZ,Communication Services,inflation,-2
-VZ,Communication Services,interest_rates,-3
+VZ,Communication Services,interest_rates,-2
 WAB,Industrials,economic_growth,3
-WAB,Industrials,inflation,-1
+WAB,Industrials,inflation,-2
 WAB,Industrials,usd_strength,-2
 WAT,Health Care,china_demand,2
-WAT,Health Care,economic_growth,1
-WAT,Health Care,healthcare_spending,2
+WAT,Health Care,economic_growth,2
+WAT,Health Care,healthcare_spending,3
+WAT,Health Care,inflation,-1
 WAT,Health Care,usd_strength,-2
 WDAY,Information Technology,economic_growth,2
 WDAY,Information Technology,enterprise_it_spending,3
+WDAY,Information Technology,inflation,-2
 WDAY,Information Technology,interest_rates,-2
-WDAY,Information Technology,usd_strength,-1
-WDC,Information Technology,ai_infrastructure_capex,2
+WDC,Information Technology,ai_infrastructure_capex,3
+WDC,Information Technology,consumer_spending,1
 WDC,Information Technology,economic_growth,2
 WDC,Information Technology,enterprise_it_spending,3
-WDC,Information Technology,usd_strength,-1
-WEC,Utilities,economic_growth,1
+WDC,Information Technology,inflation,-2
+WEC,Utilities,economic_growth,2
 WEC,Utilities,inflation,-2
-WEC,Utilities,interest_rates,-3
-WELL,Real Estate,healthcare_spending,2
+WELL,Real Estate,economic_growth,2
+WELL,Real Estate,healthcare_spending,3
 WELL,Real Estate,inflation,-2
 WELL,Real Estate,interest_rates,-3
 WFC,Financials,consumer_spending,2
 WFC,Financials,economic_growth,3
-WFC,Financials,interest_rates,3
 WM,Industrials,economic_growth,2
+WM,Industrials,healthcare_spending,2
+WM,Industrials,inflation,-2
 WM,Industrials,interest_rates,-2
-WM,Industrials,oil_price,-1
-WMB,Energy,ai_infrastructure_capex,1
 WMB,Energy,economic_growth,2
+WMB,Energy,inflation,-2
 WMB,Energy,interest_rates,-2
-WMB,Energy,oil_price,1
 WMT,Consumer Staples,consumer_spending,3
-WMT,Consumer Staples,oil_price,-1
+WMT,Consumer Staples,economic_growth,2
+WMT,Consumer Staples,inflation,-3
+WMT,Consumer Staples,interest_rates,-1
+WMT,Consumer Staples,oil_price,-2
 WRB,Financials,economic_growth,2
-WRB,Financials,inflation,-2
+WRB,Financials,inflation,-3
 WRB,Financials,interest_rates,2
 WSM,Consumer Discretionary,consumer_spending,3
 WSM,Consumer Discretionary,economic_growth,2
-WSM,Consumer Discretionary,inflation,-1
+WSM,Consumer Discretionary,inflation,-2
 WSM,Consumer Discretionary,interest_rates,-2
-WST,Health Care,healthcare_spending,2
-WST,Health Care,inflation,-1
-WST,Health Care,usd_strength,-1
-WTW,Financials,economic_growth,3
+WST,Health Care,economic_growth,2
+WST,Health Care,healthcare_spending,3
+WST,Health Care,inflation,-2
+WST,Health Care,usd_strength,-2
+WTW,Financials,economic_growth,2
 WTW,Financials,healthcare_spending,2
-WTW,Financials,inflation,2
-WTW,Financials,interest_rates,1
-WY,Real Estate,china_demand,1
+WTW,Financials,interest_rates,-1
+WTW,Financials,usd_strength,-2
+WY,Real Estate,china_demand,2
 WY,Real Estate,consumer_spending,2
-WY,Real Estate,economic_growth,2
+WY,Real Estate,economic_growth,3
+WY,Real Estate,inflation,-2
 WY,Real Estate,interest_rates,-3
 WYNN,Consumer Discretionary,china_demand,3
 WYNN,Consumer Discretionary,consumer_spending,3
 WYNN,Consumer Discretionary,economic_growth,2
-WYNN,Consumer Discretionary,interest_rates,-2
-XEL,Utilities,economic_growth,1
+WYNN,Consumer Discretionary,inflation,-2
+XEL,Utilities,ai_infrastructure_capex,2
+XEL,Utilities,economic_growth,2
 XEL,Utilities,inflation,-2
 XEL,Utilities,interest_rates,-3
 XOM,Energy,economic_growth,2
 XOM,Energy,oil_price,3
 XOM,Energy,usd_strength,-1
 XYL,Industrials,economic_growth,2
-XYL,Industrials,inflation,-1
-XYL,Industrials,interest_rates,-2
-XYL,Industrials,usd_strength,-2
+XYL,Industrials,inflation,-2
+XYL,Industrials,taiwan_supply_chain_risk,-2
 XYZ,Financials,consumer_spending,3
 XYZ,Financials,economic_growth,2
-XYZ,Financials,interest_rates,-1
-YUM,Consumer Discretionary,china_demand,2
+XYZ,Financials,inflation,-1
+YUM,Consumer Discretionary,china_demand,3
 YUM,Consumer Discretionary,consumer_spending,3
+YUM,Consumer Discretionary,economic_growth,2
 YUM,Consumer Discretionary,inflation,-2
-YUM,Consumer Discretionary,usd_strength,-2
+YUM,Consumer Discretionary,interest_rates,-2
 ZBH,Health Care,healthcare_spending,3
-ZBH,Health Care,inflation,-1
-ZBH,Health Care,usd_strength,-2
-ZBRA,Information Technology,consumer_spending,2
+ZBH,Health Care,inflation,-2
 ZBRA,Information Technology,economic_growth,2
 ZBRA,Information Technology,enterprise_it_spending,3
-ZBRA,Information Technology,usd_strength,-1
-ZTS,Health Care,consumer_spending,2
-ZTS,Health Care,economic_growth,1
+ZBRA,Information Technology,inflation,-2
+ZBRA,Information Technology,interest_rates,-1
+ZTS,Health Care,consumer_spending,3
+ZTS,Health Care,economic_growth,2
+ZTS,Health Care,inflation,-1
 ZTS,Health Care,usd_strength,-2
