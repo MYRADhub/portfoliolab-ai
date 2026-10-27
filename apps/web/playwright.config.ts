@@ -45,6 +45,8 @@ export default defineConfig({
       env: {
         NODE_ENV: "production",
         DATABASE_URL: e2eDatabaseUrl(),
+        // Tests create their own data; example portfolios in every new session would break them.
+        EXAMPLE_DATA: "0",
         ANALYTICS_URL: "http://127.0.0.1:8000",
         OPENAI_API_KEY: "test-key",
         OPENAI_BASE_URL: `http://127.0.0.1:${MOCK_PORT}/v1`,

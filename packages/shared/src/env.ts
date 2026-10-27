@@ -34,6 +34,11 @@ export const envSchema = z.object({
     .optional(),
   /** "1" lets people under 18 take part once they confirm a parent or guardian has signed the consent form. */
   STUDY_ALLOW_MINORS: z.enum(["0", "1"]).optional(),
+  /**
+   * "1" gives every new visitor the sample portfolios, an example everyday portfolio and a starter watchlist, so a
+   * fresh browser opens on a full app. For local exploration and demos; leave unset where visitors bring their own.
+   */
+  EXAMPLE_DATA: z.enum(["0", "1"]).optional(),
   /** Secret for the exposure review tool at /review. With none set the tool does not exist. */
   REVIEW_TOKEN: z.string().min(16).optional(),
   EXPERIMENT_ADMIN_TOKEN: z.string().min(16).optional(),

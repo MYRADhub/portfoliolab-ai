@@ -1,11 +1,18 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { sessions } from "@portfolio-lab/db";
+import { eq } from "drizzle-orm";
+import { sessions, watchlistItems } from "@portfolio-lab/db";
 import { createTestDb } from "@portfolio-lab/db/testing";
 import { loadConstituents, type Constituent } from "@portfolio-lab/data";
 import { listPortfolios } from "./portfolios";
-import { loadSamples, SAMPLES } from "./samples";
+import {
+  EXAMPLE_PORTFOLIO,
+  EXAMPLE_WATCHLIST,
+  loadExampleData,
+  loadSamples,
+  SAMPLES,
+} from "./samples";
 
 let ctx: Awaited<ReturnType<typeof createTestDb>>;
 let universe: Set<string>;
@@ -80,5 +87,26 @@ describe("loadSamples", () => {
     } finally {
       await empty.teardown();
     }
+  });
+});
+
+describe("loadExampleData", () => {
+  it("is a valid portfolio of real S&P 500 members", () => {
+    expect(EXAMPLE_PORTFOLIO.holdings.reduce((a, h) => a + h.weightPct, 0)).toBeCloseTo(100, 9);
+    for (const h of EXAMPLE_PORTFOLIO.holdings) expect(universe.has(h.ticker), h.ticker).toBe(true);
+    for (const t of EXAMPLE_WATCHLIST) expect(universe.has(t), t).toBe(true);
+  });
+
+  it("fills a new session with the samples, the everyday example listed first, and a watchlist", async () => {
+    const [s] = await ctx.db.insert(sessions).values({}).returning();
+    await loadExampleData(ctx.db, s!.id);
+    const list = await listPortfolios(ctx.db, s!.id);
+    expect(list).toHaveLength(SAMPLES.length + 1);
+    expect(list[0]!.name).toBe(EXAMPLE_PORTFOLIO.name);
+    const watched = await ctx.db
+      .select()
+      .from(watchlistItems)
+      .where(eq(watchlistItems.sessionId, s!.id));
+    expect(watched).toHaveLength(EXAMPLE_WATCHLIST.length);
   });
 });

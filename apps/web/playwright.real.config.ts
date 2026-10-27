@@ -35,6 +35,8 @@ export default defineConfig({
     env: {
       NODE_ENV: "production",
       DATABASE_URL: realDatabaseUrl(),
+      // Tests create their own data; example portfolios in every new session would break them.
+      EXAMPLE_DATA: "0",
       ANALYTICS_URL: "http://127.0.0.1:8000",
       LOG_LEVEL: "warn",
       REVIEW_TOKEN,

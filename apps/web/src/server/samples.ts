@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { portfolios, type Db } from "@portfolio-lab/db";
 import { AppError } from "./errors";
 import { createPortfolio } from "./portfolios";
+import { addToWatchlist } from "./watchlist";
 
 export interface SampleDef {
   key: string;
@@ -143,4 +144,56 @@ export async function loadSamples(
   result.created.reverse();
   result.existing.reverse();
   return result;
+}
+
+/** A realistic personal account: well-known names with uneven weights, the way people actually build them. */
+export const EXAMPLE_PORTFOLIO: SampleDef = {
+  key: "everyday-investor",
+  name: "Example: Everyday investor",
+  blurb: "Fifteen well-known companies with uneven weights, like a typical personal account.",
+  lesson:
+    "Spread over many sectors, yet tech and AI names carry a large share. See how many forces it really rests on.",
+  holdings: [
+    { ticker: "AAPL", weightPct: 14 },
+    { ticker: "MSFT", weightPct: 12 },
+    { ticker: "NVDA", weightPct: 10 },
+    { ticker: "AMZN", weightPct: 8 },
+    { ticker: "GOOGL", weightPct: 7 },
+    { ticker: "JPM", weightPct: 6 },
+    { ticker: "COST", weightPct: 6 },
+    { ticker: "LLY", weightPct: 6 },
+    { ticker: "V", weightPct: 5 },
+    { ticker: "XOM", weightPct: 5 },
+    { ticker: "JNJ", weightPct: 5 },
+    { ticker: "HD", weightPct: 4 },
+    { ticker: "KO", weightPct: 4 },
+    { ticker: "NEE", weightPct: 4 },
+    { ticker: "CAT", weightPct: 4 },
+  ],
+};
+
+export const EXAMPLE_WATCHLIST = ["TSLA", "META", "NFLX", "AMD", "BA", "DIS", "UBER", "PLTR"];
+
+/**
+ * Fills a new session with the samples, the everyday example (created last, so it is listed and opened first) and a
+ * starter watchlist. Tickers that are not loaded are skipped, so it works on any database.
+ */
+export async function loadExampleData(db: Db, sessionId: string): Promise<void> {
+  await loadSamples(db, sessionId);
+  try {
+    await createPortfolio(db, sessionId, {
+      name: EXAMPLE_PORTFOLIO.name,
+      normalize: true,
+      holdings: EXAMPLE_PORTFOLIO.holdings,
+    });
+  } catch (e) {
+    if (!(e instanceof AppError)) throw e;
+  }
+  for (const t of EXAMPLE_WATCHLIST) {
+    try {
+      await addToWatchlist(db, sessionId, t);
+    } catch (e) {
+      if (!(e instanceof AppError)) throw e;
+    }
+  }
 }
