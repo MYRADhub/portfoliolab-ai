@@ -5,3 +5,4 @@ export * from "./classifier";
 export * from "./store";
 export * from "./eval";
 export * from "./exposures";
+export * from "./grounded";

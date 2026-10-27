@@ -20,3 +20,4 @@ export * from "./sec/items";
 export * from "./sec/filings";
 export * from "./sec/fundamentals";
 export * from "./sec/ingest";
+export * from "./sec/tenk";

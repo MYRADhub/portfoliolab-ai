@@ -14,6 +14,16 @@ const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 /** GET JSON with exponential backoff on 429 and 5xx. Honors Retry-After (seconds) when present. */
 export async function fetchJson(url: string, opts: FetchJsonOptions): Promise<unknown> {
+  const text = await fetchText(url, opts);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new ProviderError(opts.provider, "response was not valid JSON", "bad_response");
+  }
+}
+
+/** GET a text body with the same retry rules as fetchJson. */
+export async function fetchText(url: string, opts: FetchJsonOptions): Promise<string> {
   const {
     provider,
     fetchImpl = fetch,
@@ -24,13 +34,7 @@ export async function fetchJson(url: string, opts: FetchJsonOptions): Promise<un
   } = opts;
   for (let attempt = 0; ; attempt++) {
     const res = await fetchImpl(url, headers ? { headers } : undefined);
-    if (res.ok) {
-      try {
-        return await res.json();
-      } catch {
-        throw new ProviderError(provider, "response was not valid JSON", "bad_response");
-      }
-    }
+    if (res.ok) return await res.text();
     if (res.status === 404) throw new ProviderError(provider, "not found", "not_found");
     const retryable = res.status === 429 || res.status >= 500;
     if (!retryable) throw new ProviderError(provider, `HTTP ${res.status}`, "bad_response");

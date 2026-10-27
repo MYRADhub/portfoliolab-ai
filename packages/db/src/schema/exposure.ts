@@ -80,6 +80,10 @@ export const companyFactorExposures = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     source: exposureSource("source").notNull(),
+    /** For a draft grounded in a filing: the sentence from it that supports the score, checked to appear there. */
+    evidenceQuote: text("evidence_quote"),
+    /** For a draft from repeated runs: the share of runs that gave exactly the stored score. */
+    stability: doublePrecision("stability"),
     reviewedBy: text("reviewed_by"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     version: integer("version").notNull().default(1),
@@ -90,6 +94,7 @@ export const companyFactorExposures = pgTable(
     check("exposure_magnitude_chk", sql`${t.magnitude} between 0 and 3`),
     check("exposure_direction_chk", sql`${t.direction} in (-1, 0, 1)`),
     check("exposure_confidence_chk", sql`${t.confidence} between 0 and 1`),
+    check("exposure_stability_chk", sql`${t.stability} is null or ${t.stability} between 0 and 1`),
     check("exposure_zero_direction_chk", sql`(${t.magnitude} = 0) = (${t.direction} = 0)`),
     // At most one current (open-ended) row per company/factor.
     uniqueIndex("exposure_current_idx")

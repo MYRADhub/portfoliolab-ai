@@ -1,4 +1,4 @@
-import { fetchJson, type FetchJsonOptions } from "../http";
+import { fetchJson, fetchText, type FetchJsonOptions } from "../http";
 
 /**
  * Minimal client for SEC EDGAR's public JSON APIs. No key is needed, but the SEC requires a User-Agent that
@@ -22,6 +22,20 @@ export class EdgarClient {
 
   submissions(cik: string): Promise<unknown> {
     return this.get(`https://data.sec.gov/submissions/CIK${cik.padStart(10, "0")}.json`);
+  }
+
+  /** An older page of a company's filing history, named in `filings.files` of its submissions response. */
+  submissionsPage(name: string): Promise<unknown> {
+    return this.get(`https://data.sec.gov/submissions/${encodeURIComponent(name)}`);
+  }
+
+  /** A filing document from the EDGAR archive, as text (usually HTML). */
+  document(url: string): Promise<string> {
+    return fetchText(url, {
+      ...this.http,
+      provider: "sec",
+      headers: { "user-agent": this.userAgent, accept: "text/html,*/*" },
+    });
   }
 
   companyFacts(cik: string): Promise<unknown> {

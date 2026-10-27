@@ -11,10 +11,11 @@
     "exposures": "tsx src/exposures-cli.ts"
   },
   "dependencies": {
+    "@portfolio-lab/data": "workspace:*",
     "@portfolio-lab/db": "workspace:*",
     "drizzle-orm": "^0.36.0",
-    "zod": "^4.0.0",
-    "openai": "^7.23.0"
+    "openai": "^7.23.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
