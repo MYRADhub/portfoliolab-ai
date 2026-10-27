@@ -22,6 +22,12 @@ export interface ExposureCell {
   signed: number;
   confidence: number;
   rationale: string | null;
+  /** The annual-report passage behind a grounded draft, checked to appear in the report. */
+  evidence: string | null;
+  /** Link to the report the passage comes from. */
+  source: string | null;
+  /** Share of repeated drafting runs that gave exactly this score. */
+  stability: number | null;
 }
 
 export type PortfolioExposures =
@@ -91,6 +97,9 @@ export async function getPortfolioExposures(
       direction: companyFactorExposures.direction,
       confidence: companyFactorExposures.confidence,
       rationale: companyFactorExposures.rationale,
+      evidenceQuote: companyFactorExposures.evidenceQuote,
+      evidenceUrls: companyFactorExposures.evidenceUrls,
+      stability: companyFactorExposures.stability,
     })
     .from(companyFactorExposures)
     .innerJoin(factors, eq(factors.id, companyFactorExposures.factorId))
@@ -165,6 +174,9 @@ export async function getPortfolioExposures(
         signed: r.magnitude * r.direction,
         confidence: r.confidence,
         rationale: r.rationale,
+        evidence: r.evidenceQuote,
+        source: r.evidenceUrls[0] ?? null,
+        stability: r.stability,
       })),
     pairs: pairOverlaps(hx),
   };

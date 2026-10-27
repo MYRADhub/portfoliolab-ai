@@ -1,4 +1,4 @@
-// Usage: tsx src/real-cli.ts [--db pl_real] [--steps prices,exposures] [--years 5] [--limit N] [--tickers A,B]
+// Usage: tsx src/real-cli.ts [--db pl_real] [--steps prices,benchmark,proxies,exposures] [--years 5] [--limit N] [--tickers A,B]
 // Builds a database of REAL data next to the dev database: S&P 500 companies and daily prices from Yahoo Finance.
 // Every step can be repeated; prices resume where they stopped. Exposures are the illustrative demo exposures.
 import { readFileSync, readdirSync } from "node:fs";
@@ -8,6 +8,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { seedEventTypes } from "@portfolio-lab/classify";
 import { createDb } from "@portfolio-lab/db";
+import { PROXY_SYMBOLS } from "@portfolio-lab/shared";
 import {
   ingestBenchmark,
   loadConstituents,
@@ -20,7 +21,7 @@ import { seedDemoExposures } from "./seed";
 const { values } = parseArgs({
   options: {
     db: { type: "string", default: "pl_real" },
-    steps: { type: "string", default: "prices,benchmark,exposures" },
+    steps: { type: "string", default: "prices,benchmark,proxies,exposures" },
     years: { type: "string", default: "5" },
     limit: { type: "string" },
     tickers: { type: "string" },
@@ -82,6 +83,19 @@ async function main() {
       to: now.toISOString().slice(0, 10),
     });
     console.log(`benchmark: ${r.symbol} ${r.inserted} new days`);
+  }
+  if (steps.has("proxies")) {
+    // Funds that track each force, used to check the exposure scores against prices.
+    const now = new Date();
+    const from = new Date(now);
+    from.setUTCFullYear(from.getUTCFullYear() - Number(values.years));
+    for (const symbol of PROXY_SYMBOLS) {
+      const r = await ingestBenchmark(db, new YahooProvider(), symbol, {
+        backfillFrom: from.toISOString().slice(0, 10),
+        to: now.toISOString().slice(0, 10),
+      });
+      console.log(`proxy: ${r.symbol} ${r.inserted} new days`);
+    }
   }
   if (steps.has("exposures")) console.log("exposures:", await seedDemoExposures(db));
 

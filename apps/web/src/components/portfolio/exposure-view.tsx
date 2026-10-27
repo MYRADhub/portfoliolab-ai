@@ -26,6 +26,7 @@ import { chartColors, axisTick, tooltipStyle } from "@/lib/chart";
 import { ExposureGraph } from "./exposure-graph";
 import { WithPortfolio } from "./with-portfolio";
 import { HowToRead } from "@/components/ui/how-to-read";
+import { EvidenceTable, PriceCheckCard, ScoreMethodCard } from "./score-method";
 import { exposureProvenance } from "@/lib/provenance";
 import { Loading } from "@/components/ui/skeleton";
 
@@ -232,7 +233,7 @@ function Content({ id }: { id: string }) {
                         style={x ? cellStyle(x.signed) : undefined}
                         title={
                           x
-                            ? `${t} / ${slug}: ${x.signed > 0 ? "+" : ""}${x.signed} (confidence ${pct(x.confidence, 0)})${x.rationale ? ` - ${x.rationale}` : ""}`
+                            ? `${t} / ${slug}: ${x.signed > 0 ? "+" : ""}${x.signed} (confidence ${pct(x.confidence, 0)})${x.rationale ? ` - ${x.rationale}` : ""}${x.evidence ? ` Annual report: "${x.evidence}"` : ""}`
                             : undefined
                         }
                       >
@@ -246,6 +247,10 @@ function Content({ id }: { id: string }) {
           </table>
         </CardContent>
       </Card>
+
+      <ScoreMethodCard cells={data.cells} />
+      <EvidenceTable cells={data.cells} nameOf={nameOf} />
+      <PriceCheckCard id={id} nameOf={nameOf} />
 
       <Card>
         <CardHeader>

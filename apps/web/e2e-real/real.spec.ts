@@ -243,13 +243,96 @@ test.describe("real data through the API", () => {
     ).toEqual([]);
   });
 
+  test("exposure scores are grounded in annual reports and checked against prices that precede the tested year", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    const [{ grounded, total }] = (await sql`
+      select count(distinct company_id) filter (where evidence_quote is not null)::int as grounded,
+             count(distinct company_id)::int as total
+      from company_factor_exposures where valid_to is null`) as unknown as {
+      grounded: number;
+      total: number;
+    }[];
+    expect(grounded / total).toBeGreaterThan(0.9);
+    const [{ bad }] = (await sql`
+      select count(*)::int as bad from company_factor_exposures
+      where valid_to is null and evidence_quote is not null
+        and (stability is null or stability <= 0 or evidence_urls->>0 not like 'https://www.sec.gov/%')`) as unknown as {
+      bad: number;
+    }[];
+    expect(bad).toBe(0);
+
+    const portfolios = await session(page.request);
+    const shown = portfolios[0]!;
+    const pc = (await (
+      await page.request.get(`/api/portfolios/${shown.id}/price-check`)
+    ).json()) as Json;
+    expect(pc.available).toBe(true);
+    // the check window ends before the one-year window the forces page tests
+    expect(Date.parse(pc.window.to)).toBeLessThan(Date.now() - 360 * 86_400_000);
+    expect(pc.window.days).toBeGreaterThan(400);
+    const checked = (pc.forces as Json[]).filter((f) => f.proxy);
+    expect(checked.length).toBe(11);
+    expect(
+      (pc.forces as Json[]).find((f) => f.slug === "ai_infrastructure_capex")!.proxy,
+    ).toBeNull();
+    for (const f of checked) {
+      expect(f.companies).toBeGreaterThan(450);
+      expect(f.spearman).toBeGreaterThan(-1);
+      expect(f.spearman).toBeLessThan(1);
+    }
+    // the scores carry real information about prices: on average they rank companies the way prices do
+    const mean = checked.reduce((a, f) => a + f.spearman, 0) / checked.length;
+    expect(mean).toBeGreaterThan(0.1);
+
+    await page.goto("/exposures");
+    await expect(page.getByTestId("score-method")).toContainText("How the scores are made");
+    await expect(page.getByTestId("score-method-counts")).toContainText(
+      "grounded in an annual report",
+    );
+    await expect(page.getByTestId("price-check")).toContainText("Checked against prices", {
+      timeout: 60_000,
+    });
+    await expect(
+      page.getByRole("table", { name: "Scores against measured sensitivities, by force" }),
+    ).toBeVisible({ timeout: 60_000 });
+    await page.getByTestId("score-evidence").locator("summary").click();
+    await expect(
+      page
+        .getByRole("table", { name: "Evidence for each exposure score" })
+        .getByRole("link", {
+          name: "10-K",
+        })
+        .first(),
+    ).toHaveAttribute("href", /^https:\/\/www\.sec\.gov\//);
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .include("main")
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+          .analyze()
+      ).violations.map((v) => v.id),
+    ).toEqual([]);
+  });
+
   test("the evidence page reaches the verdicts the other pages' numbers imply", async ({
     request,
   }) => {
     const b = (await (await request.get("/api/evidence")).json()) as Json;
     const by = Object.fromEntries((b.findings as Json[]).map((f) => [f.id, f]));
     expect(by.spillover.verdict).toBe("supported");
-    expect(by.sectors.verdict).toBe("supported");
+    // The sectors verdict follows its own figures by the stated bar: exposure scores must explain more, on 60% of days.
+    const fig = (label: string) =>
+      Number(by.sectors.figures.find((x: Json) => x.label === label).value.replace("%", ""));
+    const better = fig("Explained by exposure scores") > fig("Explained by sector labels");
+    expect(by.sectors.verdict).toBe(
+      !better
+        ? "not_supported"
+        : fig("Days exposure scores did better") >= 60
+          ? "supported"
+          : "inconclusive",
+    );
     expect(by.earnings.verdict).toBe("supported");
     // the figures shown match the underlying endpoints
     const pooled = (await (await request.get("/api/events/spillover?pooled=1")).json()) as Json;
@@ -472,8 +555,11 @@ test.describe("pages with real data", () => {
       .toBe(true);
     await page.request.post("/api/samples");
     await visit(page, "/exposures");
-    // The sample portfolios hold the 24 companies with hand-made illustrative profiles, and the page must say so.
-    await expect(page.getByRole("note")).toContainText("illustrative placeholders");
+    // Every score is an unreviewed AI draft, almost all grounded in an annual report, and the page says both.
+    await expect(page.getByRole("note")).toContainText("AI drafts that no person has reviewed");
+    await expect(page.getByTestId("score-method-counts")).toContainText(
+      "grounded in an annual report",
+    );
     await visit(page, "/research/AAPL");
     await expect(page.getByRole("table", { name: "Annual figures" })).toBeVisible();
     await expect(
