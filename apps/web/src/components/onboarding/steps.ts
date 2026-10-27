@@ -83,7 +83,7 @@ export const TOUR_STEPS: TourStep[] = [
     href: "/evidence",
     target: "evidence-finding",
     title: "Does any of this hold up?",
-    body: "The Evidence page tests the app's own claims on the data loaded right now: whether sector spread tells you about force spread, whether exposure scores describe stocks better than sectors, and whether AI-drafted scores match a person's blind scores. Each verdict says what it cannot show.",
+    body: "The Evidence page tests the app's own claims on the data loaded right now: whether news about one company moves the companies linked to it, whether exposure scores describe stocks better than sector labels, whether earnings days move stocks more than ordinary days, and whether AI-drafted scores match a person's blind scores. Each verdict says what it cannot show.",
   },
   {
     id: "guide",
