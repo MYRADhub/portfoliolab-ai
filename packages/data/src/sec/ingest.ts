@@ -41,6 +41,11 @@ export interface SecSummary {
   failed: { ticker: string; error: string }[];
 }
 
+export interface EightKSummary extends SecSummary {
+  /** Filings with a mapped item whose event type is not in the database, by slug. They are not stored. */
+  missingType: Record<string, number>;
+}
+
 async function companiesWithCik(db: Db, tickers?: readonly string[]) {
   const rows = await db
     .select({
@@ -69,22 +74,32 @@ export async function ingestEightKs(
     delayMs?: number;
     sleep?: (ms: number) => Promise<void>;
   },
-): Promise<SecSummary> {
+): Promise<EightKSummary> {
   const { delayMs = 120, sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms)) } =
     opts;
   await ensureEarningsReleaseType(db);
   const types = new Map((await db.select().from(eventTypes)).map((t) => [t.slug, t]));
   const list = (await companiesWithCik(db, opts.tickers)).slice(0, opts.limit ?? Infinity);
-  const summary: SecSummary = { companies: 0, articles: 0, skipped: 0, failed: [] };
+  const summary: EightKSummary = {
+    companies: 0,
+    articles: 0,
+    skipped: 0,
+    missingType: {},
+    failed: [],
+  };
 
   for (const c of list) {
     try {
       const filings = parseEightKs(await edgar.submissions(c.cik!), opts.since);
       for (const f of filings) {
         const event = eventForItems(f.items);
-        const type = event && types.get(event.slug);
-        if (!event || !type) {
+        if (!event) {
           summary.skipped++;
+          continue;
+        }
+        const type = types.get(event.slug);
+        if (!type) {
+          summary.missingType[event.slug] = (summary.missingType[event.slug] ?? 0) + 1;
           continue;
         }
         const title = `${c.name} files 8-K: ${ITEM_RULES[event.primaryItem]!.description} (Item ${event.primaryItem})`;

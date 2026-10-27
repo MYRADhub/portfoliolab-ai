@@ -33,6 +33,11 @@ if (steps.has("filings")) {
     `8-K: ${s.companies} companies, ${s.articles} new events, ${s.skipped} filings without a mapped item, ${s.failed.length} failed`,
   );
   for (const f of s.failed.slice(0, 10)) console.error(`  ${f.ticker}: ${f.error}`);
+  const missing = Object.entries(s.missingType);
+  if (missing.length > 0)
+    console.error(
+      `  not stored, event type missing from the database: ${missing.map(([k, n]) => `${n} ${k}`).join(", ")}`,
+    );
 }
 if (steps.has("fundamentals")) {
   const s = await ingestFundamentals(db, edgar, { tickers, limit });

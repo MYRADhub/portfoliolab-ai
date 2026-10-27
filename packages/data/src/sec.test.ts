@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { companies, fundamentals, newsArticles, newsClassifications } from "@portfolio-lab/db";
+import {
+  companies,
+  eventTypes,
+  fundamentals,
+  newsArticles,
+  newsClassifications,
+} from "@portfolio-lab/db";
 import { createTestDb } from "@portfolio-lab/db/testing";
 import {
   EdgarClient,
@@ -171,6 +177,19 @@ describe("ingestEightKs", () => {
       confidence: 1,
       fundamentalImportance: 7,
     });
+  });
+
+  it("counts filings whose event type is not in the database instead of storing them", async () => {
+    const s = await ingestEightKs(ctx.db, fakeEdgar(), { since: "2025-01-01", delayMs: 0 });
+    expect(s).toMatchObject({ articles: 0, skipped: 1, missingType: { leadership_change: 1 } });
+    await ctx.db.insert(eventTypes).values({
+      slug: "leadership_change",
+      name: "Leadership change",
+      defaultClass: "fundamental",
+      definition: "A director or officer joins or leaves.",
+    });
+    const again = await ingestEightKs(ctx.db, fakeEdgar(), { since: "2025-01-01", delayMs: 0 });
+    expect(again).toMatchObject({ articles: 1, missingType: {} });
   });
 
   it("records a failing company and carries on", async () => {

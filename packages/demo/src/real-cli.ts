@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { seedEventTypes } from "@portfolio-lab/classify";
 import { createDb } from "@portfolio-lab/db";
 import {
   ingestBenchmark,
@@ -51,6 +52,8 @@ async function main() {
     .sort()
     .at(-1)!;
   await loadConstituents(db, JSON.parse(readFileSync(`${dir}${file}`, "utf8")) as Constituent[]);
+  // SEC filings are stored under these event types; a filing whose type is missing would be dropped.
+  await seedEventTypes(db);
 
   if (steps.has("prices")) {
     const now = new Date();
