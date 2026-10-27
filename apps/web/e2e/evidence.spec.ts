@@ -37,6 +37,12 @@ test.describe("evidence page", () => {
     await expect(page.getByRole("heading", { name: "Evidence", level: 1 })).toBeVisible();
     const list = page.getByRole("list", { name: "Findings" });
     await expect(list.locator("> li")).toHaveCount(4);
+    await expect(page.getByTestId("evidence-summary")).toContainText("rests on 4 claims");
+    // the figures are folded away until asked for
+    const first = list.locator("> li").first();
+    await expect(first.locator("dl")).toBeHidden();
+    await first.getByText("The numbers and the limits").click();
+    await expect(first.getByText("What this does not show")).toBeVisible();
     await expect(page.getByTestId("verdict-spillover")).toHaveText("Not enough data");
     await expect(list.getByRole("link", { name: "See the full test" })).toHaveCount(3);
     await expect(list.getByRole("link", { name: "Download the scores (CSV)" })).toHaveAttribute(
