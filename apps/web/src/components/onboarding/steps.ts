@@ -13,7 +13,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "welcome",
     href: "/dashboard",
     title: "Welcome to PortfolioLab",
-    body: "Owning different stocks does not mean owning different risks. This short tour shows how PortfolioLab finds the hidden forces your portfolio depends on, and what to do with them. It takes about two minutes.",
+    body: "Owning different stocks does not mean owning different risks. This short tour shows how PortfolioLab finds the hidden forces your portfolio depends on, and what to do with them. It takes about three minutes, and you can leave at any step with Escape.",
   },
   {
     id: "portfolio",
@@ -41,7 +41,14 @@ export const TOUR_STEPS: TourStep[] = [
     href: "/exposures",
     target: "exposure-map",
     title: "The hidden exposure map",
-    body: "This is the heart of PortfolioLab. Holdings on the left connect to the economic forces on the right: interest rates, oil, AI spending and more. Hover or focus a name to see only its connections. Few forces behind many stocks means less diversification than it looks.",
+    body: "This is the heart of PortfolioLab. Holdings on the left connect to the economic forces on the right: interest rates, oil, AI spending and more. Hover or focus a name to see only its connections. Many stocks resting on the same few forces are less spread out than their sectors suggest.",
+  },
+  {
+    id: "forces",
+    href: "/forces",
+    target: "forces-attribution",
+    title: "What the forces really did",
+    body: "Exposure scores say what a stock depends on; this page checks what those forces actually did over the past year. Your portfolio's return is split into the part each force contributed, a market-wide part and a part the scores do not explain.",
   },
   {
     id: "stress",
@@ -51,6 +58,20 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Push a force up or down, or pick a ready-made scenario, and see how much each holding and the whole portfolio might move. It is a what-if, not a forecast.",
   },
   {
+    id: "watchlist",
+    href: "/watchlist",
+    target: "watchlist-add",
+    title: "Watch companies you don't own",
+    body: "Add a ticker to follow it. Alerts come from fixed rules, such as a move of twice the stock's normal daily swing or a price near its 52-week high, and each one states the figure that triggered it.",
+  },
+  {
+    id: "reactions",
+    href: "/events",
+    target: "reactions-table",
+    title: "How stocks reacted to news",
+    body: "News ranks stories by how much they matter to your holdings. Reactions then measures what prices did: the move around each story minus what the market alone would explain, averaged by type of news.",
+  },
+  {
     id: "research",
     href: "/research",
     target: "assistant",
@@ -58,10 +79,17 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Ask about your portfolio or a company in plain English. The assistant looks things up with the app's own calculations and may only quote numbers they return, citing each one.",
   },
   {
+    id: "evidence",
+    href: "/evidence",
+    target: "evidence-finding",
+    title: "Does any of this hold up?",
+    body: "The Evidence page tests the app's own claims on the data loaded right now: whether sector spread tells you about force spread, whether exposure scores describe stocks better than sectors, and whether AI-drafted scores match a person's blind scores. Each verdict says what it cannot show.",
+  },
+  {
     id: "guide",
     href: "/guide",
     target: "nav-guide",
     title: "The Guide is always here",
-    body: "Every term and chart is explained in plain language in the Guide. You can replay this tour any time from the sidebar. Enjoy exploring.",
+    body: "Every term and chart is explained in plain language in the Guide. You can replay this tutorial any time with the Tutorial button in the sidebar. Enjoy exploring.",
   },
 ];

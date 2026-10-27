@@ -45,8 +45,8 @@ export function EvidenceView() {
       {!data && !error && <Loading rows={3} />}
       {data && (
         <ul className="space-y-6" aria-label="Findings">
-          {data.findings.map((f) => (
-            <li key={f.id}>
+          {data.findings.map((f, i) => (
+            <li key={f.id} data-tour={i === 0 ? "evidence-finding" : undefined}>
               <Card>
                 <CardHeader>
                   <CardTitle>{f.question}</CardTitle>

@@ -66,7 +66,7 @@ export function EventsView() {
           ` Skipped: ${skipped.map(([k, n]) => `${n} ${SKIP_LABEL[k] ?? k}`).join("; ")}.`}
       </p>
 
-      <Card>
+      <Card data-tour="reactions-table">
         <CardHeader>
           <CardTitle>Average reaction by type of news</CardTitle>
         </CardHeader>

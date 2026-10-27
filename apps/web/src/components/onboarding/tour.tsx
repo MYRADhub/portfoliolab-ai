@@ -33,6 +33,8 @@ interface Box {
 
 const PAD = 8;
 const POPOVER_WIDTH = 360;
+/** Room kept for the popover when deciding whether it fits above or below the target. */
+const POPOVER_HEIGHT = 240;
 
 function findTarget(name: string | undefined): HTMLElement | null {
   return name ? document.querySelector<HTMLElement>(`[data-tour="${name}"]`) : null;
@@ -189,11 +191,15 @@ function TourOverlay({
       : { left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: POPOVER_WIDTH };
   } else {
     const below = spot.top + spot.height + PAD + 12;
-    const fitsBelow = below + 220 < vh;
+    const above = spot.top - PAD - 12;
     const left = Math.min(Math.max(12, spot.left), vw - POPOVER_WIDTH - 12);
-    popoverStyle = fitsBelow
-      ? { left, top: below, width: POPOVER_WIDTH }
-      : { left, bottom: Math.max(12, vh - spot.top + PAD + 12), width: POPOVER_WIDTH };
+    // Below the target if it fits, else above it, else (a target taller than the screen) pinned to the bottom edge.
+    popoverStyle =
+      below + POPOVER_HEIGHT < vh
+        ? { left, top: below, width: POPOVER_WIDTH }
+        : above > POPOVER_HEIGHT
+          ? { left, bottom: vh - above, width: POPOVER_WIDTH }
+          : { left, bottom: 12, width: POPOVER_WIDTH };
   }
 
   return (
@@ -276,7 +282,7 @@ export function TourButton() {
       data-tour="tour-button"
     >
       <CircleHelp aria-hidden="true" />
-      Take the tour
+      Tutorial
     </Button>
   );
 }

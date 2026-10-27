@@ -42,7 +42,7 @@ function Content({ id }: { id: string }) {
   if (!data) return <Loading rows={2} />;
   if (!data.available)
     return (
-      <Card>
+      <Card data-tour="forces-attribution">
         <CardContent>
           <p>
             {data.reason === "missing_exposures"
@@ -84,7 +84,7 @@ function Content({ id }: { id: string }) {
         </p>
       </HowToRead>
 
-      <Card>
+      <Card data-tour="forces-attribution">
         <CardHeader>
           <CardTitle>Where {data.portfolio.name}&apos;s return came from</CardTitle>
         </CardHeader>

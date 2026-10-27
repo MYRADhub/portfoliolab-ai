@@ -21,7 +21,7 @@ test.describe("welcome card and checklist", () => {
   }) => {
     await openDashboard(page);
     const welcome = page.getByRole("region", { name: "Welcome" });
-    await expect(welcome).toContainText("New here? Take a two-minute tour.");
+    await expect(welcome).toContainText("New here? Take the three-minute tutorial.");
     // not modal: the rest of the page is usable
     await page.getByRole("link", { name: "Terminal", exact: true }).first().click();
     await expect(page).toHaveURL(/\/terminal$/);
@@ -96,10 +96,10 @@ test.describe("guided tour", () => {
     page,
   }) => {
     await openDashboard(page);
-    await page.getByRole("button", { name: "Take the tour" }).click();
+    await page.getByRole("button", { name: "Tutorial", exact: true }).click();
     await expect(dialog(page)).toBeVisible();
     await expect(dialog(page)).toContainText("Welcome to PortfolioLab");
-    await expect(dialog(page)).toContainText("Step 1 of 8");
+    await expect(dialog(page)).toContainText("Step 1 of 12");
     await expect(dialog(page)).toBeFocused();
 
     await dialog(page).getByRole("button", { name: "Next" }).click();
@@ -136,15 +136,28 @@ test.describe("guided tour", () => {
     await expect(dialog(page)).toContainText("The hidden exposure map");
     await expect(page.locator("[data-tour-spotlight]")).toBeVisible();
 
-    await dialog(page).getByRole("button", { name: "Next" }).click();
-    await expect(page).toHaveURL(/\/stress$/);
-    await expect(dialog(page)).toContainText("Stress Lab");
-    await dialog(page).getByRole("button", { name: "Next" }).click();
-    await expect(page).toHaveURL(/\/research$/);
-    await expect(dialog(page)).toContainText("Ask a question");
+    // every later step opens its own page and spotlights a real element there
+    for (const [url, title] of [
+      [/\/forces$/, "What the forces really did"],
+      [/\/stress$/, "Stress Lab"],
+      [/\/watchlist$/, "Watch companies you don't own"],
+      [/\/events$/, "How stocks reacted to news"],
+      [/\/research$/, "Ask a question"],
+      [/\/evidence$/, "Does any of this hold up?"],
+    ] as const) {
+      await dialog(page).getByRole("button", { name: "Next" }).click();
+      await expect(page).toHaveURL(url);
+      await expect(dialog(page)).toContainText(title);
+      await expect(page.locator("[data-tour-spotlight]")).toBeVisible();
+      // the popover stays on screen even when the spotlighted element is tall
+      const box = (await dialog(page).boundingBox())!;
+      const vp = page.viewportSize()!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(vp.height);
+    }
     await dialog(page).getByRole("button", { name: "Next" }).click();
     await expect(page).toHaveURL(/\/guide$/);
-    await expect(dialog(page)).toContainText("Step 8 of 8");
+    await expect(dialog(page)).toContainText("Step 12 of 12");
     await dialog(page).getByRole("button", { name: "Finish" }).click();
     await expect(dialog(page)).toHaveCount(0);
     expect((await stored(page)).tourDone).toBe(true);
@@ -155,15 +168,15 @@ test.describe("guided tour", () => {
     page,
   }) => {
     await openDashboard(page);
-    const trigger = page.getByRole("button", { name: "Take the tour" });
+    const trigger = page.getByRole("button", { name: "Tutorial", exact: true });
     await trigger.focus();
     await trigger.click();
-    await expect(dialog(page)).toContainText("Step 1 of 8");
+    await expect(dialog(page)).toContainText("Step 1 of 12");
     await page.keyboard.press("ArrowRight");
-    await expect(dialog(page)).toContainText("Step 2 of 8");
+    await expect(dialog(page)).toContainText("Step 2 of 12");
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowLeft");
-    await expect(dialog(page)).toContainText("Step 2 of 8");
+    await expect(dialog(page)).toContainText("Step 2 of 12");
     await page.keyboard.press("Escape");
     await expect(dialog(page)).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -174,7 +187,7 @@ test.describe("guided tour", () => {
     page,
   }) => {
     await openDashboard(page);
-    await page.getByRole("button", { name: "Take the tour" }).click();
+    await page.getByRole("button", { name: "Tutorial", exact: true }).click();
     await expect(dialog(page).getByRole("button", { name: "Back" })).toHaveCount(0);
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press("Tab");
@@ -200,14 +213,14 @@ test.describe("guided tour", () => {
     await page.keyboard.press("Escape");
     await page.goto("/guide");
     await page.getByRole("button", { name: "Start the guided tour" }).click();
-    await expect(dialog(page)).toContainText("Step 1 of 8");
+    await expect(dialog(page)).toContainText("Step 1 of 12");
   });
 
   for (const theme of ["light", "dark"]) {
     test(`the tour dialog has no accessibility violations in ${theme}`, async ({ page }) => {
       await page.addInitScript((t) => localStorage.setItem("pl-theme", t), theme);
       await openDashboard(page);
-      await page.getByRole("button", { name: "Take the tour" }).click();
+      await page.getByRole("button", { name: "Tutorial", exact: true }).click();
       await dialog(page).getByRole("button", { name: "Next" }).click();
       await expect(page.locator("[data-tour-spotlight]")).toBeVisible();
       await page.evaluate(() =>
@@ -227,7 +240,7 @@ test.describe("on a phone-sized screen", () => {
   test("the tour popover fits inside the screen", async ({ page }) => {
     await openDashboard(page);
     await page.getByRole("button", { name: "Open menu" }).click();
-    await page.getByRole("button", { name: "Take the tour" }).click();
+    await page.getByRole("button", { name: "Tutorial", exact: true }).click();
     await expect(dialog(page)).toBeVisible();
     const box = await dialog(page).boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);

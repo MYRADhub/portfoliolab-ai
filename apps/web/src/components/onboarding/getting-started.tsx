@@ -28,7 +28,7 @@ export function GettingStarted() {
         <CardContent className="flex flex-wrap items-center gap-4">
           <Rocket className="size-6 text-primary" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">New here? Take a two-minute tour.</p>
+            <p className="font-semibold">New here? Take the three-minute tutorial.</p>
             <p className="text-sm text-muted-foreground">
               See how PortfolioLab finds the hidden risks behind your holdings, step by step.
             </p>

@@ -106,7 +106,7 @@ export function WatchlistView() {
         </p>
       </HowToRead>
 
-      <form onSubmit={add} className="flex flex-wrap items-end gap-2">
+      <form onSubmit={add} className="flex flex-wrap items-end gap-2" data-tour="watchlist-add">
         <label className="flex flex-col gap-1 text-sm">
           Company ticker
           <input
