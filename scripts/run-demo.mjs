@@ -2,7 +2,7 @@
 // Builds (or refreshes) the demo database, then starts the app on http://localhost:3000 in demo mode.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-
+#smth
 if (existsSync(".env")) process.loadEnvFile(".env");
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is not set. Copy .env.example to .env and run `pnpm db:up` first.");
