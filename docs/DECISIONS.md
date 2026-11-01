@@ -1015,6 +1015,31 @@ The SEC asks every requester to identify themselves. With the setting missing, t
 
 ---
 
+## 39. Charts for everything and presentations (added 2026-11-01)
+
+**39.1 More chart kinds, still built by tools.** Final. Who: You (both in-answer charts and a dashboard view), Me (which charts).
+Bar, scatter and heatmap join tables and line charts. Each tool can now offer several: the company profile a price line and an exposure bar chart; annual figures a table and a revenue, net income and cash-flow trend; a comparison a table, returns by period, risk against return, and an exposure heatmap; a screen a risk-against-return chart and, with a factor, an exposure chart. The model still only picks charts by id, so no chart value comes from the model. Waterfall charts were left out: no tool has a natural use for one yet.
+
+**39.2 Every chart is kept, not only the chosen ones.** Final. Who: Me.
+An answer stores all the charts its tools produced. "Visualize" under an answer shows them with stat tiles for the key figures from our own data; the conversation dashboard shows every answer this way. A fallback answer's charts are kept too, since they come straight from our data.
+
+**39.3 Presentations are made from a conversation and checked like answers.** Final. Who: You (from a conversation; in-app with PDF), Me (the rest).
+Only verified answers go in. Their sources and charts are renumbered across the conversation (the same figure in two answers gets one id) and the answers' citations rewritten to match. The model writes a title, 3 to 12 slides with bullets, an optional chart id and speaker notes. Every title, bullet and note goes through the same number, citation and advice check; unknown chart ids are rejected; one retry with the problems listed. After two failures, a plain deck of each answer's cited figures is shown instead. A title slide and a sources slide are added by the app, not the model. One deck per conversation, stored; making it again replaces it. 10 decks an hour per visitor.
+
+**39.4 The viewer.** Final. Who: Me.
+Arrow keys or buttons to move, a slide strip, full-screen presenting, a presenter view with notes and the next slide, and Save as PDF. For PDF every slide is first laid out on screen and then the print dialog opens, because charts hidden from view measure as zero width and would print empty. Pages print landscape.
+
+**39.5 One definition of a 1-year return.** Final. Who: Me.
+The shared snapshot behind compare and screen used a 372-day window, while the company profile and price history use 12 months, so the live test showed two different 1-year returns for the same stock and the model put the gap in a slide. The snapshot now uses the same 12-month window and rule, and a test checks the three tools agree.
+
+### Mistakes in this slice
+
+- The 1-year window mismatch above, found by a live run, not by tests; a test now covers it.
+- The mock deck was titled "E2E Deck" and the check rightly rejected the "2" as an unsourced number.
+- The new pages read their URL outside a loading boundary, which this version of Next.js refuses to build.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

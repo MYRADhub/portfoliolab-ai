@@ -33,6 +33,8 @@ import {
   type ChatMessage,
 } from "./research-chat";
 import { buildResearchTools, type EdgarLike } from "./research-tools";
+import { deckInputFrom, getDeck, makeDeck } from "./research-deck";
+import type { DeckGenerator } from "@portfolio-lab/explain";
 import { RateLimiter } from "./rate-limit";
 
 let ctx: Awaited<ReturnType<typeof createTestDb>>;
@@ -77,15 +79,13 @@ beforeAll(async () => {
     );
   }
   await ctx.db.insert(pricesDaily).values(rows);
-  await ctx.db
-    .insert(benchmarkPrices)
-    .values(
-      Array.from({ length: DAYS }, (_, i) => ({
-        symbol: "SPY",
-        date: day(i),
-        adjClose: 500 * (1 + 0.1 * (i / (DAYS - 1))),
-      })),
-    );
+  await ctx.db.insert(benchmarkPrices).values(
+    Array.from({ length: DAYS }, (_, i) => ({
+      symbol: "SPY",
+      date: day(i),
+      adjClose: 500 * (1 + 0.1 * (i / (DAYS - 1))),
+    })),
+  );
   const f = (companyId: number, metric: string, fiscalYear: number, value: number) => ({
     companyId,
     metric,
@@ -233,7 +233,10 @@ describe("research tools", () => {
     );
     expect(text(r, "AAA revenue, fiscal 2025")).toBe("$200.0B");
     expect(text(r, "AAA diluted EPS, fiscal 2025")).toBe("$4.00");
-    expect(r.display).toMatchObject({ kind: "table", columns: ["Metric", "FY2024", "FY2025"] });
+    expect(r.displays![0]).toMatchObject({
+      kind: "table",
+      columns: ["Metric", "FY2024", "FY2025"],
+    });
     const none = out(
       await tool(buildResearchTools(base()), "get_fundamentals").run({ ticker: "CCC" }),
     );
@@ -270,7 +273,7 @@ describe("research tools", () => {
     );
     expect(text(r, "AAA (Information Technology) snapshot")).toContain("P/E");
     expect(text(r, "QQQQ snapshot")).toBe("not in our data");
-    expect(r.display!.kind === "table" && r.display!.rows.length).toBe(3);
+    expect(r.displays![0]!.kind === "table" && r.displays![0]!.rows.length).toBe(3);
     await expect(
       tool(buildResearchTools(base()), "compare_companies").run({ tickers: ["AAA"] }),
     ).rejects.toThrow(/2 to 6/);
@@ -613,5 +616,214 @@ describe("research chat", () => {
     await expect(deleteThread(ctx.db, other, t!.id)).rejects.toMatchObject({ code: "not_found" });
     await deleteThread(ctx.db, sid, t!.id);
     await expect(getThread(ctx.db, sid, t!.id)).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+describe("one definition of each return", () => {
+  it("compare and screen give the same 1-year return as the company profile and price history", async () => {
+    const t = buildResearchTools(base());
+    const profile = out(await tool(t, "get_company").run({ ticker: "CCC" }));
+    const hist = out(await tool(t, "price_history").run({ tickers: ["CCC"], period: "1y" }));
+    const cmp = out(await tool(t, "compare_companies").run({ tickers: ["CCC", "AAA"] }));
+    const y1 = text(profile, "CCC return over 1 year")!;
+    expect(text(hist, "CCC return, 1 year")).toMatch(new RegExp(`^\\${y1}`));
+    expect(text(cmp, "CCC (Utilities) snapshot")).toContain(`1y ${y1}`);
+  });
+});
+
+describe("charts offered by tools", () => {
+  it("company profile offers a price line and an exposure bar chart", async () => {
+    const r = out(await tool(buildResearchTools(base()), "get_company").run({ ticker: "AAA" }));
+    expect(r.displays!.map((d) => d.kind)).toEqual(["line", "bar"]);
+    const bar = r.displays![1]!;
+    expect(bar.kind === "bar" && bar.series[0]!.values).toEqual([3]);
+  });
+
+  it("fundamentals offer a table and a trend chart without empty series", async () => {
+    const r = out(
+      await tool(buildResearchTools(base()), "get_fundamentals").run({ ticker: "AAA" }),
+    );
+    const trend = r.displays![1]!;
+    expect(trend.kind).toBe("bar");
+    if (trend.kind !== "bar") return;
+    expect(trend.categories).toEqual(["FY2024", "FY2025"]);
+    expect(trend.series.map((s) => s.name)).toEqual(["Revenue", "Net income"]);
+    expect(trend.series[0]!.values).toEqual([100e9, 200e9]);
+  });
+
+  it("a comparison offers returns, risk against return, and an exposure heatmap", async () => {
+    const r = out(
+      await tool(buildResearchTools(base()), "compare_companies").run({
+        tickers: ["AAA", "BBB", "CCC"],
+      }),
+    );
+    expect(r.displays!.map((d) => d.kind)).toEqual(["table", "bar", "scatter", "heatmap"]);
+    const heat = r.displays![3]!;
+    if (heat.kind !== "heatmap") throw new Error("not a heatmap");
+    expect(heat.columns).toEqual(["ai_capex", "rates"]);
+    expect(heat.values).toEqual([
+      [3, 0],
+      [0, 2],
+      [0, -2],
+    ]);
+    const sc = r.displays![2]!;
+    if (sc.kind !== "scatter") throw new Error("not a scatter");
+    const aaa = sc.points.find((p) => p.label === "AAA")!;
+    // Chart values are the same one-decimal percent the facts show.
+    expect(`+${aaa.y.toFixed(1)}%`).toBe(
+      text(r, "AAA (Information Technology) snapshot")!.match(/1y (\+[\d.]+%)/)![1],
+    );
+  });
+
+  it("a factor screen adds an exposure chart", async () => {
+    const r = out(
+      await tool(buildResearchTools(base()), "screen_companies").run({ factor: "rates" }),
+    );
+    const last = r.displays!.at(-1)!;
+    expect(last.kind === "bar" && last.title).toBe("Exposure to rates (-3 to 3)");
+  });
+});
+
+describe("presentations", () => {
+  const ask = (id: number, content: string): ChatMessage => ({
+    id,
+    role: "user",
+    content,
+    mode: "quick",
+    createdAt: "",
+  });
+  const ans = (id: number, content: string, answer: object): ChatMessage => ({
+    id,
+    role: "assistant",
+    content,
+    mode: "quick",
+    createdAt: "",
+    answer: answer as never,
+  });
+
+  it("renumbers facts and displays across answers, shares identical facts, and skips fallbacks", () => {
+    const shared = { label: "NVDA return", text: "+42.0%" };
+    const input = deckInputFrom("Topic", [
+      ask(1, "q1"),
+      ans(2, "Up +42.0% [F1].", {
+        source: "model",
+        facts: [{ id: "F1", ...shared }],
+        displays: [{ id: "D1", kind: "table", title: "T", columns: [], rows: [] }],
+        allDisplays: [{ id: "D1", kind: "table", title: "T", columns: [], rows: [] }],
+      }),
+      ask(3, "q2"),
+      ans(4, "fallback", {
+        source: "fallback",
+        facts: [{ id: "F1", label: "x", text: "1" }],
+        displays: [],
+      }),
+      ask(5, "q3"),
+      ans(6, "Vol 30.0% [F1], and up +42.0% [F2].", {
+        source: "model",
+        facts: [
+          { id: "F1", label: "NVDA volatility", text: "30.0%" },
+          { id: "F2", ...shared },
+        ],
+        displays: [],
+        allDisplays: [{ id: "D1", kind: "table", title: "U", columns: [], rows: [] }],
+      }),
+    ]);
+    expect(input.sections.map((x) => x.question)).toEqual(["q1", "q3"]);
+    expect(input.facts.map((f) => `${f.id} ${f.label}`)).toEqual([
+      "F1 NVDA return",
+      "F2 NVDA volatility",
+    ]);
+    expect(input.sections[1]!.answer).toBe("Vol 30.0% [F2], and up +42.0% [F1].");
+    expect(input.sections[1]!.factIds).toEqual(["F2", "F1"]);
+    expect(input.displays.map((d) => `${d.id} ${d.title}`)).toEqual(["D1 T", "D2 U"]);
+    expect(input.sections[0]!.displayIds).toEqual(["D1"]);
+  });
+
+  const deckGen = (raw: (prompt: string) => unknown): DeckGenerator & { prompts: string[] } => {
+    const prompts: string[] = [];
+    return {
+      model: "fake",
+      prompts,
+      generate: async (p) => {
+        prompts.push(p);
+        return raw(p);
+      },
+    };
+  };
+
+  it("needs a verified answer, stores the deck, replaces it when made again, and is private", async () => {
+    const empty = await prepareResearch(
+      ctx.db,
+      sid,
+      { question: "Nothing yet", mode: "quick" },
+      { limiter: unlimited() },
+    );
+    await expect(
+      makeDeck(
+        ctx.db,
+        sid,
+        empty.threadId,
+        deckGen(() => null),
+        { limiter: unlimited() },
+      ),
+    ).rejects.toMatchObject({
+      code: "bad_request",
+    });
+
+    const p = await prepareResearch(
+      ctx.db,
+      sid,
+      { question: "AAA figures?", mode: "quick" },
+      { limiter: unlimited() },
+    );
+    await executeResearch(
+      ctx.db,
+      sid,
+      p,
+      deps(
+        oneTool("get_fundamentals", { ticker: "AAA" }, (o) => {
+          const id = o
+            .split("\n")
+            .find((l) => l.includes("revenue, fiscal 2025"))!
+            .split(" | ")[0];
+          return `Revenue was $200.0B [${id}].`;
+        }),
+      ),
+      { now },
+    );
+    expect(await getDeck(ctx.db, sid, p.threadId)).toBeNull();
+
+    const slide = (title: string) => ({
+      title,
+      bullets: ["Revenue was $200.0B [F1]."],
+      display: "D1",
+      notes: "Say it [F1].",
+    });
+    const gen = deckGen(() => ({
+      title: "AAA",
+      subtitle: "Findings",
+      slides: [slide("A"), slide("B"), slide("C")],
+    }));
+    const d = await makeDeck(ctx.db, sid, p.threadId, gen, { limiter: unlimited() });
+    expect(d.source).toBe("model");
+    expect(d.displays.map((x) => x.id)).toEqual(["D1", "D2"]);
+    expect(gen.prompts[0]).toContain("F1 | AAA revenue, fiscal 2025: $200.0B");
+    expect(d.disclaimer).toMatch(/not investment advice/);
+
+    const again = await makeDeck(
+      ctx.db,
+      sid,
+      p.threadId,
+      deckGen(() => null),
+      { limiter: unlimited() },
+    );
+    expect(again.source).toBe("fallback");
+    expect((await getDeck(ctx.db, sid, p.threadId))!.source).toBe("fallback");
+
+    await expect(getDeck(ctx.db, other, p.threadId)).rejects.toMatchObject({ code: "not_found" });
+    const one = new RateLimiter(ctx.db, 0, 60_000);
+    await expect(makeDeck(ctx.db, sid, p.threadId, gen, { limiter: one })).rejects.toMatchObject({
+      code: "rate_limited",
+    });
   });
 });

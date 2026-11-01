@@ -7,9 +7,10 @@ import {
   type FiscalYear,
   type FundamentalRatios,
 } from "@portfolio-lab/finance";
+import { monthsAgo } from "./portfolio-data";
 import { exposureMap } from "./research";
 
-/** Trading days per window, counted back from the latest close. */
+/** Trading days per window, counted back from the latest close. The 1-year return uses the 12-month window instead. */
 export const WINDOW_DAYS = { "1m": 21, "3m": 63, "6m": 126, "1y": 252 } as const;
 
 export interface CompanySnapshot {
@@ -93,8 +94,8 @@ export function priceStats(closes: readonly number[]) {
     r1m: trailing(closes, WINDOW_DAYS["1m"]),
     r3m: trailing(closes, WINDOW_DAYS["3m"]),
     r6m: trailing(closes, WINDOW_DAYS["6m"]),
-    // A year needs nearly a full year of closes; a few missing days are allowed.
-    r1y: closes.length > 240 ? closes[closes.length - 1]! / closes[0]! - 1 : null,
+    // Same rule as the company page: a year of closes counts once it has at least 200 daily returns.
+    r1y: closes.length > 200 ? closes[closes.length - 1]! / closes[0]! - 1 : null,
     volatility: rets.length >= 30 ? annualizedVolatility(rets) : null,
     maxDrawdown: rets.length >= 30 ? maxDrawdown(rets) : null,
   };
@@ -119,7 +120,8 @@ export function marketSnapshot(db: Db, now: Date = new Date()): Promise<CompanyS
 
 async function buildSnapshot(db: Db, now: Date): Promise<CompanySnapshot[]> {
   const today = now.toISOString().slice(0, 10);
-  const since = new Date(now.getTime() - 372 * 86_400_000).toISOString().slice(0, 10);
+  // The same 12-month window the company page and price_history use, so every tool gives the same 1-year return.
+  const since = monthsAgo(now, 12);
   const list = await db
     .select({
       id: companies.id,

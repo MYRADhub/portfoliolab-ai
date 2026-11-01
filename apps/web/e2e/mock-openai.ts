@@ -130,6 +130,62 @@ function webSearchTurn(
   );
 }
 
+/** A deck built from the facts and displays in the prompt; invented numbers in "ungrounded" mode. */
+function deckTurn(
+  body: { model: string; instructions: string; input: string },
+  send: (s: number, b: unknown) => void,
+) {
+  requests.push({
+    path: "/v1/responses#deck",
+    auth: undefined,
+    model: body.model,
+    instructions: body.instructions,
+    input: body.input,
+    mode,
+  });
+  if (mode === "error")
+    return send(400, {
+      error: {
+        message: "mock upstream failure",
+        type: "invalid_request_error",
+        param: null,
+        code: null,
+      },
+    });
+  const facts = parseFacts(body.input);
+  const displays = [...body.input.matchAll(/^(D\d+) \| /gm)].map((m) => m[1]!);
+  const bullet = (i: number) => {
+    const f = facts[i % Math.max(1, facts.length)];
+    return f ? `${f.label}: ${f.text} [${f.id}]` : "No figures";
+  };
+  const bad = mode === "ungrounded";
+  const deck = {
+    title: "Mock Deck",
+    subtitle: "What the research found",
+    slides: [
+      {
+        title: "Summary",
+        bullets: [bad ? "Returned 99.99% [F1]" : bullet(0), bullet(1)],
+        display: null,
+        notes: `Open with ${bullet(0)}.`,
+      },
+      {
+        title: "The chart",
+        bullets: [bullet(2)],
+        display: displays[0] ?? null,
+        notes: "Walk through the chart.",
+      },
+      {
+        title: "What is uncertain",
+        bullets: [bullet(3)],
+        display: null,
+        notes: "Close with the limits.",
+      },
+    ],
+  };
+  return send(200, responseBody(body.model, deck));
+}
+
 /** First tool for a research-chat question, chosen from words in it, among the tools the app offered. */
 function researchTool(question: string, offered: Set<string>): { name: string; args: object } {
   if (/\bweb\b/i.test(question) && offered.has("web_search"))
@@ -280,6 +336,8 @@ createServer(async (req, res) => {
       tools?: { type: string; name?: string }[];
     };
     if (body.tools?.some((t) => t.type === "web_search")) return webSearchTurn(body, send);
+    if (typeof body.input === "string" && body.instructions?.includes("slide presentation"))
+      return deckTurn(body as { model: string; instructions: string; input: string }, send);
     if (Array.isArray(body.input)) return assistantTurn(body, send);
     requests.push({
       path: url.pathname,

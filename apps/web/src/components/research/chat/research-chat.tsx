@@ -1,6 +1,14 @@
 "use client";
 
-import { MessageSquarePlus, Square, Trash2 } from "lucide-react";
+import {
+  BarChart3,
+  LayoutDashboard,
+  MessageSquarePlus,
+  Presentation,
+  Square,
+  Trash2,
+} from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AssistantEvent } from "@portfolio-lab/explain";
@@ -10,6 +18,7 @@ import { readNdjson } from "@/lib/ndjson";
 import type { ChatMessage, ResearchMode, ThreadSummary } from "@/server/research-chat";
 import { AnswerView } from "./answer-view";
 import { ProgressView, type Step } from "./progress-view";
+import { AnswerDashboard } from "./visualize";
 
 type StreamEvent =
   | AssistantEvent
@@ -73,6 +82,7 @@ export function ResearchChat() {
   const [portfolios, setPortfolios] = useState<{ id: string; name: string }[]>([]);
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [loadingThread, setLoadingThread] = useState(false);
+  const [visual, setVisual] = useState<Set<number>>(new Set());
   const bottom = useRef<HTMLDivElement>(null);
   const autoAsked = useRef(false);
 
@@ -168,7 +178,7 @@ export function ResearchChat() {
                     ...steps[i]!,
                     status: e.error ? "error" : "done",
                     facts: e.facts.length,
-                    hasDisplay: e.display !== null,
+                    hasDisplay: e.displays.length > 0,
                     error: e.error ?? undefined,
                   };
                 const busy = steps.some((s) => s.status === "running");
@@ -222,6 +232,17 @@ export function ResearchChat() {
     setMode(m);
     void ask(preset, m);
   }, [params, ask]);
+
+  // "/research?thread=<id>" reopens a conversation, for links back from its dashboard or presentation.
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    const id = params.get("thread");
+    if (!id || openedFromLink.current) return;
+    openedFromLink.current = true;
+    void openThread(id);
+    // openThread only reads state at call time; running it once on load is the intent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
 
   async function openThread(id: string) {
     if (running || id === threadId) return;
@@ -343,6 +364,23 @@ export function ResearchChat() {
 
         {loadingThread && <p className="text-sm text-muted-foreground">Opening the conversation</p>}
 
+        {threadId && messages.some((m) => m.role === "assistant") && !running && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Conversation views">
+            <Link
+              href={`/research/c/${threadId}/dashboard`}
+              className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs hover:bg-muted"
+            >
+              <LayoutDashboard className="size-3.5" aria-hidden /> Dashboard
+            </Link>
+            <Link
+              href={`/research/c/${threadId}/deck`}
+              className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs hover:bg-muted"
+            >
+              <Presentation className="size-3.5" aria-hidden /> Presentation
+            </Link>
+          </div>
+        )}
+
         <ol className="space-y-5" aria-label="Conversation">
           {messages.map((m) =>
             m.role === "user" ? (
@@ -359,10 +397,36 @@ export function ResearchChat() {
             ) : (
               <li key={m.id} className="rounded-xl border p-4">
                 <AnswerView answer={m.answer} />
-                {m.answer.toolCalls.length > 0 && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {m.answer.toolCalls.length} lookups, {m.answer.facts.length} sources
-                  </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  {m.answer.toolCalls.length > 0 && (
+                    <span>
+                      {m.answer.toolCalls.length} lookups, {m.answer.facts.length} sources
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    aria-expanded={visual.has(m.id)}
+                    onClick={() =>
+                      setVisual((v) => {
+                        const n = new Set(v);
+                        if (n.has(m.id)) n.delete(m.id);
+                        else n.add(m.id);
+                        return n;
+                      })
+                    }
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-foreground hover:bg-muted"
+                  >
+                    <BarChart3 className="size-3.5" aria-hidden />
+                    {visual.has(m.id) ? "Hide charts" : "Visualize"}
+                  </button>
+                </div>
+                {visual.has(m.id) && (
+                  <section aria-label="Answer charts" className="mt-4 border-t pt-4">
+                    <AnswerDashboard
+                      facts={m.answer.facts}
+                      displays={m.answer.allDisplays ?? m.answer.displays}
+                    />
+                  </section>
                 )}
               </li>
             ),

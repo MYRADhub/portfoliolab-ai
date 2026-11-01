@@ -1,4 +1,14 @@
-import { index, jsonb, pgTable, serial, text, timestamp, uuid, check } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { portfolios, sessions } from "./portfolio";
 
@@ -39,4 +49,18 @@ export const researchMessages = pgTable(
     index("research_messages_thread_idx").on(t.threadId, t.id),
     check("research_messages_role_chk", sql`${t.role} in ('user', 'assistant')`),
   ],
+);
+
+/** The presentation made from a conversation. One per conversation; making it again replaces it. */
+export const researchDecks = pgTable(
+  "research_decks",
+  {
+    id: serial("id").primaryKey(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => researchThreads.id, { onDelete: "cascade" }),
+    payload: jsonb("payload").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("research_decks_thread_idx").on(t.threadId)],
 );

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { COVERED, mock, newSession, startUiSession } from "./helpers";
 
@@ -96,7 +97,12 @@ test.describe("research chat API", () => {
     await startUiSession(page);
     const { events } = await askApi(page.request, { question: "Compare these two please" });
     const msg = events.at(-1)!.message;
-    expect(msg.answer.displays).toHaveLength(1);
+    expect(msg.answer.displays.map((d: Json) => d.kind)).toEqual([
+      "table",
+      "bar",
+      "scatter",
+      "heatmap",
+    ]);
     expect(msg.answer.displays[0]).toMatchObject({ id: "D1", kind: "table", title: "Comparison" });
     expect(msg.answer.displays[0].rows.map((r: string[]) => r[0])).toEqual(["NVDA", "AAPL"]);
   });
@@ -285,7 +291,11 @@ test.describe("research chat page", () => {
     await startUiSession(page);
     await page.goto("/research/NVDA");
     await page.getByRole("link", { name: "Deep research brief" }).click();
-    await expect(page.getByText("Give me a research brief on NVDA")).toBeVisible();
+    await expect(
+      page
+        .getByRole("list", { name: "Conversation", exact: true })
+        .getByText("Give me a research brief on NVDA"),
+    ).toBeVisible();
     await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
     await expect(page.getByRole("radio", { name: "Deep research" })).toHaveAttribute(
       "aria-checked",
@@ -294,4 +304,157 @@ test.describe("research chat page", () => {
     const req = (await mock.requests()).find((r) => r.path === "/v1/responses")!;
     expect(req.instructions).toMatch(/deep research request/);
   });
+});
+
+test.describe("visualizer and presentation", () => {
+  test.beforeEach(async () => {
+    await mock.reset();
+  });
+
+  test("the deck API makes, stores and protects a presentation", async ({ page, playwright }) => {
+    await startUiSession(page);
+    await mock.setMode("ungrounded");
+    const unverified = await askApi(page.request, { question: "Tell me about NVDA" });
+    const t0 = unverified.events[0]!.threadId;
+    const refused = await page.request.post(`/api/research/threads/${t0}/deck`);
+    expect(refused.status()).toBe(400);
+    expect(await refused.text()).toMatch(/no verified answers/);
+
+    await mock.setMode("grounded");
+    const { events } = await askApi(page.request, { question: "Compare these two please" });
+    const threadId = events[0]!.threadId;
+    expect(
+      ((await (await page.request.get(`/api/research/threads/${threadId}/deck`)).json()) as Json)
+        .deck,
+    ).toBeNull();
+    const made = (await (
+      await page.request.post(`/api/research/threads/${threadId}/deck`)
+    ).json()) as Json;
+    expect(made.deck.source).toBe("model");
+    expect(made.deck.deck.slides).toHaveLength(3);
+    expect(made.deck.deck.slides[1].display).toBe("D1");
+    expect(made.deck.displays.map((d: Json) => d.kind)).toEqual([
+      "table",
+      "bar",
+      "scatter",
+      "heatmap",
+    ]);
+    const req = (await mock.requests()).find((r) => r.path === "/v1/responses#deck")!;
+    expect(req.instructions).toMatch(/slide presentation/);
+    expect(req.input).toContain("### Question 1: Compare these two please");
+
+    const stored = (await (
+      await page.request.get(`/api/research/threads/${threadId}/deck`)
+    ).json()) as Json;
+    expect(stored.deck.createdAt).toBe(made.deck.createdAt);
+    const other = await newSession(playwright);
+    expect((await other.get(`/api/research/threads/${threadId}/deck`)).status()).toBe(404);
+    expect((await other.post(`/api/research/threads/${threadId}/deck`)).status()).toBe(404);
+
+    await mock.setMode("ungrounded");
+    const again = (await (
+      await page.request.post(`/api/research/threads/${threadId}/deck`)
+    ).json()) as Json;
+    expect(again.deck.source).toBe("fallback");
+    expect(JSON.stringify(again.deck.deck)).not.toContain("99.99");
+    expect(again.deck.deck.slides[0].title).toBe("Compare these two please");
+  });
+
+  test("Visualize shows every chart of an answer with its key figures", async ({ page }) => {
+    await startUiSession(page);
+    await page.goto("/research");
+    await page.getByLabel("Your question").fill("Compare these two please");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await page.getByRole("button", { name: "Visualize" }).click();
+    const charts = page.getByRole("region", { name: "Answer charts" });
+    await expect(
+      charts.getByRole("img", { name: "Bar chart: Returns by period (%)" }),
+    ).toBeVisible();
+    await expect(
+      charts.getByRole("img", { name: /Scatter chart: Risk against return/ }),
+    ).toBeVisible();
+    await expect(charts.getByRole("region", { name: /Economic exposures/ })).toBeVisible();
+    await page.getByRole("button", { name: "Hide charts" }).click();
+    await expect(charts).toHaveCount(0);
+  });
+
+  test("the dashboard and the presentation work from a conversation", async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __printed: number }).__printed = 0;
+      window.print = () => {
+        (window as unknown as { __printed: number }).__printed++;
+      };
+    });
+    await startUiSession(page);
+    await page.goto("/research");
+    await page.getByLabel("Your question").fill("Tell me about NVDA");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
+
+    await page
+      .getByRole("group", { name: "Conversation views" })
+      .getByRole("link", { name: "Dashboard" })
+      .click();
+    await expect(page.getByRole("heading", { name: "Tell me about NVDA", level: 1 })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Chart: NVDA price, last year" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Key figures" })).toContainText(
+      "NVDA return over 1 year",
+    );
+
+    await page.getByRole("link", { name: "Presentation", exact: true }).click();
+    await page.getByRole("button", { name: "Prepare presentation" }).click();
+    const slide = page.getByRole("region", { name: /^Slide \d+ of 5$/ });
+    await expect(slide).toContainText("Mock Deck");
+    await page.keyboard.press("ArrowRight");
+    await expect(slide.getByRole("heading", { name: "Summary" })).toBeVisible();
+    await page.getByRole("button", { name: "Presenter view" }).click();
+    await expect(page.getByRole("complementary", { name: "Speaker notes" })).toContainText(
+      "Open with",
+    );
+    await expect(page.getByRole("complementary", { name: "Speaker notes" })).toContainText(
+      "Next: The chart",
+    );
+    await page.getByRole("button", { name: "Next slide" }).click();
+    await expect(slide.getByRole("img", { name: /NVDA price, last year/ })).toBeVisible();
+    await page.getByRole("button", { name: /^5\. Sources/ }).click();
+    await expect(slide.getByRole("heading", { name: "Sources" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Save as PDF" }).click();
+    await expect(page.getByRole("region", { name: "Slides for printing" })).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __printed: number }).__printed))
+      .toBe(1);
+
+    // Back to the conversation reopens it.
+    await page.goto(page.url().replace(/\/research\/c\/([^/]+)\/deck$/, "/research?thread=$1"));
+    await expect(page.getByText("Tell me about NVDA").first()).toBeVisible();
+    await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
+  });
+
+  for (const theme of ["light", "dark"]) {
+    test(`the dashboard and the presentation have no accessibility violations in ${theme}`, async ({
+      page,
+    }) => {
+      await page.addInitScript((t) => localStorage.setItem("pl-theme", t), theme);
+      await startUiSession(page);
+      const { events } = await askApi(page.request, { question: "Compare these two please" });
+      const threadId = events[0]!.threadId;
+      await page.request.post(`/api/research/threads/${threadId}/deck`);
+      const scan = async () => {
+        await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+        const r = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+          .analyze();
+        expect(r.violations.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 100)}`)).toEqual([]);
+      };
+      await page.goto(`/research/c/${threadId}/dashboard`);
+      await expect(page.getByRole("region", { name: /Economic exposures/ })).toBeVisible();
+      await scan();
+      await page.goto(`/research/c/${threadId}/deck`);
+      await page.getByRole("button", { name: "Next slide" }).click();
+      await page.getByRole("button", { name: "Next slide" }).click();
+      await page.getByRole("button", { name: "Presenter view" }).click();
+      await scan();
+    });
+  }
 });

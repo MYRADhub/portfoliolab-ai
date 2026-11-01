@@ -82,6 +82,8 @@ function tickersArg(a: unknown, min: number, max: number): string[] {
 }
 
 const price = (x: number) => `$${x.toFixed(2)}`;
+/** A fraction as percent for charts, to one decimal like the facts. */
+const pc = (x: number | null | undefined) => (x == null ? null : Math.round(x * 1000) / 10);
 const ratio = (x: number) => x.toFixed(1);
 const signedScore = (x: number) => `${x > 0 ? "+" : ""}${x}`;
 
@@ -151,6 +153,16 @@ function snapshotLine(c: CompanySnapshot): string {
   return parts.join(", ") || "no price or fundamental data";
 }
 
+function riskReturn(title: string, cs: readonly CompanySnapshot[]): Display {
+  return {
+    kind: "scatter",
+    title,
+    x: { label: "Annualized volatility (%)", unit: "percent" },
+    y: { label: "1-year return (%)", unit: "percent" },
+    points: cs.map((c) => ({ label: c.ticker, x: pc(c.volatility)!, y: pc(c.r1y)! })),
+  };
+}
+
 /** Every tool the research chat may call, given what this server has configured. */
 export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
   const { db, now = new Date() } = ctx;
@@ -176,9 +188,9 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
     {
       name: "get_company",
       description:
-        "Profile of one company from our data: sector, latest price, returns, risk, latest annual ratios, its strongest economic exposures and its closest peers.",
+        "Profile of one company from our data: sector, latest price, returns, risk, latest annual ratios, its strongest economic exposures and its closest peers. Offers a price chart and an exposure chart.",
       parameters: obj({ ticker: tickerParam }, ["ticker"]),
-      run: async (a) => {
+      run: async (a): Promise<ToolOutput> => {
         const r = await getCompanyResearch(db, tickerArg(a), { now });
         const t = r.company.ticker;
         const out: ToolEntry[] = [
@@ -220,13 +232,31 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
             label: `${t} closest peers (${r.peers[0]!.basis === "exposure" ? "by exposure profile" : "same sector"})`,
             text: r.peers.map((p) => p.ticker).join(", "),
           });
-        return out;
+        const displays: Display[] = [];
+        if (r.prices.length > 1)
+          displays.push({
+            kind: "line",
+            title: `${t} price, last year`,
+            unit: "price",
+            series: [
+              { name: t, points: thin(r.prices.map((p) => ({ date: p.date, value: p.close }))) },
+            ],
+          });
+        if (r.exposures.length)
+          displays.push({
+            kind: "bar",
+            title: `${t} economic exposures (-3 to 3)`,
+            unit: "score",
+            categories: r.exposures.slice(0, 10).map((e) => e.name),
+            series: [{ name: "Exposure", values: r.exposures.slice(0, 10).map((e) => e.signed) }],
+          });
+        return { entries: out, displays };
       },
     },
     {
       name: "get_fundamentals",
       description:
-        "Annual figures from SEC 10-K filings for one company, up to five fiscal years: revenue, net income, operating income, diluted EPS, operating cash flow. Offers a table.",
+        "Annual figures from SEC 10-K filings for one company, up to five fiscal years: revenue, net income, operating income, diluted EPS, operating cash flow. Offers a table and a trend chart.",
       parameters: obj({ ticker: tickerParam }, ["ticker"]),
       run: async (a): Promise<ToolOutput> => {
         const c = await companyRow(db, tickerArg(a));
@@ -262,7 +292,18 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
             }),
           ]),
         };
-        return { entries, display };
+        const trend: Display = {
+          kind: "bar",
+          title: `${c.ticker} revenue, net income and operating cash flow`,
+          unit: "usd",
+          categories: ordered.map((y) => `FY${y.fiscalYear}`),
+          series: [
+            { name: "Revenue", values: ordered.map((y) => y.revenue) },
+            { name: "Net income", values: ordered.map((y) => y.netIncome) },
+            { name: "Operating cash flow", values: ordered.map((y) => y.operatingCashFlow) },
+          ].filter((x) => x.values.some((v) => v !== null)),
+        };
+        return { entries, displays: [display, trend] };
       },
     },
     {
@@ -368,7 +409,7 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
     {
       name: "compare_companies",
       description:
-        "Side-by-side comparison of two to six companies from our data: sector, returns, volatility, P/E, net margin, revenue growth. Offers a table.",
+        "Side-by-side comparison of two to six companies from our data: sector, returns, volatility, P/E, net margin, revenue growth. Offers a table, a returns chart, a risk-against-return chart and an exposure heatmap.",
       parameters: obj({ tickers: { type: "array", items: tickerParam } }, ["tickers"]),
       run: async (a): Promise<ToolOutput> => {
         const tickers = tickersArg(a, 2, 6);
@@ -416,13 +457,45 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
             ];
           }),
         };
-        return { entries, display };
+        const known = rows.filter((c): c is CompanySnapshot => c !== null);
+        const displays: Display[] = [display];
+        if (known.length) {
+          displays.push({
+            kind: "bar",
+            title: "Returns by period (%)",
+            unit: "percent",
+            categories: known.map((c) => c.ticker),
+            series: [
+              { name: "1 month", values: known.map((c) => pc(c.r1m)) },
+              { name: "3 months", values: known.map((c) => pc(c.r3m)) },
+              { name: "1 year", values: known.map((c) => pc(c.r1y)) },
+            ],
+          });
+          const pts = known.filter((c) => c.volatility != null && c.r1y != null);
+          if (pts.length >= 2) displays.push(riskReturn("Risk against return, last year", pts));
+          const factorsUsed = [
+            ...new Set(
+              known.flatMap((c) => Object.keys(c.exposures).filter((k) => c.exposures[k])),
+            ),
+          ].sort();
+          if (factorsUsed.length)
+            displays.push({
+              kind: "heatmap",
+              title: "Economic exposures (-3 to 3)",
+              unit: "score",
+              rows: known.map((c) => c.ticker),
+              columns: factorsUsed,
+              values: known.map((c) => factorsUsed.map((f) => c.exposures[f] ?? 0)),
+              diverging: true,
+            });
+        }
+        return { entries, displays };
       },
     },
     {
       name: "screen_companies",
       description:
-        "Screen the S&P 500 universe in our data. Filter by sector, by an economic exposure (factor slug from list_factors), and by ranges of returns, P/E, margins and growth; sort and return the top matches. Offers a table.",
+        "Screen the S&P 500 universe in our data. Filter by sector, by an economic exposure (factor slug from list_factors), and by ranges of returns, P/E, margins and growth; sort and return the top matches. Offers a table, a risk-against-return chart and, with a factor, an exposure chart.",
       parameters: obj({
         sector: {
           type: "string",
@@ -542,7 +615,18 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
             ...(factor ? [signedScore(c.exposures[factor] ?? 0)] : []),
           ]),
         };
-        return { entries, display };
+        const displays: Display[] = [display];
+        const pts = sorted.filter((c) => c.volatility != null && c.r1y != null);
+        if (pts.length >= 3) displays.push(riskReturn("Screen results: risk against return", pts));
+        if (factor)
+          displays.push({
+            kind: "bar",
+            title: `Exposure to ${factor} (-3 to 3)`,
+            unit: "score",
+            categories: sorted.map((c) => c.ticker),
+            series: [{ name: factor, values: sorted.map((c) => c.exposures[factor] ?? 0) }],
+          });
+        return { entries, displays };
       },
     },
     {
