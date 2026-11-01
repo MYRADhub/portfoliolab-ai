@@ -11,6 +11,11 @@ export const envSchema = z.object({
   MARKETAUX_API_KEY: optionalKey,
   ALPHAVANTAGE_API_KEY: optionalKey,
   FRED_API_KEY: optionalKey,
+  /**
+   * Who is asking, sent to SEC EDGAR as the User-Agent, for example "Jane Doe jane@example.com". The SEC requires it.
+   * With none set, the research assistant has no SEC filing tools.
+   */
+  SEC_USER_AGENT: z.string().min(5).max(200).optional(),
   /** "1" turns the research study on. Off by default: no data is collected from participants unless set. */
   EXPERIMENT_ENABLED: z.enum(["0", "1"]).optional(),
   /**

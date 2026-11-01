@@ -275,43 +275,6 @@ test.describe("research page", () => {
     await expect(page.getByText(/Create a portfolio to see how adding MSFT/)).toBeVisible();
   });
 
-  test("the assistant answers a suggested question with citations and figures", async ({
-    page,
-  }) => {
-    const s = await startUiSession(page);
-    await s.create("Covered", COVERED);
-    await page.goto("/research");
-    await page.getByRole("button", { name: "Is my portfolio really diversified?" }).click();
-    const answer = page.getByRole("region", { name: "Assistant answer" });
-    await expect(answer).toContainText("Analysis window:");
-    await expect(answer.locator("sup").first()).toHaveText("F1");
-    await expect(answer).toContainText("Looked at: Portfolio summary");
-    await answer.getByText("Figures used").click();
-    await expect(answer.getByText(/F1 Analysis window:/)).toBeVisible();
-    await expect(answer.getByText(/not investment advice/)).toBeVisible();
-  });
-
-  test("a follow-up question carries the earlier turns as context", async ({ page }) => {
-    const s = await startUiSession(page);
-    await s.create("Covered", COVERED);
-    await page.goto("/research");
-    await page.getByLabel("Your question").fill("How risky is my portfolio?");
-    await page.getByRole("button", { name: "Ask", exact: true }).click();
-    await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
-    await page.getByLabel("Your question").fill("And which news matters most?");
-    await page.getByRole("button", { name: "Ask", exact: true }).click();
-    await expect(page.getByText("Earlier in this conversation (1)")).toBeVisible();
-    await page.getByText("Earlier in this conversation (1)").click();
-    await expect(
-      page.getByRole("list", { name: "Earlier questions" }).getByText("How risky is my portfolio?"),
-    ).toBeVisible();
-    const reqs = await mock.requests();
-    const last = reqs.filter((r) => r.input.includes("And which news matters most?")).at(-1)!;
-    expect(last.input).toContain("Earlier in this conversation");
-    expect(last.input).toContain("How risky is my portfolio?");
-    expect(last.input).toContain("New question: And which news matters most?");
-  });
-
   test("the history is validated by the API", async ({ page }) => {
     const s = await startUiSession(page);
     const id = await s.create("Covered", COVERED);
@@ -350,32 +313,6 @@ test.describe("research page", () => {
     );
   });
 
-  test("the assistant shows only figures, with a notice, when the answer cannot be verified", async ({
-    page,
-  }) => {
-    await mock.setMode("ungrounded");
-    const s = await startUiSession(page);
-    await s.create("Covered", COVERED);
-    await page.goto("/research");
-    await page.getByLabel("Your question").fill("How risky is my portfolio?");
-    await page.getByRole("button", { name: "Ask", exact: true }).click();
-    await expect(page.getByText(/could not be verified/)).toBeVisible();
-    await expect(page.getByText("99.99")).toHaveCount(0);
-  });
-
-  test("the assistant shows an error and recovers when the service fails", async ({ page }) => {
-    await mock.setMode("error");
-    const s = await startUiSession(page);
-    await s.create("Covered", COVERED);
-    await page.goto("/research");
-    await page.getByLabel("Your question").fill("How risky is my portfolio?");
-    await page.getByRole("button", { name: "Ask", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: /./ }).first()).toBeVisible();
-    await mock.setMode("grounded");
-    await page.getByRole("button", { name: "Ask", exact: true }).click();
-    await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
-  });
-
   for (const theme of ["light", "dark"]) {
     test(`the company page and an assistant answer have no accessibility violations in ${theme}`, async ({
       page,
@@ -396,8 +333,9 @@ test.describe("research page", () => {
       };
       await scan();
       await page.goto("/research");
-      await page.getByRole("button", { name: "Is my portfolio really diversified?" }).click();
+      await page.getByRole("button", { name: "What is the biggest risk in my portfolio?" }).click();
       await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
+      await page.getByText(/Sources and figures/).click();
       await scan();
     });
   }

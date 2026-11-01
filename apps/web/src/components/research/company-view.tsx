@@ -45,6 +45,20 @@ export function CompanyView({ ticker }: { ticker: string }) {
           {company.sector ?? "Unclassified"}
           {company.industry ? ` | ${company.industry}` : ""}
         </p>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs">
+          <Link
+            href={`/research?mode=deep&ask=${encodeURIComponent(`Give me a research brief on ${company.ticker}`)}`}
+            className="rounded-full border px-3 py-1 hover:bg-muted"
+          >
+            Deep research brief
+          </Link>
+          <Link
+            href={`/research?ask=${encodeURIComponent(`What are the main risks for ${company.ticker} according to its latest filings and recent news?`)}`}
+            className="rounded-full border px-3 py-1 hover:bg-muted"
+          >
+            Ask about risks
+          </Link>
+        </div>
       </div>
 
       <div

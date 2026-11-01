@@ -974,6 +974,47 @@ A one-line summary ("4 claims: 2 supported, 1 inconclusive and 1 not enough data
 
 ---
 
+## 38. A research chat with web search, SEC filings and more tools (added 2026-11-01)
+
+**38.1 The grounding check stays, and web pages are checked too.** Final. Who: You.
+Every number in an answer must still appear in something a tool returned. Web search uses OpenAI's hosted search in a separate small request; we keep the raw page excerpts it returns (`web_search_call.results`) and throw away the model's own summary of them, so only page text becomes a fact. The excerpts are cleaned of the search tool's markup first. Alternative considered: accept any number that has a link next to it. Rejected by you: an invented figure could pass as long as it had a link.
+
+**38.2 Conversations are saved in the database, per visitor.** Final. Who: You.
+Two new tables, `research_threads` and `research_messages`. A saved answer keeps its facts, tool calls, tables and charts, check result and prompt version, so it can be shown and audited again. Deleting a visitor deletes their conversations. Only answers that passed the check are sent back as context for follow-ups (the last 6).
+
+**38.3 Answers appear only after they pass the check, and progress streams.** Final. Who: Me.
+Showing text word by word would show prose that has not yet been checked, which the product has never allowed. What streams instead is each lookup as it starts and finishes, then "checking every figure", then the verified answer. Stop cancels the work; the question stays in the conversation and no answer is saved.
+
+**38.4 The tools.** Final. Who: Me.
+Our data: find companies, company profile, five years of annual figures, price history of up to five tickers against each other or SPY (with the return gap and correlation, since the model may not do arithmetic), side-by-side comparison, a screener over the whole S&P 500 (sector, exposure, returns, P/E, margin, growth, volatility), the list of exposures, and news search. SEC: recent filings, reading the Business, Risk Factors or MD&A section of the latest 10-K or 10-Q (an 8-K is read with its press-release exhibit), and EDGAR full-text search across all filings. Web: search and read a page (through the hosted tool, so our server never fetches an address a user typed). Portfolio tools appear only when a portfolio is selected. Calls in one step run together.
+
+**38.5 Tables and charts come from tools, not from the model.** Final. Who: Me.
+A tool can offer a table or chart (D1, D2, ...). The model only chooses which to show by id, so every value in them is computed by us.
+
+**38.6 Two depths.** Final. Who: Me.
+Quick: up to 8 lookup rounds and about 300 words. Deep research: up to 14 rounds, a plan of sub-questions, a 400 to 900 word report with sections and a closing "What is uncertain". The original portfolio assistant's instructions are unchanged.
+
+**38.7 A separate allowance.** Final. Who: Me.
+30 quick questions and 6 deep reports per hour per visitor, apart from the 10-an-hour allowance for explanations.
+
+**38.8 The check understands Markdown.** Final. Who: Me.
+List numbers, heading marks, table rules and link addresses are not counted as figures, and neither are names with digits in them (10-K, 8-K, S&P 500, Q2). Numbers inside tables and link text are still checked.
+
+**38.9 SEC tools need SEC_USER_AGENT.** Final. Who: Me.
+The SEC asks every requester to identify themselves. With the setting missing, the chat simply has no filing tools.
+
+**38.10 Two new libraries.** Final. Who: Me.
+`react-markdown` and `remark-gfm` render answers (headings, lists, tables). Raw HTML in answers is not rendered.
+
+### Mistakes in this slice
+
+- The MD&A heading pattern first matched the table-of-contents line, page number included; tested against a real NVIDIA 10-K and 10-Q after the fix.
+- EDGAR full-text search ignores a date range unless both ends are given; the first version silently returned 2018 filings.
+- Dimming sources that were not cited failed the colour-contrast check; cited ones are now bold instead.
+- The live check showed the real-data prices end on 2026-10-26; the model said so in its answer, but refreshing prices is a separate job.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

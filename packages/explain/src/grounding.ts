@@ -35,6 +35,25 @@ export function citedIds(text: string): string[] {
   return [...text.matchAll(CITATION)].flatMap((m) => [...m[0].matchAll(/F\d+/g)].map((x) => x[0]));
 }
 
+/**
+ * Names that contain digits but are not figures: SEC form names, the index name and calendar quarters or halves.
+ * They are removed before numbers are checked so "the 10-K" or "in Q2" do not need a fact.
+ */
+const NAMES_WITH_DIGITS =
+  /\b(?:10-K|10-Q|8-K|20-F|40-F|6-K|S-1|DEF 14A)\b|S&P\s?500|\b[QH][1-4]\b/gi;
+
+/**
+ * Markdown structure is not content: ordered-list markers ("1."), heading marks, table rules, and link targets.
+ * Link text stays (it is checked), the URL goes (sources are shown through citations instead).
+ */
+export function stripMarkdownStructure(text: string): string {
+  return text
+    .replace(/\[([^\]]*)\]\((?:[^)\s]+)\)/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s*\d{1,2}[.)]\s+/gm, "")
+    .replace(/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/gm, "");
+}
+
 /** Checks that every digit-bearing number in `text` appears in the facts, every citation exists, and no advice. */
 export function checkGrounding(text: string, facts: readonly Fact[]): GroundingIssue[] {
   const issues: GroundingIssue[] = [];
@@ -46,7 +65,7 @@ export function checkGrounding(text: string, facts: readonly Fact[]): GroundingI
   }
 
   const allowed = allowedNumbers(facts);
-  const body = text.replace(CITATION, " ");
+  const body = stripMarkdownStructure(text).replace(CITATION, " ").replace(NAMES_WITH_DIGITS, " ");
   const seen = new Set<string>();
   for (const m of body.matchAll(NUMBER)) {
     const c = canonical(m[0]);

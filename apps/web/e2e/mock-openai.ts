@@ -3,7 +3,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { MOCK_PORT } from "./env";
 
-type Mode = "grounded" | "ungrounded" | "retry" | "error" | "refusal" | "incomplete";
+type Mode = "grounded" | "ungrounded" | "retry" | "error" | "refusal" | "incomplete" | "slow";
 
 let mode: Mode = "grounded";
 let retryCounter = 0;
@@ -84,14 +84,77 @@ function responseBody(model: string, payload: object | null, extra: object = {})
   };
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** The page text a nested web search "finds". Its numbers are what a grounded web answer may use. */
+export const WEB_RESULT = {
+  title: "E2E Web Result",
+  url: "https://example.com/e2e-web-result",
+  snippet:
+    "citeturn1search0 [wordlim: 200] Published: 2 days ago; Crawled: today; Mock Corp reported quarterly revenue of $12.3 billion, up 45% from a year ago.",
+};
+
+// Nested web search: the app asks a separate request to run the hosted web_search tool and keeps only its results.
+function webSearchTurn(
+  body: { model: string; input: unknown },
+  send: (s: number, b: unknown) => void,
+) {
+  requests.push({
+    path: "/v1/responses#web_search",
+    auth: undefined,
+    model: body.model,
+    instructions: "",
+    input: typeof body.input === "string" ? body.input : JSON.stringify(body.input),
+    mode,
+  });
+  return send(
+    200,
+    responseBody(body.model, null, {
+      output: [
+        {
+          type: "web_search_call",
+          id: "ws_mock",
+          status: "completed",
+          action: { type: "search", queries: ["mock"] },
+          results: [{ type: "text_result", ...WEB_RESULT }],
+        },
+        {
+          type: "message",
+          id: "msg_ws",
+          status: "completed",
+          role: "assistant",
+          content: [{ type: "output_text", text: "done", annotations: [] }],
+        },
+      ],
+    }),
+  );
+}
+
+/** First tool for a research-chat question, chosen from words in it, among the tools the app offered. */
+function researchTool(question: string, offered: Set<string>): { name: string; args: object } {
+  if (/\bweb\b/i.test(question) && offered.has("web_search"))
+    return { name: "web_search", args: { query: "Mock Corp results" } };
+  if (/\bcompare\b/i.test(question))
+    return { name: "compare_companies", args: { tickers: ["NVDA", "AAPL"] } };
+  if (/\bNVDA\b/.test(question)) return { name: "get_company", args: { ticker: "NVDA" } };
+  if (offered.has("get_portfolio_summary")) return { name: "get_portfolio_summary", args: {} };
+  return { name: "list_factors", args: {} };
+}
+
 // Tool-calling flow for the research assistant: first turn asks for the portfolio summary, then answers from the
 // tool output (grounded), or with an invented number (ungrounded), or fails, depending on the mode.
 type Item = { role?: string; content?: string; type?: string; output?: string };
-function assistantTurn(
-  body: { model: string; instructions: string; input: string | Item[] },
+async function assistantTurn(
+  body: {
+    model: string;
+    instructions: string;
+    input: string | Item[];
+    tools?: { name?: string }[];
+  },
   send: (status: number, body: unknown) => void,
 ) {
   const items = body.input as Item[];
+  const research = body.instructions.includes("research analyst");
   requests.push({
     path: "/v1/responses",
     auth: undefined,
@@ -111,6 +174,25 @@ function assistantTurn(
     });
   const outputs = items.filter((i) => i.type === "function_call_output").map((i) => i.output ?? "");
   const question = items.find((i) => i.role === "user")?.content ?? "";
+  if (mode === "slow") await sleep(4000);
+  if (research && outputs.length === 0) {
+    const pick = researchTool(question, new Set((body.tools ?? []).map((t) => t.name ?? "")));
+    return send(
+      200,
+      responseBody(body.model, null, {
+        output: [
+          {
+            type: "function_call",
+            id: "fc_mock",
+            call_id: "call_mock",
+            name: pick.name,
+            arguments: JSON.stringify(pick.args),
+            status: "completed",
+          },
+        ],
+      }),
+    );
+  }
   if (outputs.length === 0) {
     const wantsCompany = /\bNVDA\b/.test(question);
     return send(
@@ -131,7 +213,13 @@ function assistantTurn(
   }
   const retried = question.includes("rejected for");
   if (mode === "ungrounded" || (mode === "retry" && !retried))
-    return send(200, responseBody(body.model, { answer: "The portfolio returned 99.99% [F1]." }));
+    return send(
+      200,
+      responseBody(body.model, {
+        answer: "The portfolio returned 99.99% [F1].",
+        ...(research ? { displays: [] } : {}),
+      }),
+    );
   const facts = outputs
     .join("\n")
     .split("\n")
@@ -139,6 +227,19 @@ function assistantTurn(
       const m = /^(F\d+) \| ([^:]+): (.*)$/.exec(line);
       return m ? [{ id: m[1]!, label: m[2]!, text: m[3]! }] : [];
     });
+  if (research) {
+    const displays = [...outputs.join("\n").matchAll(/^(D\d+) \| /gm)].map((m) => m[1]!);
+    return send(
+      200,
+      responseBody(body.model, {
+        answer: `## Findings\n\n${facts
+          .slice(0, 3)
+          .map((f) => `- ${f.label}: ${f.text} [${f.id}]`)
+          .join("\n")}`,
+        displays,
+      }),
+    );
+  }
   return send(
     200,
     responseBody(body.model, {
@@ -176,7 +277,9 @@ createServer(async (req, res) => {
       model: string;
       instructions: string;
       input: string | { role?: string; content?: string; type?: string; output?: string }[];
+      tools?: { type: string; name?: string }[];
     };
+    if (body.tools?.some((t) => t.type === "web_search")) return webSearchTurn(body, send);
     if (Array.isArray(body.input)) return assistantTurn(body, send);
     requests.push({
       path: url.pathname,
@@ -189,6 +292,7 @@ createServer(async (req, res) => {
     const m = mode === "retry" ? (retryCounter++ % 2 === 0 ? "ungrounded" : "grounded") : mode;
     switch (m) {
       case "grounded":
+      case "slow":
         return send(200, responseBody(body.model, groundedPayload(body.input)));
       case "ungrounded":
         return send(200, responseBody(body.model, ungroundedPayload));
