@@ -61,7 +61,8 @@ test.describe("news analysis", () => {
     await s.create("Scan", SCAN_HOLDINGS);
     await page.goto("/news");
     await page.getByRole("button", { name: "Scan now" }).click();
-    const status = page.getByRole("status");
+    // Loading placeholders are status regions too; the scan's result is the one that says what was searched.
+    const status = page.getByRole("status").filter({ hasText: "Searched" });
     await expect(status).toContainText("Searched the web", { timeout: 30_000 });
     await expect(status).toContainText("1 new");
     await expect(status).toContainText("1 classified");
