@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Bot, Link2, Newspaper, Ruler, Scale, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 import { pct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
@@ -63,7 +66,24 @@ export function NewsAnalysisPanel({
   portfolioId: string;
   articleId: number;
 }) {
-  const { data, error } = useApi<NewsAnalysis>(`/api/portfolios/${portfolioId}/news/${articleId}`);
+  const url = `/api/portfolios/${portfolioId}/news/${articleId}`;
+  const loaded = useApi<NewsAnalysis>(url);
+  const [classified, setClassified] = useState<NewsAnalysis | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [classifyError, setClassifyError] = useState<string | null>(null);
+  const data = classified ?? loaded.data;
+  const error = loaded.error;
+  async function classify() {
+    setBusy(true);
+    setClassifyError(null);
+    try {
+      setClassified(await api<NewsAnalysis>(`${url}/classify`, { method: "POST" }));
+    } catch (e) {
+      setClassifyError(e instanceof Error ? e.message : "Classification failed");
+    } finally {
+      setBusy(false);
+    }
+  }
   if (error)
     return (
       <p role="alert" className="text-sm text-destructive">
@@ -141,9 +161,20 @@ export function NewsAnalysisPanel({
 
       <Section icon={Bot} title="What kind of news it is">
         {!latest ? (
-          <p className="text-muted-foreground">
-            Not classified yet; it is ranked with a neutral impact.
-          </p>
+          <div className="space-y-2">
+            <p className="text-muted-foreground">
+              Not classified yet; it is ranked with a neutral impact. Scans classify the strongest
+              stories for each holding and leave the rest for you to ask about.
+            </p>
+            <Button size="sm" variant="outline" onClick={() => void classify()} disabled={busy}>
+              {busy ? "Classifying" : "Classify now"}
+            </Button>
+            {classifyError && (
+              <p role="alert" className="text-xs text-destructive">
+                {classifyError}
+              </p>
+            )}
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">

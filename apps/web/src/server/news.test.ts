@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Classifier } from "@portfolio-lab/classify";
 import { syncAliases, type WebNewsResult } from "@portfolio-lab/data";
@@ -5,13 +6,16 @@ import {
   benchmarkPrices,
   companies,
   holdings,
+  newsArticles,
+  newsClassifications,
+  newsCompanyLinks,
   portfolios,
   pricesDaily,
   sessions,
 } from "@portfolio-lab/db";
 import { createTestDb } from "@portfolio-lab/db/testing";
 import { getNewsAnalysis, eventReturns } from "./news-analysis";
-import { scanPortfolioNews } from "./news-scan";
+import { classifyNewsStory, inPool, pickForClassification, scanPortfolioNews } from "./news-scan";
 import { getMarketRadar } from "./radar";
 import { RateLimiter } from "./rate-limit";
 
@@ -19,6 +23,8 @@ let ctx: Awaited<ReturnType<typeof createTestDb>>;
 let sid: string;
 let other: string;
 let pid: string;
+let aId: number;
+let bId: number;
 // Saturday 2026-10-31: stories from "2 days ago" are Thursday 10-29 (a trading day).
 const now = new Date("2026-10-31T18:00:00Z");
 
@@ -34,6 +40,8 @@ beforeAll(async () => {
       { ticker: "BBB", name: "Beta Banks Corp", sector: "Financials" },
     ])
     .returning();
+  aId = a!.id;
+  bId = b!.id;
   await syncAliases(ctx.db);
   const days = ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"];
   // AAA: 100, 100, 100, 110 (+10% on 10-29), 121 (+10%); SPY: +1% on 10-29, +0% after.
@@ -121,7 +129,9 @@ describe("news scan", () => {
     expect(r.fetched).toBe(2);
     expect(r.inserted).toBe(2);
     expect(r.linked).toBe(2);
-    expect(r.classified).toBe(2);
+    // Both copies are one story: only its earliest article, the one the News page ranks by, is classified.
+    expect(r.classified).toBe(1);
+    expect(r.unclassified).toBe(0);
 
     const radar = await getMarketRadar(ctx.db, sid, pid, { days: 7, now });
     expect(radar.items).toHaveLength(1);
@@ -266,5 +276,160 @@ describe("news analysis", () => {
     });
     expect(eventReturns(rows, "2026-11-02")).toEqual({ day: null, twoDay: null, date: null });
     expect(eventReturns(rows, "2026-10-01").day).toBeNull();
+  });
+});
+
+describe("choosing what to classify", () => {
+  let cId: number;
+  let n = 0;
+  async function article(opts: { at: string; score: number; cluster?: number; company?: number }) {
+    const [row] = await ctx.db
+      .insert(newsArticles)
+      .values({
+        provider: "test",
+        providerId: `pick-${n++}`,
+        url: `https://example.com/pick-${n}`,
+        title: `Pick story ${n}`,
+        publishedAt: new Date(opts.at),
+        dedupeHash: `pick-${n}`,
+      })
+      .returning();
+    await ctx.db
+      .update(newsArticles)
+      .set({ clusterId: opts.cluster ?? row!.id })
+      .where(eq(newsArticles.id, row!.id));
+    await ctx.db.insert(newsCompanyLinks).values({
+      articleId: row!.id,
+      companyId: opts.company ?? cId,
+      method: "provider_tag",
+      score: opts.score,
+    });
+    return row!.id;
+  }
+
+  beforeAll(async () => {
+    const [c] = await ctx.db
+      .insert(companies)
+      .values({ ticker: "CCC", name: "Gamma Goods Co", sector: "Consumer Staples" })
+      .returning();
+    cId = c!.id;
+  });
+
+  it("takes each holding's strongest, then newest, stories up to the allowance", async () => {
+    const weak = await article({ at: "2026-10-30T12:00:00Z", score: 0.6 });
+    const strongOld = await article({ at: "2026-10-27T12:00:00Z", score: 1 });
+    const strongNew = await article({ at: "2026-10-29T12:00:00Z", score: 1 });
+    const picked = await pickForClassification(ctx.db, [weak, strongOld, strongNew], [cId], 2);
+    expect(picked).toEqual({ ids: [strongNew, strongOld], left: 1 });
+  });
+
+  it("counts a story once, picks its earliest copy, and skips stories already classified", async () => {
+    const first = await article({ at: "2026-10-28T09:00:00Z", score: 0.7 });
+    const copy = await article({ at: "2026-10-28T10:00:00Z", score: 1, cluster: first });
+    const known = await article({ at: "2026-10-29T09:00:00Z", score: 1 });
+    await ctx.db.insert(newsClassifications).values({
+      articleId: known,
+      class: "noise",
+      fundamentalImportance: 1,
+      marketRelevance: 1,
+      expectedPersistence: 1,
+      mechanism: "Nothing changes.",
+      confidence: 0.5,
+      model: "fake-model",
+      promptVersion: "cls-test",
+      contentHash: "known",
+    });
+    const picked = await pickForClassification(ctx.db, [copy, known], [cId], 5);
+    expect(picked).toEqual({ ids: [first], left: 0 });
+  });
+
+  it("ignores links below the cut-off and companies not held", async () => {
+    const faint = await article({ at: "2026-10-29T09:00:00Z", score: 0.1 });
+    expect(await pickForClassification(ctx.db, [faint], [cId], 5)).toEqual({ ids: [], left: 0 });
+    const other = await article({ at: "2026-10-29T09:00:00Z", score: 1 });
+    expect(await pickForClassification(ctx.db, [other], [aId], 5)).toEqual({ ids: [], left: 0 });
+    expect(await pickForClassification(ctx.db, [], [cId], 5)).toEqual({ ids: [], left: 0 });
+  });
+
+  it("runs work with at most the pool size in flight", async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const seen: number[] = [];
+    await inPool([1, 2, 3, 4, 5, 6, 7], 3, async (x) => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, x % 2 ? 5 : 1));
+      seen.push(x);
+      inFlight--;
+    });
+    expect(peak).toBe(3);
+    expect(seen.sort()).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    await inPool([], 3, async () => {
+      throw new Error("never called");
+    });
+  });
+});
+
+describe("classifying one story on request", () => {
+  let story: number;
+  beforeAll(async () => {
+    const [row] = await ctx.db
+      .insert(newsArticles)
+      .values({
+        provider: "test",
+        providerId: "on-request",
+        url: "https://example.com/beta-banks-branches",
+        title: "Beta Banks Corp to close branches",
+        publishedAt: new Date("2026-10-30T15:00:00Z"),
+        dedupeHash: "on-request",
+      })
+      .returning();
+    story = row!.id;
+    await ctx.db.update(newsArticles).set({ clusterId: story }).where(eq(newsArticles.id, story));
+    await ctx.db
+      .insert(newsCompanyLinks)
+      .values({ articleId: story, companyId: bId, method: "alias", score: 0.9 });
+  });
+
+  it("classifies a story the scan left, once", async () => {
+    const before = classifier.calls;
+    const a = await classifyNewsStory(ctx.db, sid, pid, story, classifier, {
+      now,
+      limiter: unlimited(),
+    });
+    expect(a.classifications[0]).toMatchObject({ class: "fundamental", decidedBy: "ai" });
+    expect(classifier.calls).toBe(before + 1);
+    await classifyNewsStory(ctx.db, sid, pid, story, classifier, { now, limiter: unlimited() });
+    expect(classifier.calls).toBe(before + 1);
+  });
+
+  it("checks ownership, configuration and the hourly allowance", async () => {
+    const [row] = await ctx.db
+      .insert(newsArticles)
+      .values({
+        provider: "test",
+        providerId: "on-request-2",
+        url: "https://example.com/beta-banks-fees",
+        title: "Beta Banks Corp cuts fees",
+        publishedAt: new Date("2026-10-30T16:00:00Z"),
+        dedupeHash: "on-request-2",
+      })
+      .returning();
+    await ctx.db
+      .insert(newsCompanyLinks)
+      .values({ articleId: row!.id, companyId: bId, method: "alias", score: 0.9 });
+    const opts = { now, limiter: unlimited() };
+    await expect(
+      classifyNewsStory(ctx.db, other, pid, row!.id, classifier, opts),
+    ).rejects.toMatchObject({ code: "not_found" });
+    await expect(classifyNewsStory(ctx.db, sid, pid, row!.id, null, opts)).rejects.toMatchObject({
+      code: "unavailable",
+    });
+    await expect(
+      classifyNewsStory(ctx.db, sid, pid, row!.id, classifier, {
+        now,
+        limiter: new RateLimiter(ctx.db, 0, 60_000),
+      }),
+    ).rejects.toMatchObject({ code: "rate_limited" });
   });
 });

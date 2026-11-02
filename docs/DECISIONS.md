@@ -1092,6 +1092,22 @@ It opens with a summary written by code from the page's own figures ("Up 1.8% th
 **42.6 A calmer look.** Final. Who: You (clean fintech), Me (the details).
 Near-neutral surfaces, the sidebar on the page background, hairline borders instead of shadows, rounder cards, and a slightly larger page title; status colours and their contrast are unchanged. The sidebar has five main pages, a collapsible "Analysis tools" group (open on its own pages, otherwise remembered per browser), and Help.
 
+## 43. Classifying only the stories that matter, faster (added 2026-11-02)
+
+With the Finnhub key added, a first scan of a 15-stock portfolio returned about 1,900 new articles and classified every one, one AI call each, which took 36 minutes. A request from the Scan button cannot wait that long.
+
+**43.1 A per-holding allowance.** Final. Who: You (the approach), Me (the numbers).
+After linking, a scan classifies at most 8 new stories per holding: that holding's strongest links first, then the newest. Copies of the same story count once, and the one classified is the story's earliest article, because that is the one the News page ranks by. Stories already classified are skipped and do not use up the allowance. The rest stay ranked with a neutral impact, and the scan says how many it left.
+
+**43.2 Classify on request.** Final. Who: Me.
+A story the scan left has a "Classify now" button in its "How we judged this" panel. It checks that the story belongs to your portfolio, is limited to 60 an hour per session, and returns the updated reasoning.
+
+**43.3 More calls at once.** Final. Who: You (the approach), Me (the number).
+Classification runs 8 calls at once in a pool, so one slow call no longer holds up a whole batch. Before, it ran in batches of 4.
+
+**43.4 Tests never use a real news feed.** Final. Who: Me.
+The end-to-end tests blank the Finnhub and Marketaux keys for the app they start. Otherwise a key in the shell pulls live articles into the test database, which happened once during this change.
+
 ---
 
 ## 13. Mistakes made and fixed (for honesty)

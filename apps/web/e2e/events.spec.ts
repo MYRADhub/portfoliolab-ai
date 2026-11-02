@@ -11,9 +11,11 @@ test.describe("event study API", () => {
     expect(r.status()).toBe(200);
     const b = (await r.json()) as Json;
 
-    // Seeded: story, radar r1, r2, r3 (classified), AMZN and JPM (unclassified); the weak Target link is excluded.
-    expect(b.eventsFound).toBe(6);
-    expect(b.skipped.not_classified).toBe(2);
+    // Seeded: story, radar r1, r2, r3 (classified), AMZN and JPM (unclassified), and the Linde story, which the
+    // news-analysis spec classifies on request (so it is unclassified only if that spec has not run yet). The weak
+    // Target link is excluded.
+    expect(b.eventsFound).toBe(7);
+    expect([2, 3]).toContain(b.skipped.not_classified);
     expect(b.eventsStudied).toBeGreaterThanOrEqual(1);
     expect(
       b.eventsStudied + Object.values(b.skipped).reduce((a: number, n) => a + (n as number), 0),

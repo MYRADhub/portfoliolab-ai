@@ -313,6 +313,7 @@ interface ScanResult {
   linked: number;
   searchLinked: number;
   classified: number;
+  unclassified: number;
   failures: { provider: string; ticker: string; error: string }[];
 }
 
@@ -359,6 +360,9 @@ function ScanBar({ portfolioId, onDone }: { portfolioId: string; onDone: () => v
             ? ` (${result.searchLinked} only by the search that found them)`
             : ""}
           , {result.classified} classified
+          {result.unclassified
+            ? ` (${result.unclassified} more left unclassified; open one to classify it)`
+            : ""}
           {result.failures.length ? `, ${result.failures.length} problems` : ""}.
         </p>
       )}

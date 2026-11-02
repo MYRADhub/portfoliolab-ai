@@ -81,6 +81,31 @@ test.describe("news analysis", () => {
     await expect(panel).toContainText("Decided by AI");
   });
 
+  test("a story the scan left unclassified can be classified from its panel", async ({
+    page,
+    playwright,
+  }) => {
+    const s = await startUiSession(page);
+    const id = await s.create("Linde", [{ ticker: "LIN", weightPct: 100 }]);
+    const radar = (await (await page.request.get(`/api/portfolios/${id}/radar`)).json()) as Json;
+    const story = radar.items.find((i: Json) => i.title.startsWith("E2E Linde"));
+    const other = await newSession(playwright);
+    expect((await other.post(`/api/portfolios/${id}/news/${story.id}/classify`)).status()).toBe(
+      404,
+    );
+
+    await page.goto("/news");
+    const card = page.getByRole("article").filter({ hasText: "E2E Linde" });
+    await card.getByRole("button", { name: "How we judged this" }).click();
+    const panel = card.getByRole("region", { name: "How we judged this story" });
+    await expect(panel).toContainText("Not classified yet");
+    await panel.getByRole("button", { name: "Classify now" }).click();
+    await expect(panel).toContainText("Decided by AI");
+    await expect(panel.getByRole("button", { name: "Classify now" })).toHaveCount(0);
+    const reqs = await mock.requests();
+    expect(reqs.filter((r) => r.path === "/v1/responses#classify")).toHaveLength(1);
+  });
+
   for (const theme of ["light", "dark"]) {
     test(`the news page with the reasoning open has no accessibility violations in ${theme}`, async ({
       page,

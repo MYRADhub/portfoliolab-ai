@@ -264,6 +264,8 @@ async function main() {
   await classify(r3.id, "noise", 1, "r3");
   await addArticle("E2E Radar AMZN unclassified", 0, 0.8, undefined, "AMZN", hoursAgo(3));
   await addArticle("E2E Radar JPM stale rumor", 0, 0.5, undefined, "JPM", hoursAgo(24 * 6)); // old, weak, unclassified: collapsed
+  // Unclassified, on a company no other spec holds: the "Classify now" test classifies it.
+  await addArticle("E2E Linde wins air separation contract", 0, 0.9, undefined, "LIN", hoursAgo(4));
 
   // A trading day on which no seeded news lands, for tests that need an empty day.
   const eventDays = new Set(
