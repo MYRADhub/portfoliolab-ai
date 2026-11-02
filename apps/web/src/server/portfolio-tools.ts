@@ -351,18 +351,14 @@ export function buildPortfolioTools(
         const entries: ToolEntry[] = [
           { label: "Average pairwise correlation (1 year)", text: c.averagePairwise.toFixed(2) },
           { label: "Diversification ratio (1 year)", text: c.diversificationRatio.toFixed(2) },
-          ...c.pairs
-            .slice(0, 2)
-            .map((p) => ({
-              label: "Most correlated pair",
-              text: `${p.a} and ${p.b} ${p.correlation.toFixed(2)}`,
-            })),
-          ...c.pairs
-            .slice(-1)
-            .map((p) => ({
-              label: "Least correlated pair",
-              text: `${p.a} and ${p.b} ${p.correlation.toFixed(2)}`,
-            })),
+          ...c.pairs.slice(0, 2).map((p) => ({
+            label: "Most correlated pair",
+            text: `${p.a} and ${p.b} ${p.correlation.toFixed(2)}`,
+          })),
+          ...c.pairs.slice(-1).map((p) => ({
+            label: "Least correlated pair",
+            text: `${p.a} and ${p.b} ${p.correlation.toFixed(2)}`,
+          })),
         ];
         if (c.stress)
           entries.push({
@@ -655,13 +651,11 @@ export function buildPortfolioTools(
               label: `${h.ticker} on ${m.date}`,
               text: `${signedPct(h.assetReturn, 2)}, contributing ${(h.contribution * 100 >= 0 ? "+" : "") + (h.contribution * 100).toFixed(2)} percentage points`,
             })),
-          ...m.news
-            .slice(0, 3)
-            .map((n) => ({
-              label: "News that day",
-              text: n.title,
-              source: { url: n.url, title: n.title },
-            })),
+          ...m.news.slice(0, 3).map((n) => ({
+            label: "News that day",
+            text: n.title,
+            source: { url: n.url, title: n.title },
+          })),
         ];
       },
     },

@@ -4,3 +4,6 @@ dist
 pnpm-lock.yaml
 services/analytics/.venv
 description.md
+# Written by tools, not people: drizzle-kit regenerates migration metadata, and the paper's data files are generated output.
+packages/db/migrations/meta
+paper/data
