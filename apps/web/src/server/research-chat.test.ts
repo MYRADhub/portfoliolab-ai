@@ -189,6 +189,7 @@ describe("research tools", () => {
       "screen_companies",
       "list_factors",
       "search_news",
+      "get_watchlist",
     ]);
     const web: WebSearcher = { search: async () => [], open: async () => [] };
     const edgar = {} as EdgarLike;
@@ -198,7 +199,9 @@ describe("research tools", () => {
         "get_holdings",
         "get_portfolio_summary",
         "get_portfolio_news",
-        "what_if_add",
+        "portfolio_fit",
+        "rank_fit",
+        "custom_scenario",
         "web_search",
         "read_web_page",
         "list_filings",
@@ -825,5 +828,160 @@ describe("presentations", () => {
     await expect(makeDeck(ctx.db, sid, p.threadId, gen, { limiter: one })).rejects.toMatchObject({
       code: "rate_limited",
     });
+  });
+});
+
+describe("portfolio fit", () => {
+  beforeAll(async () => {
+    // A force a preset scenario shocks: rate-shock moves interest_rates by +1 (and inflation by +0.5).
+    const [ir] = await ctx.db
+      .insert(factors)
+      .values({
+        slug: "interest_rates",
+        name: "Interest rates",
+        category: "macro",
+        description: "Rates.",
+      })
+      .returning();
+    const byT = new Map((await ctx.db.select().from(companies)).map((c) => [c.ticker, c.id]));
+    await ctx.db.insert(companyFactorExposures).values([
+      {
+        companyId: byT.get("AAA")!,
+        factorId: ir!.id,
+        magnitude: 2,
+        direction: 1,
+        confidence: 1,
+        source: "manual",
+      },
+      {
+        companyId: byT.get("CCC")!,
+        factorId: ir!.id,
+        magnitude: 3,
+        direction: -1,
+        confidence: 1,
+        source: "manual",
+      },
+    ]);
+  });
+
+  it("backtests the portfolio with and without a new company and matches independent arithmetic", async () => {
+    const { getPortfolioFit } = await import("./portfolio-fit");
+    const f = await getPortfolioFit(ctx.db, sid, pid, "ccc", 0.1, now);
+    expect(f.heldWeight).toBeNull();
+    expect(f.candidate.ticker).toBe("CCC");
+
+    // Correlation of CCC with AAA from the raw closes.
+    const rows = await ctx.db.select().from(pricesDaily).orderBy(pricesDaily.date);
+    const byT = new Map((await ctx.db.select().from(companies)).map((c) => [c.id, c.ticker]));
+    const closes = (t: string) =>
+      rows
+        .filter((r) => byT.get(r.companyId) === t && r.date >= f.window.from)
+        .map((r) => r.adjClose);
+    const rets = (xs: number[]) => xs.slice(1).map((x, i) => x / xs[i]! - 1);
+    const { pearson } = await import("@portfolio-lab/finance");
+    const aaa = f.correlation.byHolding.find((h) => h.ticker === "AAA")!;
+    expect(aaa.correlation).toBeCloseTo(pearson(rets(closes("CCC")), rets(closes("AAA"))), 10);
+
+    // Daily-rebalanced backtest after: 0.54 AAA, 0.36 BBB, 0.1 CCC.
+    const ra = rets(closes("AAA"));
+    const rb = rets(closes("BBB"));
+    const rc = rets(closes("CCC"));
+    const growth =
+      ra.reduce((g, _, i) => g * (1 + 0.54 * ra[i]! + 0.36 * rb[i]! + 0.1 * rc[i]!), 1) - 1;
+    expect(f.history.after.totalReturn).toBeCloseTo(growth, 10);
+    expect(f.history.after.beta).not.toBeNull();
+
+    expect(f.sectors.find((s) => s.sector === "Utilities")).toEqual({
+      sector: "Utilities",
+      before: 0,
+      after: 0.1,
+    });
+    expect(f.concentration).not.toBeNull();
+    expect(f.overlaps).toEqual([]);
+    const rate = f.stress.find((s) => s.id === "rate-shock")!;
+    expect(rate.before).toBeCloseTo(0.6 * 2 * 0.03, 10);
+    expect(rate.after).toBeCloseTo(0.54 * 2 * 0.03 - 0.1 * 3 * 0.03, 10);
+    expect(f.exposureGrid!.rows).toEqual(["AAA", "BBB", "CCC"]);
+  });
+
+  it("treats an already-held company as a larger position and validates the size", async () => {
+    const { getPortfolioFit } = await import("./portfolio-fit");
+    const f = await getPortfolioFit(ctx.db, sid, pid, "AAA", 0.1, now);
+    expect(f.heldWeight).toBe(0.6);
+    expect(f.concentration).toBeNull();
+    expect(f.sectors.find((s) => s.sector === "Information Technology")!.after).toBeCloseTo(
+      0.64,
+      10,
+    );
+    await expect(getPortfolioFit(ctx.db, sid, pid, "CCC", 0.6, now)).rejects.toMatchObject({
+      code: "bad_request",
+    });
+    await expect(getPortfolioFit(ctx.db, other, pid, "CCC", 0.1, now)).rejects.toMatchObject({
+      code: "not_found",
+    });
+  });
+
+  const ptools = () => buildResearchTools({ ...base(), portfolioId: pid });
+
+  it("portfolio_fit states every difference and offers its charts", async () => {
+    const r = out(await tool(ptools(), "portfolio_fit").run({ ticker: "CCC", weight_pct: 10 }));
+    expect(text(r, "Fit of CCC at 10%")).toMatch(/^added at 10%, other holdings scaled down/);
+    expect(text(r, "Portfolio volatility with CCC at 10%")).toMatch(
+      /^\d+\.\d% versus \d+\.\d% without \([+-]\d+\.\d percentage points\)$/,
+    );
+    expect(text(r, 'Scenario "Interest rates jump" with CCC at 10%')).toBe(
+      "estimated +2.3% versus +3.6% without",
+    );
+    expect(r.displays!.map((d) => d.kind)).toEqual(["table", "bar", "bar", "heatmap"]);
+    await expect(
+      tool(ptools(), "portfolio_fit").run({ ticker: "CCC", weight_pct: 80 }),
+    ).rejects.toThrow(/at most 50/);
+  });
+
+  it("rank_fit ranks candidates by correlation and reports ones it cannot score", async () => {
+    const r = out(await tool(ptools(), "rank_fit").run({ tickers: ["CCC", "ZZZ"] }));
+    expect(text(r, "Fit of ZZZ")).toMatch(/^not available/);
+    expect(r.entries.some((e) => e.label === "Rank 1 by correlation: CCC at 5%")).toBe(true);
+    expect(r.displays!.map((d) => d.kind)).toEqual(["table", "scatter"]);
+  });
+
+  it("custom_scenario applies the shocks to the holdings' exposures", async () => {
+    const r = out(
+      await tool(ptools(), "custom_scenario").run({
+        shocks: { rates: 1, nonsense_force: 0.5, "Bad Key": 1 },
+      }),
+    );
+    // BBB: +2 on rates x 1 x 3% = +6%, at 40%: +2.40%. AAA has no rates exposure.
+    expect(text(r, "Estimated portfolio impact, custom scenario")).toBe("+2.40%");
+    expect(text(r, "Shocks no holding is exposed to")).toBe("nonsense_force");
+    expect(text(r, "Custom scenario shocks")).toBe("rates +1, nonsense_force +0.5");
+    await expect(tool(ptools(), "custom_scenario").run({ shocks: {} })).rejects.toThrow(
+      /at least one/,
+    );
+  });
+
+  it("connects the app's portfolio analytics", async () => {
+    const t = ptools();
+    const corr = out(await tool(t, "get_correlation").run({}));
+    expect(text(corr, "Average pairwise correlation (1 year)")).toMatch(/^-?\d\.\d\d$/);
+    expect(corr.displays![0]!.kind).toBe("heatmap");
+    const mkt = out(await tool(t, "compare_to_market").run({}));
+    expect(text(mkt, "Beta to SPY")).toMatch(/^-?\d+\.\d\d$/);
+    const alt = out(await tool(t, "alternative_weightings").run({}));
+    expect(
+      alt.entries.filter((e) => e.label.startsWith("Weighting")).length,
+    ).toBeGreaterThanOrEqual(4);
+    // What-if only: no target weights in what the model sees.
+    expect(JSON.stringify(alt.entries)).not.toMatch(/weight \d/);
+    const sim = out(await tool(t, "simulate_outcomes").run({ years: 1 }));
+    expect(text(sim, "Median ending value of 100 after 1 years")).toMatch(/^\d+\.\d$/);
+    const move = out(await tool(t, "todays_move").run({}));
+    expect(move.entries[0]!.label).toMatch(/^Portfolio return on \d{4}-\d{2}-\d{2}$/);
+    await tool(t, "portfolio_insights").run({});
+    const div = out(await tool(t, "find_diversifiers").run({}));
+    expect(div.entries[0]!.label).toBe("Effective hidden forces now");
+    const watch = out(await tool(t, "get_watchlist").run({}));
+    expect(watch.entries).toEqual([{ label: "Watchlist", text: "empty" }]);
+    expect(t.some((x) => x.name === "what_if_add")).toBe(false);
   });
 });

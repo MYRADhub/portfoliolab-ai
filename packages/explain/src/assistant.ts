@@ -6,7 +6,7 @@ import { checkGrounding, type GroundingIssue } from "./grounding";
 import { DEFAULT_EXPLAIN_MODEL } from "./generator";
 
 export const ASSISTANT_PROMPT_VERSION = "asst-v1";
-export const RESEARCH_PROMPT_VERSION = "research-v1";
+export const RESEARCH_PROMPT_VERSION = "research-v2";
 export const MAX_TOOL_ROUNDS = 4;
 /** Tool rounds per mode. Deep research plans and digs, so it gets more. */
 export const ROUNDS_BY_MODE: Record<AssistantMode, number> = { portfolio: 4, quick: 8, deep: 14 };
@@ -180,6 +180,7 @@ Rules:
 - Always call the tools you need before answering. Never answer from memory, even for well-known facts. Call independent tools in parallel.
 - Prefer our own data for prices, returns and fundamentals. Use SEC filings for what a company says about itself. Use the web for recent events, guidance, analyst views and anything after our data ends. Say which kind of source a claim rests on when it matters.
 - If a ticker is unclear, call find_companies first.
+- When a portfolio is selected and the question is about a company, also say how it fits that portfolio: use portfolio_fit (rank_fit for several candidates). Present fit results as what would have happened, never as what to do.
 ${SHARED_RULES}
 - Do not write URLs. Sources are shown to the reader through the citations.
 - Tools may offer tables and charts with ids like D1. List the ids worth showing under your answer in "displays", most useful first, or leave it empty.

@@ -29,6 +29,7 @@ import {
 import { annualizedVolatility, maxDrawdown, pearson } from "@portfolio-lab/finance";
 import { compactUsd, pct, signedPct } from "@/lib/format";
 import { buildAssistantTools } from "./assistant";
+import { buildPortfolioTools, watchlistTool } from "./portfolio-tools";
 import {
   BENCHMARK_TICKER,
   closesFor,
@@ -749,7 +750,8 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
       },
     });
     for (const t of buildAssistantTools(db, ctx.sessionId, pid, now)) {
-      if (t.name === "get_company") continue;
+      // The research chat has a richer company profile, and portfolio_fit covers what_if_add.
+      if (t.name === "get_company" || t.name === "what_if_add") continue;
       tools.push(
         t.name === "get_news"
           ? {
@@ -761,7 +763,9 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
           : t,
       );
     }
+    tools.push(...buildPortfolioTools(db, ctx.sessionId, pid, now));
   }
+  tools.push(watchlistTool(db, ctx.sessionId, now));
 
   if (ctx.web) {
     const web = ctx.web;

@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Layers,
   LayoutDashboard,
   MessageSquarePlus,
   Presentation,
@@ -45,6 +46,23 @@ const SUGGESTIONS: { text: string; mode: ResearchMode; needsPortfolio?: boolean 
     mode: "quick",
   },
 ];
+
+/** Companies an answer looked up (not the market index), for the "fit to my portfolio" follow-up. */
+export function tickersOf(answer: { toolCalls: { name: string; arguments: string }[] }): string[] {
+  const out = new Set<string>();
+  for (const c of answer.toolCalls) {
+    if (/^(portfolio_fit|rank_fit)$/.test(c.name)) return [];
+    try {
+      const a = JSON.parse(c.arguments || "{}") as { ticker?: unknown; tickers?: unknown };
+      for (const t of [a.ticker, ...(Array.isArray(a.tickers) ? a.tickers : [])])
+        if (typeof t === "string" && /^[A-Za-z.\-]{1,10}$/.test(t) && t.toUpperCase() !== "SPY")
+          out.add(t.toUpperCase());
+    } catch {
+      // A malformed call contributes nothing.
+    }
+  }
+  return [...out].slice(0, 6);
+}
 
 async function postQuestion(body: object, signal: AbortSignal): Promise<Response> {
   const send = () =>
@@ -419,6 +437,24 @@ export function ResearchChat() {
                     <BarChart3 className="size-3.5" aria-hidden />
                     {visual.has(m.id) ? "Hide charts" : "Visualize"}
                   </button>
+                  {portfolioId && !running && tickersOf(m.answer).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ts = tickersOf(m.answer);
+                        void ask(
+                          ts.length === 1
+                            ? `How would ${ts[0]} fit my portfolio?`
+                            : `How would ${ts.join(", ")} each fit my portfolio? Compare them.`,
+                          "quick",
+                        );
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-foreground hover:bg-muted"
+                    >
+                      <Layers className="size-3.5" aria-hidden />
+                      Fit to my portfolio
+                    </button>
+                  )}
                 </div>
                 {visual.has(m.id) && (
                   <section aria-label="Answer charts" className="mt-4 border-t pt-4">

@@ -1040,6 +1040,25 @@ The shared snapshot behind compare and screen used a 372-day window, while the c
 
 ---
 
+## 40. How a company fits the portfolio, and the app's analytics in the chat (added 2026-11-01)
+
+**40.1 One fit analysis.** Final. Who: You (scope, 5% default), Me (contents).
+`portfolio_fit` answers "what if this were in my portfolio?" in one call. The candidate takes the given share (default 5%) and every other holding shrinks in proportion; a company already held becomes a larger position. Over the last year, at constant weights rebalanced daily (the same method as the portfolio pages), it gives return, volatility, maximum drawdown and beta to SPY with and without the candidate, the candidate's correlation with the portfolio and with each holding, sector weights before and after, hidden-force spread before and after, holdings that lean the same way on a force, and each preset scenario before and after. Every difference is computed in code and stated as a fact, since the model may not do arithmetic. It is labelled a backtest, not a forecast.
+
+**40.2 Several candidates at once.** Final. Who: Me.
+`rank_fit` scores two to six candidates at the same size, loading the portfolio side once, and ranks them by correlation with the portfolio, lowest first. A candidate that cannot be scored is reported, not dropped silently.
+
+**40.3 The app's own analytics as tools.** Final. Who: Me.
+Correlation, the market comparison, the simulation, alternative weightings, the diversifier screen, today's move, insights, the watchlist, and a custom scenario (shocks to named forces from -1 to 1, unknown forces reported back). The original `what_if_add` is not offered in the chat any more, since the fit covers it and two overlapping tools confused the choice.
+
+**40.4 Alternative weightings stay what-ifs.** Final. Who: You.
+The chat sees how each weighting would have behaved, never the target weights, and the advice check still applies.
+
+**40.5 Where it shows.** Final. Who: Me.
+The company page's what-if card now includes the full fit (a before-and-after table, with correlations, scenarios and exposures folded under it) and a link to ask the assistant. An answer that looked up companies offers "Fit to my portfolio" when a portfolio is selected. The research instructions ask the model to cover fit whenever a portfolio is selected (prompt version `research-v2`).
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

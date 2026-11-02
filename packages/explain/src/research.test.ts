@@ -82,7 +82,7 @@ describe("research mode", () => {
       onEvent: (e) => events.push(e),
     });
     expect(r.source).toBe("model");
-    expect(r.promptVersion).toBe("research-v1");
+    expect(r.promptVersion).toBe("research-v2");
     expect(r.facts.map((f) => [f.id, f.kind ?? "data"])).toEqual([
       ["F1", "data"],
       ["F2", "web"],

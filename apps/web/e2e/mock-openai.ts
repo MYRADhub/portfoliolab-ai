@@ -190,6 +190,8 @@ function deckTurn(
 function researchTool(question: string, offered: Set<string>): { name: string; args: object } {
   if (/\bweb\b/i.test(question) && offered.has("web_search"))
     return { name: "web_search", args: { query: "Mock Corp results" } };
+  if (/\bfit\b/i.test(question) && offered.has("portfolio_fit"))
+    return { name: "portfolio_fit", args: { ticker: "MSFT", weight_pct: 10 } };
   if (/\bcompare\b/i.test(question))
     return { name: "compare_companies", args: { tickers: ["NVDA", "AAPL"] } };
   if (/\bNVDA\b/.test(question)) return { name: "get_company", args: { ticker: "NVDA" } };

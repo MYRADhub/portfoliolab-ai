@@ -458,3 +458,74 @@ test.describe("visualizer and presentation", () => {
     });
   }
 });
+
+test.describe("portfolio fit", () => {
+  test.beforeEach(async () => {
+    await mock.reset();
+  });
+
+  test("the fit API backtests a candidate and protects the portfolio", async ({
+    page,
+    playwright,
+  }) => {
+    const s = await startUiSession(page);
+    const id = await s.create("Covered", COVERED);
+    const r = (await (
+      await page.request.get(`/api/portfolios/${id}/fit?ticker=MSFT&weight=0.1`)
+    ).json()) as Json;
+    expect(r.fit.weight).toBe(0.1);
+    expect(r.fit.candidate.ticker).toBe("MSFT");
+    expect(r.fit.correlation.byHolding.length).toBe(COVERED.length);
+    expect(r.fit.stress.length).toBeGreaterThan(0);
+    expect(r.displays[0]).toMatchObject({ id: "D1", kind: "table" });
+    expect(
+      (await page.request.get(`/api/portfolios/${id}/fit?ticker=MSFT&weight=0.9`)).status(),
+    ).toBe(400);
+    expect((await page.request.get(`/api/portfolios/${id}/fit?ticker=ZZZZ`)).status()).toBe(404);
+    const other = await newSession(playwright);
+    expect((await other.get(`/api/portfolios/${id}/fit?ticker=MSFT`)).status()).toBe(404);
+  });
+
+  test("asking how a company fits uses the portfolio and shows the fit charts", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Covered", COVERED);
+    await page.goto("/research");
+    await page.getByLabel("Your question").fill("How would MSFT fit my portfolio?");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    const answer = page.getByRole("region", { name: "Assistant answer" });
+    await expect(answer).toContainText("Fit of MSFT at 10%");
+    await expect(
+      answer.getByRole("region", { name: /Portfolio with and without MSFT/ }),
+    ).toBeVisible();
+  });
+
+  test("an answer about a company offers a fit follow-up", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Covered", COVERED);
+    await page.goto("/research");
+    await page.getByLabel("Your question").fill("Tell me about NVDA");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await page.getByRole("button", { name: "Fit to my portfolio" }).click();
+    await expect(page.getByText("How would NVDA fit my portfolio?")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Assistant answer" })).toHaveCount(2);
+  });
+
+  test("the company page shows the full fit", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Covered", COVERED);
+    await page.goto("/research/MSFT");
+    const fit = page.getByRole("region", { name: "Portfolio fit" });
+    await expect(
+      fit.getByRole("region", { name: /Portfolio with and without MSFT at 5%/ }),
+    ).toBeVisible();
+    await fit.getByText("Correlations, scenarios and exposures").click();
+    await expect(
+      fit.getByRole("img", { name: /Correlation of MSFT with each holding/ }),
+    ).toBeVisible();
+    await expect(
+      fit.getByRole("link", { name: "Ask the assistant about the fit" }),
+    ).toHaveAttribute("href", /research\?ask=How%20would%20MSFT%20fit/);
+  });
+});
