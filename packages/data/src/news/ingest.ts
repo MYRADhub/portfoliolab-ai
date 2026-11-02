@@ -19,6 +19,8 @@ export interface NewsIngestSummary {
   duplicates: number;
   clustered: number;
   links: number;
+  /** Ids of the articles this run added, for matching and classifying them next. */
+  insertedIds: number[];
   failures: { ticker: string; error: string }[];
   stoppedEarly: "rate_limited" | null;
   remaining: string[];
@@ -53,9 +55,9 @@ async function findCluster(
 async function storeArticle(
   db: Db,
   provider: string,
-  queriedTicker: string,
+  queriedTicker: string | null,
   a: RawArticle,
-): Promise<{ inserted: boolean; clustered: boolean; links: number }> {
+): Promise<{ id: number; inserted: boolean; clustered: boolean; links: number }> {
   const hash = titleHash(a.title);
   const [row] = await db
     .insert(newsArticles)
@@ -100,11 +102,14 @@ async function storeArticle(
     id = existing.id;
   }
 
-  const tags = [...new Set([queriedTicker, ...a.tickers])];
-  const known = await db
-    .select({ id: companies.id })
-    .from(companies)
-    .where(inArray(companies.ticker, tags));
+  const tags = [...new Set([...(queriedTicker ? [queriedTicker] : []), ...a.tickers])];
+  const known =
+    tags.length === 0
+      ? []
+      : await db
+          .select({ id: companies.id })
+          .from(companies)
+          .where(inArray(companies.ticker, tags));
   let links = 0;
   if (known.length) {
     const inserted = await db
@@ -116,7 +121,7 @@ async function storeArticle(
       .returning({ a: newsCompanyLinks.articleId });
     links = inserted.length;
   }
-  return { inserted: row !== undefined, clustered, links };
+  return { id, inserted: row !== undefined, clustered, links };
 }
 
 /**
@@ -137,6 +142,7 @@ export async function ingestNews(
     duplicates: 0,
     clustered: 0,
     links: 0,
+    insertedIds: [],
     failures: [],
     stoppedEarly: null,
     remaining: [],
@@ -149,9 +155,16 @@ export async function ingestNews(
       summary.fetched += articles.length;
       for (const a of articles) {
         try {
-          const r = await storeArticle(db, provider.name, ticker, a);
-          if (r.inserted) summary.inserted++;
-          else summary.duplicates++;
+          const r = await storeArticle(
+            db,
+            provider.name,
+            provider.tagsQueriedTicker === false ? null : ticker,
+            a,
+          );
+          if (r.inserted) {
+            summary.inserted++;
+            summary.insertedIds.push(r.id);
+          } else summary.duplicates++;
           if (r.clustered) summary.clustered++;
           summary.links += r.links;
         } catch (err) {

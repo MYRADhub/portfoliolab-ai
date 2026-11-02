@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { NewsAnalysisPanel } from "@/components/news/news-analysis-panel";
 import { ClassBadge, toClassKey } from "@/components/news/class-badge";
 import { ImportanceMeter } from "@/components/news/importance-meter";
 import { RelevanceRing } from "@/components/news/relevance-ring";
@@ -5,6 +9,10 @@ import { formatAge, pct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export interface NewsCardItem {
+  /** The story's earliest article; with a portfolio id it enables "How we judged this". */
+  id?: number;
+  /** Outlets that covered the story, earliest first. */
+  outlets?: string[];
   title: string;
   url: string;
   source: string | null;
@@ -50,7 +58,23 @@ function Part({ label, value, note }: { label: string; value: number; note: stri
  * One story, shown as a card: relevance ring, type badge, importance meter, the holdings it touches, and a
  * "why am I seeing this?" breakdown. `compact` hides the importance meter and breakdown for use in small panels.
  */
-export function NewsCard({ item, compact = false }: { item: NewsCardItem; compact?: boolean }) {
+function outletLine(item: NewsCardItem): string {
+  const o = item.outlets ?? [];
+  if (o.length > 1)
+    return `${o.slice(0, 2).join(", ")}${o.length > 2 ? ` and ${o.length - 2} more` : ""}`;
+  return item.source ?? o[0] ?? "";
+}
+
+export function NewsCard({
+  item,
+  compact = false,
+  portfolioId,
+}: {
+  item: NewsCardItem;
+  compact?: boolean;
+  portfolioId?: string;
+}) {
+  const [judging, setJudging] = useState(false);
   const r = item.relevance;
   const c = item.classification;
   const key = toClassKey(c?.class);
@@ -66,9 +90,9 @@ export function NewsCard({ item, compact = false }: { item: NewsCardItem; compac
         <div className="flex flex-wrap items-center gap-2">
           <ClassBadge value={c?.class} />
           <span className="text-xs text-muted-foreground">
-            {item.source ? `${item.source} | ` : ""}
+            {outletLine(item) ? `${outletLine(item)} · ` : ""}
             {formatAge(item.ageDays)}
-            {item.copies > 0 ? ` | ${item.copies} similar` : ""}
+            {item.copies > 0 && (item.outlets?.length ?? 0) <= 1 ? ` · ${item.copies} similar` : ""}
           </span>
         </div>
         <h3 className="leading-snug font-medium">
@@ -130,6 +154,19 @@ export function NewsCard({ item, compact = false }: { item: NewsCardItem; compac
               </li>
             </ul>
           </details>
+        )}
+        {!compact && portfolioId && item.id !== undefined && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              aria-expanded={judging}
+              onClick={() => setJudging((v) => !v)}
+              className="rounded-md border px-2 py-0.5 text-xs font-medium hover:bg-muted"
+            >
+              {judging ? "Hide the analysis" : "How we judged this"}
+            </button>
+            {judging && <NewsAnalysisPanel portfolioId={portfolioId} articleId={item.id} />}
+          </div>
         )}
       </div>
     </article>

@@ -114,7 +114,9 @@ export async function startUiSession(page: Page) {
 }
 
 export async function waitForDashboard(page: Page) {
-  await expect(page.getByText("Sharpe", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Key figures" }).getByText("Ups and downs", { exact: true }),
+  ).toBeVisible();
 }
 
 export const pct = (x: number, d = 1) => `${(x * 100).toFixed(d)}%`;
@@ -133,9 +135,9 @@ export const NEWS_DATE: string = fixtures.newsDate;
 export const QUIET_DATE: string = fixtures.quietDate;
 export const NEWS_TITLE = "E2E Acme cuts outlook on weak orders";
 
-/** The dashboard's compact holdings list. */
+/** The body of the dashboard's holdings table: one row per holding. */
 export const holdingsSnapshot = (page: Page) =>
-  page.getByRole("list", { name: "Holdings snapshot" });
+  page.getByRole("table", { name: "Holdings snapshot" }).locator("tbody");
 /** The "Why did my portfolio move?" card. */
 export const moveCard = (page: Page) =>
   page.getByText("Why did my portfolio move?").locator("xpath=ancestor::*[@data-slot='card'][1]");

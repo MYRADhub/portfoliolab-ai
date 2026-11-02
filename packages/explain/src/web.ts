@@ -6,7 +6,10 @@ export interface WebResult {
   title: string;
   url: string;
   snippet: string;
+  /** As the search tool words it, for example "2 days ago". */
   published?: string;
+  /** Exact time (ISO) when the tool states one. */
+  publishedAt?: string;
 }
 
 export interface WebSearcher {
@@ -22,13 +25,18 @@ export const WEB_RESULTS_MAX = 6;
  * Removes the search tool's markup from an excerpt: citation tokens, word limits, crawl metadata and line-number
  * prefixes. What stays is the page's own text, so numbers in it can be checked against the answer.
  */
-export function cleanSnippet(raw: string): { text: string; published?: string } {
+export function cleanSnippet(raw: string): {
+  text: string;
+  published?: string;
+  publishedAt?: string;
+} {
   let s = raw
     // Citation markers like "citeturn305141search0", sometimes wrapped in private-use characters.
     .replace(/[\uE000-\uF8FF]/g, "")
     .replace(/\b(?:cite)?turn\d+(?:search|view|news|open|fetch|find|image)\d+\b/g, " ")
     .replace(/\[wordlim:\s*\d+\]/gi, " ");
   let published: string | undefined;
+  let publishedAt: string | undefined;
   // A metadata preamble of "Key: value;" pairs comes first: keep the publication date, drop the rest.
   const meta =
     /^\s*((?:(?:Published|Date|Crawled|Content type|Source|Total lines|Updated):[^;\n]*;?\s*)+)/i.exec(
@@ -37,6 +45,12 @@ export function cleanSnippet(raw: string): { text: string; published?: string } 
   if (meta) {
     const pub = /Published:\s*([^;\n]+)/i.exec(meta[1]!);
     if (pub) published = pub[1]!.trim();
+    // "Date: Fri Oct 30 14:21:58 2026 UTC"
+    const exact = /Date:\s*\w{3} (\w{3}) (\d{1,2}) ([\d:]{8}) (\d{4}) UTC/i.exec(meta[1]!);
+    if (exact) {
+      const t = Date.parse(`${exact[1]} ${exact[2]} ${exact[4]} ${exact[3]} UTC`);
+      if (Number.isFinite(t)) publishedAt = new Date(t).toISOString();
+    }
     s = s.slice(meta[0].length);
   }
   s = s
@@ -45,7 +59,7 @@ export function cleanSnippet(raw: string): { text: string; published?: string } 
     .replace(/\s+/g, " ")
     .trim();
   if (s.length > WEB_SNIPPET_MAX) s = `${s.slice(0, WEB_SNIPPET_MAX).replace(/\s+\S*$/, "")} ...`;
-  return published ? { text: s, published } : { text: s };
+  return { text: s, ...(published ? { published } : {}), ...(publishedAt ? { publishedAt } : {}) };
 }
 
 export function domainOf(url: string): string {
@@ -77,7 +91,7 @@ export function resultsFromOutput(output: readonly unknown[], max = WEB_RESULTS_
     for (const r of item.results ?? []) {
       const url = r.url ?? item.action?.url;
       if (!url || !r.snippet || seen.has(url) || !/^https?:\/\//.test(url)) continue;
-      const { text, published } = cleanSnippet(r.snippet);
+      const { text, published, publishedAt } = cleanSnippet(r.snippet);
       if (text.length < 40) continue;
       seen.add(url);
       out.push({
@@ -85,6 +99,7 @@ export function resultsFromOutput(output: readonly unknown[], max = WEB_RESULTS_
         url,
         snippet: text,
         ...(published ? { published } : {}),
+        ...(publishedAt ? { publishedAt } : {}),
       });
       if (out.length >= max) return out;
     }
@@ -120,6 +135,14 @@ export class OpenAIWebSearcher implements WebSearcher {
   search(query: string, signal?: AbortSignal): Promise<WebResult[]> {
     return this.run(
       `Search the web for: ${query}\nPrefer primary sources (company releases, filings, regulators) and reputable financial press. When done, reply only with the word done.`,
+      signal,
+    );
+  }
+
+  /** Like search, but asks for news outlets and dated articles rather than reference pages. */
+  searchNews(query: string, signal?: AbortSignal): Promise<WebResult[]> {
+    return this.run(
+      `Search recent news for: ${query}\nPrefer dated articles from reputable news outlets (for example Reuters, AP, Bloomberg, CNBC, The Wall Street Journal, Financial Times, MarketWatch, Barron's) and company press releases. Avoid quote pages, profiles and undated pages. When done, reply only with the word done.`,
       signal,
     );
   }

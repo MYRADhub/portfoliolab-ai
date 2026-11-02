@@ -135,12 +135,12 @@ test.describe("portfolio form", () => {
     await page.getByRole("button", { name: "Create portfolio" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await waitForDashboard(page);
-    await expect(
-      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "AAPL" }),
-    ).toContainText("75%");
-    await expect(
-      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "NVDA" }),
-    ).toContainText("25%");
+    await expect(holdingsSnapshot(page).getByRole("row").filter({ hasText: "AAPL" })).toContainText(
+      "75%",
+    );
+    await expect(holdingsSnapshot(page).getByRole("row").filter({ hasText: "NVDA" })).toContainText(
+      "25%",
+    );
   });
 
   test("pressing Enter in a weight field submits the form", async ({ page }) => {
@@ -234,14 +234,13 @@ test.describe("dashboard", () => {
     await page.reload();
     await waitForDashboard(page);
 
+    await expect(page.getByRole("region", { name: "Summary" })).toContainText(/this month/);
     const kpis = page.getByRole("region", { name: "Key figures" });
-    for (const label of [
-      "Portfolio index",
-      "1 month",
-      "Volatility (ann.)",
-      "Max drawdown",
-      "Sharpe",
-    ]) {
+    for (const label of ["1 month", "Ups and downs", "Worst fall"]) {
+      await expect(kpis.getByText(label, { exact: true })).toBeVisible();
+    }
+    await kpis.getByText("More figures").click();
+    for (const label of ["Portfolio index", "Sharpe"]) {
       await expect(kpis.getByText(label, { exact: true })).toBeVisible();
     }
     await expect(kpis.getByText(/^(Year to date|Whole window)$/)).toBeVisible();
@@ -251,13 +250,16 @@ test.describe("dashboard", () => {
       ),
     ).toBeVisible();
 
-    await expect(page.getByRole("heading", { name: "What to know now" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Risks and signals to watch" })).toBeVisible();
     const cards = page.getByRole("list", { name: "Insights" }).getByRole("listitem");
     expect(await cards.count()).toBeGreaterThanOrEqual(4);
     expect(await cards.count()).toBeLessThanOrEqual(6);
 
-    await expect(page.getByText("Portfolio index (100 at the start)")).toBeVisible();
-    const snapshot = holdingsSnapshot(page).getByRole("listitem");
+    await expect(
+      page.getByRole("img", { name: "Chart: portfolio value against the S&P 500" }),
+    ).toBeVisible();
+    await expect(page.getByRole("region", { name: "Drivers" })).toBeVisible();
+    const snapshot = holdingsSnapshot(page).getByRole("row");
     await expect(snapshot).toHaveCount(5);
     for (const [t, w] of [
       ["NVDA", "25%"],
@@ -291,6 +293,7 @@ test.describe("dashboard", () => {
     };
     const signed = (x: number, d = 1) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
     const kpis = page.getByRole("region", { name: "Key figures" });
+    await kpis.getByText("More figures").click();
     await expect(kpis).toContainText(t.index.value.toFixed(1));
     await expect(kpis).toContainText(`${signed(t.index.dayChange, 2)} today`);
     const month = t.performance.find((p) => p.label === "1 month")!.value!;
@@ -309,16 +312,12 @@ test.describe("dashboard", () => {
     const select = page.getByLabel("Portfolio", { exact: true });
     await expect(select).toBeVisible();
     await expect(select.locator("option")).toHaveText(["Covered four", "Mega caps"]);
-    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(4); // newest first: four holdings
+    await expect(holdingsSnapshot(page).getByRole("row")).toHaveCount(4); // newest first: four holdings
     await select.selectOption({ label: "Mega caps" });
-    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(5);
-    await expect(
-      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "JPM" }),
-    ).toHaveCount(1);
+    await expect(holdingsSnapshot(page).getByRole("row")).toHaveCount(5);
+    await expect(holdingsSnapshot(page).getByRole("row").filter({ hasText: "JPM" })).toHaveCount(1);
     await select.selectOption({ label: "Covered four" });
-    await expect(
-      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "JPM" }),
-    ).toHaveCount(0);
+    await expect(holdingsSnapshot(page).getByRole("row").filter({ hasText: "JPM" })).toHaveCount(0);
   });
 
   test("explains why a portfolio cannot be analyzed instead of failing silently", async ({
@@ -333,7 +332,7 @@ test.describe("dashboard", () => {
     await expect(appAlert(page)).toContainText(
       "trading days of shared history; at least 30 are required",
     );
-    await expect(page.getByText("Sharpe", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Ups and downs", { exact: true })).toHaveCount(0);
   });
 
   test("a failed portfolio does not leak into the next selection", async ({ page }) => {
@@ -373,10 +372,8 @@ test.describe("deleting a portfolio", () => {
 
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await page.getByRole("button", { name: "Confirm delete" }).click();
-    await expect(
-      holdingsSnapshot(page).getByRole("listitem").filter({ hasText: "JPM" }),
-    ).toHaveCount(1); // falls back to the remaining portfolio
-    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(5);
+    await expect(holdingsSnapshot(page).getByRole("row").filter({ hasText: "JPM" })).toHaveCount(1); // falls back to the remaining portfolio
+    await expect(holdingsSnapshot(page).getByRole("row")).toHaveCount(5);
     await expect(page.getByLabel("Portfolio", { exact: true })).toHaveCount(0); // a single portfolio needs no selector
     const list = (await (await page.request.get("/api/portfolios")).json()) as {
       portfolios: { name: string }[];

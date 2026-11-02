@@ -124,21 +124,23 @@ test.describe("insight cards on the dashboard", () => {
     const cards = page.getByRole("list", { name: "Insights" }).getByRole("listitem");
     await expect(cards).toHaveCount(Math.min(6, api.insights.length));
     const first = cards.first();
-    const top = api.insights[0]!;
+    // The dashboard shows the most severe first, keeping the API's order within a severity.
+    const order = { alert: 0, watch: 1, info: 2 } as Record<string, number>;
+    const top = [...api.insights].sort((a, b) => order[a.severity]! - order[b.severity]!)[0]!;
     await expect(first).toContainText(top.title);
     await expect(first).toContainText(top.detail);
     await expect(first.getByRole("link", { name: top.linkLabel })).toHaveAttribute(
       "href",
       top.href,
     );
-    const label = { alert: "Alert", watch: "Watch", info: "Info" }[
+    const label = { alert: "Alert", watch: "Watch", info: "Note" }[
       top.severity as "alert" | "watch" | "info"
     ];
     await expect(first.getByText(new RegExp(`${label}$`)).first()).toBeVisible();
     // Each severity has its own symbol, so color is never the only cue.
     const symbols = await page
       .getByRole("list", { name: "Insights" })
-      .locator("article span[aria-hidden='true']")
+      .locator("li span[aria-hidden='true']")
       .allTextContents();
     expect(new Set(symbols).size).toBeGreaterThanOrEqual(2);
   });

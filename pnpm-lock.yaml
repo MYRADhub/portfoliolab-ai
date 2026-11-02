@@ -38,6 +38,9 @@ importers:
       '@next/env':
         specifier: ^16.4.2
         version: 16.4.2
+      '@portfolio-lab/classify':
+        specifier: workspace:*
+        version: link:../../packages/classify
       '@portfolio-lab/data':
         specifier: workspace:*
         version: link:../../packages/data

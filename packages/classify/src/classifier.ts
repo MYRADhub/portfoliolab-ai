@@ -75,3 +75,10 @@ export class OpenAIClassifier implements Classifier {
     return { status: "ok", output: checked.data, usage };
   }
 }
+
+export function createOpenAIClassifier(
+  apiKey: string,
+  model: string = DEFAULT_MODEL,
+): OpenAIClassifier {
+  return new OpenAIClassifier(new OpenAI({ apiKey }), model);
+}

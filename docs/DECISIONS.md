@@ -1072,6 +1072,28 @@ The company page's what-if card now includes the full fit (a before-and-after ta
 
 ---
 
+## 42. Real news with its reasoning shown, a plain-language dashboard, and a calmer look (added 2026-11-02)
+
+**42.1 Where news comes from.** Final. Who: You (both sources), Me (how).
+The real-data database had no news at all, only SEC filings, and no news key was set. "Scan now" on the News page now searches the web for the last week's news on each holding (through the hosted search, worded to prefer news outlets and dated articles) and, when `FINNHUB_API_KEY` is set, the Finnhub feed too. Web pages without a publication date are dropped, since they cannot be placed in time. Articles go through the existing pipeline: stored once per link, grouped with near-duplicates (so one story shows every outlet that covered it), linked to companies by name, then classified. Six scans an hour per visitor. A live scan of a 15-stock portfolio took 81 seconds.
+
+**42.2 A weak link rather than a lost story.** Final. Who: Me.
+Web results found by searching for a company often do not name it in the text we get, so name matching missed most of them (7 of 23 in the live run). Such an article is now linked to the company it was searched for with a confidence of 0.55, just above the cut-off, and its own method (`web_search`), so the reason is shown and the story ranks low.
+
+**42.3 AI classification with the reasoning kept.** Final. Who: You.
+New articles are classified by the existing language-model classifier (class, event type, importance, market attention, persistence, the mechanism in a sentence, confidence), cached by model, prompt version and input. SEC filings keep their fixed rules. The panel says which one decided.
+
+**42.4 "How we judged this" on every story.** Final. Who: Me.
+One panel per story shows: every article in its group with outlet, time and link, and which was first; each company it is linked to, how (feed tag, name found with the words found, or search), how confident, and the holding's weight; every classification with model and prompt version; the relevance arithmetic step by step with this portfolio's numbers (the same function the ranking uses); and the stock's move on the first trading day that could reflect the story, against the S&P 500, for one and two days. It says plainly that a move is not proof the story caused it. The News page also gets an overview: stories per holding, the outlets behind them, and the mix of types.
+
+**42.5 A dashboard that answers "how am I doing and why".** Final. Who: You (the direction), Me (the contents).
+It opens with a summary written by code from the page's own figures ("Up 1.8% this month. 2.6 points ahead of the S&P 500... XOM added the most..."), then four figures in plain words with a one-line explanation each (1 month and year to date with the S&P 500 beside them, "Ups and downs" for volatility, "Worst fall" for drawdown); the portfolio index, Sharpe ratio and others are folded under "More figures". The chart overlays the S&P 500 with range buttons. "What drove the last month" shows each holding's weight times its 1-month return, labelled as an approximation. Insights are sorted by severity, each with a word and a shape. Holdings are a table with 60-day trend lines and their share of the ups and downs, highlighted when well above their weight; on a phone the trend and risk columns are hidden so rows fit the screen.
+
+**42.6 A calmer look.** Final. Who: You (clean fintech), Me (the details).
+Near-neutral surfaces, the sidebar on the page background, hairline borders instead of shadows, rounder cards, and a slightly larger page title; status colours and their contrast are unchanged. The sidebar has five main pages, a collapsible "Analysis tools" group (open on its own pages, otherwise remembered per browser), and Help.
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

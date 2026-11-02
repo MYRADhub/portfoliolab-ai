@@ -128,11 +128,9 @@ test.describe("samples in the app", () => {
     await page.getByRole("button", { name: "Load this sample: AI boom bet" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await waitForDashboard(page);
-    await expect(holdingsSnapshot(page).getByRole("listitem")).toHaveCount(5);
+    await expect(holdingsSnapshot(page).getByRole("row")).toHaveCount(5);
     for (const t of ["NVDA", "AMD", "AVGO", "MU", "MSFT"])
-      await expect(holdingsSnapshot(page).getByRole("listitem").filter({ hasText: t })).toHaveCount(
-        1,
-      );
+      await expect(holdingsSnapshot(page).getByRole("row").filter({ hasText: t })).toHaveCount(1);
     const api = (await (await page.request.get("/api/portfolios")).json()) as {
       portfolios: { name: string }[];
     };
