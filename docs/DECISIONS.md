@@ -1108,6 +1108,11 @@ Classification runs 8 calls at once in a pool, so one slow call no longer holds 
 **43.4 Tests never use a real news feed.** Final. Who: Me.
 The end-to-end tests blank the Finnhub and Marketaux keys for the app they start. Otherwise a key in the shell pulls live articles into the test database, which happened once during this change.
 
+## 44. Node 24 everywhere (added 2026-11-02)
+
+**44.1 The app and CI run on Node 24.** Final. Who: You.
+`.nvmrc` is 24 (the current long-term-support line), the root `engines` field requires 24 or later, and every package's `@types/node` is 24. The CI actions moved to their Node 24 releases and the jobs are pinned to `ubuntu-24.04`, so the runner image changes only when we choose. Typecheck, lint, unit tests and all 382 end-to-end tests pass on Node 24.22.2.
+
 ---
 
 ## 13. Mistakes made and fixed (for honesty)

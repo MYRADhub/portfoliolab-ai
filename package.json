@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "lint": "eslint . && pnpm --filter @portfolio-lab/web lint",

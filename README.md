@@ -66,7 +66,7 @@ New here? The app opens with a short **guided tour**, a **getting-started checkl
 
 ## Try it in five minutes (demo mode)
 
-You need: **Node 22**, **pnpm**, and **Docker** (for the database).
+You need: **Node 24**, **pnpm**, and **Docker** (for the database).
 
 ```sh
 git clone <this repository>

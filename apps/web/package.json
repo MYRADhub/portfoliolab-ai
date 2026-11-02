@@ -43,7 +43,7 @@
     "@playwright/test": "^1.64.1",
     "@portfolio-lab/demo": "workspace:*",
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
