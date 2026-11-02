@@ -92,7 +92,7 @@ export function htmlToText(html: string): string {
 }
 
 /** The longest stretch from a start heading to the next end heading. Short stretches are table-of-contents entries. */
-function longestSection(text: string, start: RegExp, end: RegExp): string {
+export function longestSection(text: string, start: RegExp, end: RegExp): string {
   let best = "";
   for (const m of text.matchAll(start)) {
     const from = m.index! + m[0].length;

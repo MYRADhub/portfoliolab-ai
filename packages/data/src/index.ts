@@ -21,3 +21,5 @@ export * from "./sec/filings";
 export * from "./sec/fundamentals";
 export * from "./sec/ingest";
 export * from "./sec/tenk";
+export * from "./sec/research";
+export * from "./sec/diff";

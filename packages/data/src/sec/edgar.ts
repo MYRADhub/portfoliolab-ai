@@ -41,4 +41,24 @@ export class EdgarClient {
   companyFacts(cik: string): Promise<unknown> {
     return this.get(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik.padStart(10, "0")}.json`);
   }
+
+  /**
+   * EDGAR full-text search over filings since 2001. `forms` limits the form types; dates are YYYY-MM-DD. Returns the
+   * raw response; parse it with parseFullTextHits.
+   */
+  fullTextSearch(
+    query: string,
+    opts: { forms?: readonly string[]; from?: string; to?: string; ciks?: readonly string[] } = {},
+  ): Promise<unknown> {
+    const p = new URLSearchParams({ q: query });
+    if (opts.forms?.length) p.set("forms", opts.forms.join(","));
+    if (opts.ciks?.length) p.set("ciks", opts.ciks.map((c) => c.padStart(10, "0")).join(","));
+    if (opts.from || opts.to) {
+      p.set("dateRange", "custom");
+      // EDGAR ignores a range unless both ends are given.
+      p.set("startdt", opts.from ?? "2001-01-01");
+      p.set("enddt", opts.to ?? new Date().toISOString().slice(0, 10));
+    }
+    return this.get(`https://efts.sec.gov/LATEST/search-index?${p.toString()}`);
+  }
 }

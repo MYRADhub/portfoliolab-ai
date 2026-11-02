@@ -6,7 +6,8 @@ import { MOCK_PORT, WEB_PORT } from "./env";
 export const BASE = `http://127.0.0.1:${WEB_PORT}`;
 const MOCK = `http://127.0.0.1:${MOCK_PORT}`;
 
-export type MockMode = "grounded" | "ungrounded" | "retry" | "error" | "refusal" | "incomplete";
+export type MockMode =
+  "grounded" | "ungrounded" | "retry" | "error" | "refusal" | "incomplete" | "slow";
 
 export const mock = {
   async setMode(mode: MockMode) {
@@ -17,7 +18,14 @@ export const mock = {
     await fetch(`${MOCK}/__reset`, { method: "POST" });
   },
   async requests(): Promise<
-    { auth?: string; model: string; instructions: string; input: string; mode: string }[]
+    {
+      path: string;
+      auth?: string;
+      model: string;
+      instructions: string;
+      input: string;
+      mode: string;
+    }[]
   > {
     return (await fetch(`${MOCK}/__requests`)).json() as Promise<never>;
   },

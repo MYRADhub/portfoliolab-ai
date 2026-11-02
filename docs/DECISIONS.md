@@ -974,6 +974,104 @@ A one-line summary ("4 claims: 2 supported, 1 inconclusive and 1 not enough data
 
 ---
 
+## 38. A research chat with web search, SEC filings and more tools (added 2026-11-01)
+
+**38.1 The grounding check stays, and web pages are checked too.** Final. Who: You.
+Every number in an answer must still appear in something a tool returned. Web search uses OpenAI's hosted search in a separate small request; we keep the raw page excerpts it returns (`web_search_call.results`) and throw away the model's own summary of them, so only page text becomes a fact. The excerpts are cleaned of the search tool's markup first. Alternative considered: accept any number that has a link next to it. Rejected by you: an invented figure could pass as long as it had a link.
+
+**38.2 Conversations are saved in the database, per visitor.** Final. Who: You.
+Two new tables, `research_threads` and `research_messages`. A saved answer keeps its facts, tool calls, tables and charts, check result and prompt version, so it can be shown and audited again. Deleting a visitor deletes their conversations. Only answers that passed the check are sent back as context for follow-ups (the last 6).
+
+**38.3 Answers appear only after they pass the check, and progress streams.** Final. Who: Me.
+Showing text word by word would show prose that has not yet been checked, which the product has never allowed. What streams instead is each lookup as it starts and finishes, then "checking every figure", then the verified answer. Stop cancels the work; the question stays in the conversation and no answer is saved.
+
+**38.4 The tools.** Final. Who: Me.
+Our data: find companies, company profile, five years of annual figures, price history of up to five tickers against each other or SPY (with the return gap and correlation, since the model may not do arithmetic), side-by-side comparison, a screener over the whole S&P 500 (sector, exposure, returns, P/E, margin, growth, volatility), the list of exposures, and news search. SEC: recent filings, reading the Business, Risk Factors or MD&A section of the latest 10-K or 10-Q (an 8-K is read with its press-release exhibit), and EDGAR full-text search across all filings. Web: search and read a page (through the hosted tool, so our server never fetches an address a user typed). Portfolio tools appear only when a portfolio is selected. Calls in one step run together.
+
+**38.5 Tables and charts come from tools, not from the model.** Final. Who: Me.
+A tool can offer a table or chart (D1, D2, ...). The model only chooses which to show by id, so every value in them is computed by us.
+
+**38.6 Two depths.** Final. Who: Me.
+Quick: up to 8 lookup rounds and about 300 words. Deep research: up to 14 rounds, a plan of sub-questions, a 400 to 900 word report with sections and a closing "What is uncertain". The original portfolio assistant's instructions are unchanged.
+
+**38.7 A separate allowance.** Final. Who: Me.
+30 quick questions and 6 deep reports per hour per visitor, apart from the 10-an-hour allowance for explanations.
+
+**38.8 The check understands Markdown.** Final. Who: Me.
+List numbers, heading marks, table rules and link addresses are not counted as figures, and neither are names with digits in them (10-K, 8-K, S&P 500, Q2). Numbers inside tables and link text are still checked.
+
+**38.9 SEC tools need SEC_USER_AGENT.** Final. Who: Me.
+The SEC asks every requester to identify themselves. With the setting missing, the chat simply has no filing tools.
+
+**38.10 Two new libraries.** Final. Who: Me.
+`react-markdown` and `remark-gfm` render answers (headings, lists, tables). Raw HTML in answers is not rendered.
+
+### Mistakes in this slice
+
+- The MD&A heading pattern first matched the table-of-contents line, page number included; tested against a real NVIDIA 10-K and 10-Q after the fix.
+- EDGAR full-text search ignores a date range unless both ends are given; the first version silently returned 2018 filings.
+- Dimming sources that were not cited failed the colour-contrast check; cited ones are now bold instead.
+- The live check showed the real-data prices end on 2026-10-26; the model said so in its answer, but refreshing prices is a separate job.
+
+---
+
+## 39. Charts for everything and presentations (added 2026-11-01)
+
+**39.1 More chart kinds, still built by tools.** Final. Who: You (both in-answer charts and a dashboard view), Me (which charts).
+Bar, scatter and heatmap join tables and line charts. Each tool can now offer several: the company profile a price line and an exposure bar chart; annual figures a table and a revenue, net income and cash-flow trend; a comparison a table, returns by period, risk against return, and an exposure heatmap; a screen a risk-against-return chart and, with a factor, an exposure chart. The model still only picks charts by id, so no chart value comes from the model. Waterfall charts were left out: no tool has a natural use for one yet.
+
+**39.2 Every chart is kept, not only the chosen ones.** Final. Who: Me.
+An answer stores all the charts its tools produced. "Visualize" under an answer shows them with stat tiles for the key figures from our own data; the conversation dashboard shows every answer this way. A fallback answer's charts are kept too, since they come straight from our data.
+
+**39.3 Presentations are made from a conversation and checked like answers.** Final. Who: You (from a conversation; in-app with PDF), Me (the rest).
+Only verified answers go in. Their sources and charts are renumbered across the conversation (the same figure in two answers gets one id) and the answers' citations rewritten to match. The model writes a title, 3 to 12 slides with bullets, an optional chart id and speaker notes. Every title, bullet and note goes through the same number, citation and advice check; unknown chart ids are rejected; one retry with the problems listed. After two failures, a plain deck of each answer's cited figures is shown instead. A title slide and a sources slide are added by the app, not the model. One deck per conversation, stored; making it again replaces it. 10 decks an hour per visitor.
+
+**39.4 The viewer.** Final. Who: Me.
+Arrow keys or buttons to move, a slide strip, full-screen presenting, a presenter view with notes and the next slide, and Save as PDF. For PDF every slide is first laid out on screen and then the print dialog opens, because charts hidden from view measure as zero width and would print empty. Pages print landscape.
+
+**39.5 One definition of a 1-year return.** Final. Who: Me.
+The shared snapshot behind compare and screen used a 372-day window, while the company profile and price history use 12 months, so the live test showed two different 1-year returns for the same stock and the model put the gap in a slide. The snapshot now uses the same 12-month window and rule, and a test checks the three tools agree.
+
+### Mistakes in this slice
+
+- The 1-year window mismatch above, found by a live run, not by tests; a test now covers it.
+- The mock deck was titled "E2E Deck" and the check rightly rejected the "2" as an unsourced number.
+- The new pages read their URL outside a loading boundary, which this version of Next.js refuses to build.
+
+---
+
+## 40. How a company fits the portfolio, and the app's analytics in the chat (added 2026-11-01)
+
+**40.1 One fit analysis.** Final. Who: You (scope, 5% default), Me (contents).
+`portfolio_fit` answers "what if this were in my portfolio?" in one call. The candidate takes the given share (default 5%) and every other holding shrinks in proportion; a company already held becomes a larger position. Over the last year, at constant weights rebalanced daily (the same method as the portfolio pages), it gives return, volatility, maximum drawdown and beta to SPY with and without the candidate, the candidate's correlation with the portfolio and with each holding, sector weights before and after, hidden-force spread before and after, holdings that lean the same way on a force, and each preset scenario before and after. Every difference is computed in code and stated as a fact, since the model may not do arithmetic. It is labelled a backtest, not a forecast.
+
+**40.2 Several candidates at once.** Final. Who: Me.
+`rank_fit` scores two to six candidates at the same size, loading the portfolio side once, and ranks them by correlation with the portfolio, lowest first. A candidate that cannot be scored is reported, not dropped silently.
+
+**40.3 The app's own analytics as tools.** Final. Who: Me.
+Correlation, the market comparison, the simulation, alternative weightings, the diversifier screen, today's move, insights, the watchlist, and a custom scenario (shocks to named forces from -1 to 1, unknown forces reported back). The original `what_if_add` is not offered in the chat any more, since the fit covers it and two overlapping tools confused the choice.
+
+**40.4 Alternative weightings stay what-ifs.** Final. Who: You.
+The chat sees how each weighting would have behaved, never the target weights, and the advice check still applies.
+
+**40.5 Where it shows.** Final. Who: Me.
+The company page's what-if card now includes the full fit (a before-and-after table, with correlations, scenarios and exposures folded under it) and a link to ask the assistant. An answer that looked up companies offers "Fit to my portfolio" when a portfolio is selected. The research instructions ask the model to cover fit whenever a portfolio is selected (prompt version `research-v2`).
+
+---
+
+## 41. Filing comparison, refreshing an answer, and a research notebook (added 2026-11-01)
+
+**41.1 What changed in a filing is found by code.** Final. Who: You (the feature), Me (the method).
+`compare_filings` takes the same section (Risk Factors, MD&A, or Business) of a company's latest 10-K or 10-Q and of the one before it (or the one about a year earlier). Paragraphs of eight words or more are matched by word overlap: 90% or more is unchanged, 50% to 90% is reworded, less is added; older paragraphs nothing came close to were removed. In a reworded paragraph, only sentences that differ from every older sentence by more than 20% count as new, so small edits are not reported as new language. With a focus, changes about it come first. On NVIDIA's two latest 10-Ks this finds 32 added and 20 removed paragraphs in 0.2 seconds, including the new Groq licence and counterparty risks. The model only explains what the comparison found.
+
+**41.2 Refreshing an answer reports what moved.** Final. Who: You (the feature), Me (the method).
+"Refresh" asks the same question again in the same conversation. What changed is computed by matching the figures of the two answers by label, with dates in labels ignored so "close on 2026-10-26" and "close on 2026-11-02" are the same figure; the result is stored with the new answer and shown above it. The model also gets the earlier figures as a tool, labelled "Earlier answer (date)", so it can describe the changes and still pass the number check; those labels are not counted as new figures.
+
+**41.3 A notebook per portfolio.** Final. Who: You (the feature), Me (the design).
+"Pin to notebook" keeps a whole answer, "Pin chart" keeps one chart; pins go to the notebook of the portfolio selected in the chat, or to General. Each pin can carry a note. Pinning the same thing twice returns the existing pin; a visitor can keep 200 pins. A notebook can be made into a presentation the same way a conversation can: pinned charts become that answer's chosen charts, a whole-answer pin keeps the answer's own choice, and only verified answers are used. The deck table now stores either a conversation's deck or a notebook's, never both (a database check enforces it).
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

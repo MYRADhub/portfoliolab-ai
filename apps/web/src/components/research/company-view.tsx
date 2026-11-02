@@ -9,6 +9,9 @@ import { compactUsd, pct, signedPct } from "@/lib/format";
 import { exposureProvenance, PROVENANCE_LABEL } from "@/lib/provenance";
 import { useApi } from "@/lib/use-api";
 import type { CompanyResearch, WhatIfOutcome } from "@/server/research";
+import type { PortfolioFit } from "@/server/portfolio-fit";
+import type { ShownDisplay } from "@portfolio-lab/explain";
+import { DisplayView } from "./chat/display-view";
 import { Loading } from "@/components/ui/skeleton";
 
 const tone = (x: number | null) =>
@@ -45,6 +48,20 @@ export function CompanyView({ ticker }: { ticker: string }) {
           {company.sector ?? "Unclassified"}
           {company.industry ? ` | ${company.industry}` : ""}
         </p>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs">
+          <Link
+            href={`/research?mode=deep&ask=${encodeURIComponent(`Give me a research brief on ${company.ticker}`)}`}
+            className="rounded-full border px-3 py-1 hover:bg-muted"
+          >
+            Deep research brief
+          </Link>
+          <Link
+            href={`/research?ask=${encodeURIComponent(`What are the main risks for ${company.ticker} according to its latest filings and recent news?`)}`}
+            className="rounded-full border px-3 py-1 hover:bg-muted"
+          >
+            Ask about risks
+          </Link>
+        </div>
       </div>
 
       <div
@@ -368,7 +385,54 @@ function WhatIf({ ticker }: { ticker: string }) {
             </p>
           </div>
         )}
+        {portfolioId && <FitDetail portfolioId={portfolioId} ticker={ticker} weight={weight} />}
       </CardContent>
     </Card>
+  );
+}
+
+/** The full fit: price history with and without the company, correlations, scenarios and exposures. */
+function FitDetail({
+  portfolioId,
+  ticker,
+  weight,
+}: {
+  portfolioId: string;
+  ticker: string;
+  weight: number;
+}) {
+  const { data, error } = useApi<{ fit: PortfolioFit; displays: ShownDisplay[] }>(
+    `/api/portfolios/${portfolioId}/fit?ticker=${ticker}&weight=${weight}`,
+  );
+  if (error)
+    return <p className="text-xs text-muted-foreground">Full fit not available: {error}</p>;
+  if (!data) return <Loading rows={1} />;
+  const [table, ...charts] = data.displays;
+  return (
+    <section aria-label="Portfolio fit" className="space-y-3 border-t pt-3">
+      <p className="text-xs text-muted-foreground">
+        Last year, {data.fit.window.from} to {data.fit.window.to}, constant weights rebalanced
+        daily. Correlation with the portfolio:{" "}
+        <strong className="tabular-nums">{data.fit.correlation.withPortfolio.toFixed(2)}</strong>. A
+        backtest, not a forecast.
+      </p>
+      {table && <DisplayView display={table} />}
+      <details>
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          Correlations, scenarios and exposures
+        </summary>
+        <div className="mt-3 space-y-5">
+          {charts.map((d) => (
+            <DisplayView key={d.id} display={d} />
+          ))}
+        </div>
+      </details>
+      <Link
+        href={`/research?ask=${encodeURIComponent(`How would ${ticker} fit my portfolio at ${Math.round(weight * 100)}%?`)}`}
+        className="inline-block rounded-full border px-3 py-1 text-xs hover:bg-muted"
+      >
+        Ask the assistant about the fit
+      </Link>
+    </section>
   );
 }

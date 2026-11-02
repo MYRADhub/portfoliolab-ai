@@ -160,3 +160,40 @@
     @apply font-sans;
   }
 }
+
+/* Markdown answers in the research chat. Kept small on purpose: no typography plugin is installed. */
+@layer components {
+  .research-prose {
+    @apply space-y-3 text-sm leading-relaxed;
+  }
+  .research-prose h1,
+  .research-prose h2 {
+    @apply mt-5 text-base font-semibold first:mt-0;
+  }
+  .research-prose h3,
+  .research-prose h4 {
+    @apply mt-4 text-sm font-semibold first:mt-0;
+  }
+  .research-prose ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .research-prose ol {
+    @apply list-decimal space-y-1 pl-5;
+  }
+  .research-prose table {
+    @apply w-full border-collapse text-xs;
+  }
+  .research-prose th,
+  .research-prose td {
+    @apply border-b px-2 py-1 text-left align-top;
+  }
+  .research-prose th {
+    @apply font-medium text-muted-foreground;
+  }
+  .research-prose code {
+    @apply rounded bg-muted px-1 text-xs;
+  }
+  .research-prose blockquote {
+    @apply border-l-2 pl-3 text-muted-foreground;
+  }
+}
