@@ -23,9 +23,9 @@ jobs:
       DATABASE_URL: postgres://portfoliolab:portfoliolab@localhost:5432/portfoliolab
       ANALYTICS_URL: http://localhost:8000
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -54,16 +54,16 @@ jobs:
       DATABASE_URL: postgres://portfoliolab:portfoliolab@localhost:5432/portfoliolab
       ANALYTICS_URL: http://localhost:8000
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @portfolio-lab/web exec playwright install chrome --with-deps
       - run: pnpm --filter @portfolio-lab/web e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-results
@@ -74,8 +74,8 @@ jobs:
       run:
         working-directory: services/analytics
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync
       - run: uv run ruff check .
       - run: uv run pytest
