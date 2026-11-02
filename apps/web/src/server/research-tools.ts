@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, ilike, isNull, lte } from "drizzle-orm";
 import { MIN_LINK_SCORE } from "@portfolio-lab/data";
 import {
+  diffSections,
   filingSectionText,
   parseFullTextHits,
   recentFilings,
@@ -928,6 +929,149 @@ export function buildResearchTools(ctx: ResearchToolContext): AssistantTool[] {
           return out.length
             ? out
             : [{ label: title, text: `nothing about "${focus ?? ""}" found in it` }];
+        },
+      },
+      {
+        name: "compare_filings",
+        description:
+          "What changed in a section of a company's filing between its latest 10-K (or 10-Q) and an earlier one: paragraphs added, removed, and reworded (with the new sentences). Found by comparing the texts, not by judgement. Use for 'what new risks did they disclose' questions. Offers a summary table.",
+        parameters: obj(
+          {
+            ticker: tickerParam,
+            form: { type: "string", enum: ["10-K", "10-Q"] },
+            section: { type: "string", enum: ["risk_factors", "mdna", "business"] },
+            against: {
+              type: "string",
+              enum: ["previous", "year_ago"],
+              description:
+                "Compare with the filing just before (default) or the one about a year earlier",
+            },
+            focus: { type: "string", description: "Show changes about this first" },
+          },
+          ["ticker"],
+        ),
+        run: async (a, signal): Promise<ToolOutput> => {
+          const form = arg<string>(a, "form") === "10-Q" ? "10-Q" : "10-K";
+          const section = (arg<FilingSection>(a, "section") ?? "risk_factors") as FilingSection;
+          if (section === "all" || (form === "10-Q" && section === "business"))
+            throw new Error("a 10-Q has risk_factors and mdna sections to compare");
+          const { c, cik } = await cikOf(tickerArg(a));
+          const list = recentFilings(await edgar.submissions(cik), cik, [form], 6);
+          if (list.length < 2)
+            return {
+              entries: [
+                { label: `${c.ticker} ${form} comparison`, text: "fewer than two filings found" },
+              ],
+            };
+          const latest = list[0]!;
+          const target = new Date(new Date(latest.filingDate).getTime() - 365 * 86_400_000)
+            .toISOString()
+            .slice(0, 10);
+          const earlier =
+            arg(a, "against") === "year_ago"
+              ? list
+                  .slice(1)
+                  .reduce((best, f) =>
+                    Math.abs(Date.parse(f.filingDate) - Date.parse(target)) <
+                    Math.abs(Date.parse(best.filingDate) - Date.parse(target))
+                      ? f
+                      : best,
+                  )
+              : list[1]!;
+          signal?.throwIfAborted();
+          const [hNew, hOld] = await Promise.all([
+            cachedDocument(edgar, latest.url),
+            cachedDocument(edgar, earlier.url),
+          ]);
+          const nNew = filingSectionText(hNew, form, section);
+          const nOld = filingSectionText(hOld, form, section);
+          const name = SECTION_NAME[section];
+          if (!nNew.found || !nOld.found)
+            return {
+              entries: [
+                {
+                  label: `${c.ticker} ${form} ${name} comparison`,
+                  text: "the section heading was not found in one of the filings, so they cannot be compared section to section",
+                },
+              ],
+            };
+          const d = diffSections(nOld.text, nNew.text);
+          const span = `${form} filed ${latest.filingDate} versus ${earlier.filingDate}`;
+          const src = (f: FilingRef) => ({
+            url: f.url,
+            title: `${c.ticker} ${f.form} filed ${f.filingDate}`,
+            published: f.filingDate,
+          });
+          const focus = arg<string>(a, "focus")?.slice(0, 200);
+          // With a focus, changes about it come first; otherwise document order.
+          const rank = (t: string) => (focus ? pickPassages(t, focus, 1).length : 0);
+          const pick = (kind: string, n: number) =>
+            d.changes
+              .filter(
+                (x) =>
+                  x.kind === kind && (kind !== "reworded" || (x.newSentences?.length ?? 0) > 0),
+              )
+              .map((x, i) => ({
+                x,
+                i,
+                r: rank(x.kind === "reworded" ? x.newSentences!.join(" ") : x.text),
+              }))
+              .sort((p, q) => q.r - p.r || p.i - q.i)
+              .slice(0, n)
+              .map((p) => p.x);
+          const clip = (t: string) => {
+            const w = t.split(/\s+/);
+            return w.length > 90 ? `${w.slice(0, 90).join(" ")} ...` : t;
+          };
+          const entries: ToolEntry[] = [
+            {
+              label: `${c.ticker} ${name}, ${span}`,
+              text: `${d.counts.added} paragraphs added, ${d.counts.removed} removed, ${d.counts.reworded} reworded, ${d.counts.unchanged} unchanged; ${d.words.after} words versus ${d.words.before}`,
+              kind: "filing",
+              source: src(latest),
+            },
+          ];
+          pick("added", 6).forEach((x, i) =>
+            entries.push({
+              label: `${c.ticker} ${name}: added in the ${latest.filingDate} filing (${i + 1})`,
+              text: clip(x.text),
+              kind: "filing",
+              source: src(latest),
+            }),
+          );
+          pick("removed", 4).forEach((x, i) =>
+            entries.push({
+              label: `${c.ticker} ${name}: removed since the ${earlier.filingDate} filing (${i + 1})`,
+              text: clip(x.text),
+              kind: "filing",
+              source: src(earlier),
+            }),
+          );
+          pick("reworded", 4).forEach((x, i) =>
+            entries.push({
+              label: `${c.ticker} ${name}: new wording in the ${latest.filingDate} filing (${i + 1})`,
+              text: clip(x.newSentences!.join(" ")),
+              kind: "filing",
+              source: src(latest),
+            }),
+          );
+          return {
+            entries,
+            displays: [
+              {
+                kind: "table",
+                title: `${c.ticker} ${name}: ${span}`,
+                columns: ["Change", "Paragraphs"],
+                rows: [
+                  ["Added", String(d.counts.added)],
+                  ["Removed", String(d.counts.removed)],
+                  ["Reworded", String(d.counts.reworded)],
+                  ["Unchanged", String(d.counts.unchanged)],
+                  ["Words", `${d.words.before} to ${d.words.after}`],
+                ],
+              },
+            ],
+          };
         },
       },
       {

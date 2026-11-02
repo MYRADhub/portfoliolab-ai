@@ -985,3 +985,311 @@ describe("portfolio fit", () => {
     expect(t.some((x) => x.name === "what_if_add")).toBe(false);
   });
 });
+
+describe("filing comparison", () => {
+  const para = (s: string) => `<p>${s}</p>`;
+  const keep =
+    "We depend on a limited number of suppliers for advanced packaging and any disruption could delay shipments.";
+  const gone =
+    "Changes in interest rates could affect the value of our investment portfolio and our cost of borrowing.";
+  const added =
+    "Export controls on our newest accelerators to China now require a license for every shipment we make.";
+  const filler = Array.from({ length: 30 }, (_, i) =>
+    para(
+      `Ordinary risk paragraph number ${i} describing general business conditions in some detail.`,
+    ),
+  ).join("");
+  const k = (body: string) =>
+    `<p>Item 1A. Risk Factors</p>${filler}${body}<p>Item 1B. Unresolved Staff Comments</p>`;
+  const docs: Record<string, string> = {
+    "https://www.sec.gov/Archives/edgar/data/1/000000000126000005/k26.htm": k(
+      para(keep) + para(added),
+    ),
+    "https://www.sec.gov/Archives/edgar/data/1/000000000125000005/k25.htm": k(
+      para(keep) + para(gone),
+    ),
+  };
+  const edgar: EdgarLike = {
+    submissions: async () => ({
+      filings: {
+        recent: {
+          accessionNumber: ["0000000001-26-000005", "0000000001-25-000005"],
+          filingDate: ["2026-02-20", "2025-02-21"],
+          form: ["10-K", "10-K"],
+          primaryDocument: ["k26.htm", "k25.htm"],
+        },
+      },
+    }),
+    document: async (url) => {
+      const d = docs[url];
+      if (!d) throw new Error(`not found ${url}`);
+      return d;
+    },
+    fullTextSearch: async () => ({}),
+  };
+
+  it("reports added and removed risk paragraphs with links to each filing", async () => {
+    const t = tool(buildResearchTools({ ...base(), edgar }), "compare_filings");
+    const r = out(await t.run({ ticker: "AAA", focus: "export controls China" }));
+    expect(r.entries[0]!.label).toBe("AAA Risk Factors, 10-K filed 2026-02-20 versus 2025-02-21");
+    expect(r.entries[0]!.text).toMatch(/^1 paragraphs added, 1 removed, 0 reworded, 31 unchanged/);
+    const add = r.entries.find((e) => e.label.includes("added in the 2026-02-20 filing"))!;
+    expect(add.text).toBe(added);
+    expect(add.source!.url).toContain("k26.htm");
+    const rem = r.entries.find((e) => e.label.includes("removed since the 2025-02-21 filing"))!;
+    expect(rem.text).toBe(gone);
+    expect(rem.source!.url).toContain("k25.htm");
+    expect(r.displays![0]!.kind).toBe("table");
+    await expect(t.run({ ticker: "AAA", form: "10-Q", section: "business" })).rejects.toThrow(
+      /10-Q has/,
+    );
+  });
+});
+
+describe("refresh", () => {
+  /** Calls get_fundamentals (and get_earlier_figures when offered), then cites the 2025 revenue it saw. */
+  const model = (seen: string[][]): AssistantModel => ({
+    model: "fake",
+    begin(_q, tools) {
+      const names = tools.map((t) => t.name);
+      seen.push(names);
+      let step = 0;
+      return {
+        async next(outputs): Promise<AssistantTurn> {
+          if (step++ === 0)
+            return {
+              calls: [
+                { id: "a", name: "get_fundamentals", arguments: '{"ticker":"AAA"}' },
+                ...(names.includes("get_earlier_figures")
+                  ? [{ id: "b", name: "get_earlier_figures", arguments: "{}" }]
+                  : []),
+              ],
+              text: null,
+            };
+          const line = outputs![0]!.output
+            .split("\n")
+            .find((l) => l.includes("AAA revenue, fiscal 2025"))!;
+          const [id, rest] = line.split(" | ");
+          return {
+            calls: [],
+            text: JSON.stringify({
+              answer: `Revenue was ${rest!.split(": ")[1]} [${id}].`,
+              displays: [],
+            }),
+          };
+        },
+      };
+    },
+  });
+
+  it("re-asks the earlier question, offers the earlier figures, and reports what changed", async () => {
+    const seen: string[][] = [];
+    const p = await prepareResearch(
+      ctx.db,
+      sid,
+      { question: "AAA revenue?", mode: "quick" },
+      { limiter: unlimited() },
+    );
+    const first = await executeResearch(ctx.db, sid, p, deps(model(seen)), { now });
+    expect(seen[0]).not.toContain("get_earlier_figures");
+
+    const aaa = (await ctx.db.select().from(companies)).find((c) => c.ticker === "AAA")!;
+    const { and: andOp, eq: eqOp } = await import("drizzle-orm");
+    const where = andOp(
+      eqOp(fundamentals.companyId, aaa.id),
+      eqOp(fundamentals.metric, "revenue"),
+      eqOp(fundamentals.fiscalYear, 2025),
+    );
+    await ctx.db.update(fundamentals).set({ value: 250e9 }).where(where);
+    try {
+      const r = await prepareResearch(
+        ctx.db,
+        sid,
+        { question: "", mode: "quick", threadId: p.threadId, refreshOf: first.id },
+        { limiter: unlimited() },
+      );
+      expect(r.question).toBe("AAA revenue?");
+      const m = await executeResearch(ctx.db, sid, r, deps(model(seen)), { now });
+      expect(seen[1]).toContain("get_earlier_figures");
+      const a = m.role === "assistant" ? m.answer : null;
+      expect(a!.source).toBe("model");
+      expect(m.content).toBe("Revenue was $250.0B [F1].");
+      expect(a!.refresh!.of).toBe(first.id);
+      expect(a!.refresh!.changes.changed).toContainEqual({
+        label: "AAA revenue, fiscal 2025",
+        before: "$200.0B",
+        after: "$250.0B",
+      });
+      // Earlier figures given to the model are not counted as new figures.
+      expect(a!.refresh!.changes.added.some((x) => x.label.startsWith("Earlier answer"))).toBe(
+        false,
+      );
+      expect(
+        a!.facts.some((f) => f.label.startsWith("Earlier answer (") && f.text === "$200.0B"),
+      ).toBe(true);
+    } finally {
+      await ctx.db.update(fundamentals).set({ value: 200e9 }).where(where);
+    }
+  });
+
+  it("only refreshes an answer in the caller's own thread", async () => {
+    const [t] = await listThreads(ctx.db, sid);
+    const thread = await getThread(ctx.db, sid, t!.id);
+    const answer = thread.messages.find((x) => x.role === "assistant")!;
+    await expect(
+      prepareResearch(
+        ctx.db,
+        sid,
+        { question: "", mode: "quick", refreshOf: answer.id },
+        { limiter: unlimited() },
+      ),
+    ).rejects.toMatchObject({ code: "bad_request" });
+    await expect(
+      prepareResearch(
+        ctx.db,
+        sid,
+        { question: "", mode: "quick", threadId: t!.id, refreshOf: 999999 },
+        { limiter: unlimited() },
+      ),
+    ).rejects.toMatchObject({ code: "not_found" });
+    await expect(
+      prepareResearch(
+        ctx.db,
+        other,
+        { question: "", mode: "quick", threadId: t!.id, refreshOf: answer.id },
+        { limiter: unlimited() },
+      ),
+    ).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+describe("research notebook", () => {
+  it("pins answers and charts per notebook, dedupes, keeps notes, and stays private", async () => {
+    const nb = await import("./research-notebook");
+    const p = await prepareResearch(
+      ctx.db,
+      sid,
+      { question: "Notebook AAA?", mode: "quick" },
+      { limiter: unlimited() },
+    );
+    const m = await executeResearch(
+      ctx.db,
+      sid,
+      p,
+      deps(
+        oneTool("get_fundamentals", { ticker: "AAA" }, (o) => {
+          const id = o
+            .split("\n")
+            .find((l) => l.includes("revenue, fiscal 2025"))!
+            .split(" | ")[0];
+          return `Revenue was $200.0B [${id}].`;
+        }),
+      ),
+      { now },
+    );
+
+    const whole = await nb.addPin(ctx.db, sid, { messageId: m.id, note: "  key point  " });
+    expect(whole.created).toBe(true);
+    expect((await nb.addPin(ctx.db, sid, { messageId: m.id })).created).toBe(false);
+    const chart = await nb.addPin(ctx.db, sid, {
+      messageId: m.id,
+      displayId: "D2",
+      portfolioId: pid,
+    });
+    expect(chart.created).toBe(true);
+    await expect(
+      nb.addPin(ctx.db, sid, { messageId: m.id, displayId: "D9" }),
+    ).rejects.toMatchObject({ code: "not_found" });
+    await expect(nb.addPin(ctx.db, other, { messageId: m.id })).rejects.toMatchObject({
+      code: "not_found",
+    });
+    await expect(
+      nb.addPin(ctx.db, other, { messageId: m.id, portfolioId: pid }),
+    ).rejects.toMatchObject({ code: "not_found" });
+    await expect(
+      nb.addPin(ctx.db, sid, { messageId: m.id, note: "x".repeat(2001) }),
+    ).rejects.toMatchObject({ code: "bad_request" });
+
+    const general = await nb.listPins(ctx.db, sid, null);
+    expect(general.map((x) => [x.question, x.note, x.displayId])).toEqual([
+      ["Notebook AAA?", "key point", null],
+    ]);
+    const mine = await nb.listPins(ctx.db, sid, pid);
+    expect(mine.map((x) => x.displayId)).toEqual(["D2"]);
+    expect(await nb.listPins(ctx.db, other, null)).toEqual([]);
+    await expect(nb.listPins(ctx.db, other, pid)).rejects.toMatchObject({ code: "not_found" });
+
+    await nb.updatePinNote(ctx.db, sid, whole.id, "");
+    expect((await nb.listPins(ctx.db, sid, null))[0]!.note).toBeNull();
+    await expect(nb.updatePinNote(ctx.db, other, whole.id, "steal")).rejects.toMatchObject({
+      code: "not_found",
+    });
+    await expect(nb.deletePin(ctx.db, other, whole.id)).rejects.toMatchObject({
+      code: "not_found",
+    });
+
+    // A notebook deck: the chart pin limits that answer to the pinned chart.
+    const gen: DeckGenerator & { prompts: string[] } = {
+      model: "fake",
+      prompts: [],
+      async generate(prompt) {
+        this.prompts.push(prompt);
+        const s = (t: string) => ({
+          title: t,
+          bullets: ["Revenue was $200.0B [F1]."],
+          display: null,
+          notes: "Say it [F1].",
+        });
+        return { title: "Notebook", subtitle: "Pinned research", slides: [s("A"), s("B"), s("C")] };
+      },
+    };
+    expect(await nb.getNotebookDeck(ctx.db, sid, pid)).toBeNull();
+    const d = await nb.makeNotebookDeck(ctx.db, sid, pid, gen, { limiter: unlimited() });
+    expect(d.source).toBe("model");
+    expect(d.threadId).toBeNull();
+    expect(gen.prompts[0]).toContain("Topic: Research notebook: Mine");
+    expect((await nb.getNotebookDeck(ctx.db, sid, pid))!.createdAt).toBe(d.createdAt);
+    expect(await nb.getNotebookDeck(ctx.db, sid, null)).toBeNull();
+
+    await nb.deletePin(ctx.db, sid, whole.id);
+    expect(await nb.listPins(ctx.db, sid, null)).toEqual([]);
+    await expect(
+      nb.makeNotebookDeck(ctx.db, sid, null, gen, { limiter: unlimited() }),
+    ).rejects.toMatchObject({
+      code: "bad_request",
+    });
+  });
+
+  it("turns pins into one section per answer, merging chart pins and letting a whole-answer pin win", async () => {
+    const { pinsAsMessages } = await import("./research-notebook");
+    const d = (id: string) => ({ id, kind: "table" as const, title: id, columns: [], rows: [] });
+    const answer = {
+      source: "model",
+      facts: [],
+      displays: [d("D1")],
+      allDisplays: [d("D1"), d("D2"), d("D3")],
+    } as never;
+    const base = {
+      portfolioId: null,
+      note: null,
+      createdAt: "",
+      question: "q",
+      answer,
+      content: "c",
+      thread: { id: "t", title: "t" },
+    };
+    const two = pinsAsMessages([
+      { ...base, id: 1, messageId: 5, displayId: "D2" },
+      { ...base, id: 2, messageId: 5, displayId: "D3" },
+    ]);
+    expect(two).toHaveLength(2);
+    const a = two[1]!;
+    expect(a.role === "assistant" && a.answer.displays.map((x) => x.id)).toEqual(["D2", "D3"]);
+    const whole = pinsAsMessages([
+      { ...base, id: 1, messageId: 5, displayId: "D2" },
+      { ...base, id: 2, messageId: 5, displayId: null },
+    ]);
+    const w = whole[1]!;
+    expect(w.role === "assistant" && w.answer.displays.map((x) => x.id)).toEqual(["D1"]);
+  });
+});

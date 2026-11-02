@@ -176,7 +176,17 @@ function SlideFace({
 }
 
 /** The presentation made from a conversation: make it, step through it, present it, or save it as PDF. */
-export function DeckView({ threadId }: { threadId: string }) {
+export function DeckView({
+  apiUrl,
+  links,
+  source,
+}: {
+  /** GET loads the stored deck, POST makes it again. */
+  apiUrl: string;
+  links: { href: string; label: string }[];
+  /** What the deck is made from, for the descriptions: "conversation" or "notebook". */
+  source: "conversation" | "notebook";
+}) {
   const [deck, setDeck] = useState<StoredDeck | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,19 +197,19 @@ export function DeckView({ threadId }: { threadId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    api<{ deck: StoredDeck | null }>(`/api/research/threads/${threadId}/deck`)
+    api<{ deck: StoredDeck | null }>(apiUrl)
       .then((r) => !cancelled && setDeck(r.deck))
       .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Failed to load"));
     return () => {
       cancelled = true;
     };
-  }, [threadId]);
+  }, [apiUrl]);
 
   async function make() {
     setBusy(true);
     setError(null);
     try {
-      const r = await api<{ deck: StoredDeck }>(`/api/research/threads/${threadId}/deck`, {
+      const r = await api<{ deck: StoredDeck }>(apiUrl, {
         method: "POST",
       });
       setDeck(r.deck);
@@ -249,22 +259,15 @@ export function DeckView({ threadId }: { threadId: string }) {
   const header = (
     <div className="space-y-2 print:hidden">
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link
-          href={`/research?thread=${threadId}`}
-          className="text-muted-foreground hover:underline"
-        >
-          Back to the conversation
-        </Link>
-        <Link
-          href={`/research/c/${threadId}/dashboard`}
-          className="text-muted-foreground hover:underline"
-        >
-          Dashboard
-        </Link>
+        {links.map((l) => (
+          <Link key={l.href} href={l.href} className="text-muted-foreground hover:underline">
+            {l.label}
+          </Link>
+        ))}
       </div>
       <PageHeader
         title="Presentation"
-        description="Slides made from the verified answers in this conversation. Every figure on them was checked against the sources."
+        description={`Slides made from the verified answers in this ${source}. Every figure on them was checked against the sources.`}
       />
     </div>
   );
@@ -277,8 +280,8 @@ export function DeckView({ threadId }: { threadId: string }) {
         {header}
         <div className="space-y-3 rounded-xl border p-6">
           <p className="text-sm text-muted-foreground">
-            No presentation yet. It is built from this conversation&apos;s verified answers, charts
-            and sources, with speaker notes.
+            No presentation yet. It is built from this {source}&apos;s verified answers, charts and
+            sources, with speaker notes.
           </p>
           <Button onClick={() => void make()} disabled={busy}>
             {busy ? "Preparing slides and checking every figure" : "Prepare presentation"}

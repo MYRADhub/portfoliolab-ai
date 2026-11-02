@@ -43,9 +43,14 @@ export function StatTiles({ facts }: { facts: readonly Fact[] }) {
 export function AnswerDashboard({
   facts,
   displays,
+  onPin,
+  pinned,
 }: {
   facts: readonly Fact[];
   displays: readonly ShownDisplay[];
+  /** When given, each chart gets a button to pin it to the notebook. */
+  onPin?: (displayId: string) => void;
+  pinned?: ReadonlySet<string>;
 }) {
   const wide = (d: ShownDisplay) =>
     d.kind === "table" || d.kind === "heatmap" || (d.kind === "bar" && d.categories.length > 6);
@@ -55,8 +60,19 @@ export function AnswerDashboard({
       {displays.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-2">
           {displays.map((d) => (
-            <div key={d.id} className={wide(d) ? "lg:col-span-2" : ""}>
+            <div key={d.id} className={`space-y-1 ${wide(d) ? "lg:col-span-2" : ""}`}>
               <DisplayView display={d} size="lg" />
+              {onPin && (
+                <button
+                  type="button"
+                  disabled={pinned?.has(d.id)}
+                  onClick={() => onPin(d.id)}
+                  className="rounded-md border px-2 py-0.5 text-xs hover:bg-muted disabled:opacity-100 disabled:hover:bg-transparent"
+                  aria-label={pinned?.has(d.id) ? `${d.title} pinned` : `Pin chart: ${d.title}`}
+                >
+                  {pinned?.has(d.id) ? "Pinned" : "Pin chart"}
+                </button>
+              )}
             </div>
           ))}
         </div>

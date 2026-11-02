@@ -5,9 +5,11 @@ import {
   type AssistantAnswer,
   type AssistantEvent,
   type AssistantModel,
+  type Fact,
   type WebSearcher,
 } from "@portfolio-lab/explain";
 import { withHistory, type Turn } from "./assistant";
+import { compareFacts, type FactChanges } from "./fact-changes";
 import { AppError } from "./errors";
 import { DISCLAIMER } from "./explain";
 import { RateLimiter } from "./rate-limit";
@@ -35,7 +37,12 @@ export interface ThreadSummary {
 
 export interface StoredAnswer extends AssistantAnswer {
   mode: ResearchMode;
+  /** Set when this answer re-ran an earlier one: what changed in the figures since then. */
+  refresh?: { of: number; since: string; changes: FactChanges };
 }
+
+/** Labels of the earlier figures handed to a refresh, so they are kept apart from the fresh ones. */
+export const EARLIER_PREFIX = "Earlier answer";
 
 export type ChatMessage =
   | { id: number; role: "user"; content: string; mode: ResearchMode | null; createdAt: string }
@@ -133,9 +140,12 @@ export function verifiedTurns(messages: readonly ChatMessage[]): Turn[] {
 
 export interface ResearchRequest {
   threadId?: string;
+  /** Ignored when refreshing: the earlier question is asked again. */
   question: string;
   mode: ResearchMode;
   portfolioId?: string | null;
+  /** Id of an earlier answer in the same thread to run again and compare with. */
+  refreshOf?: number;
 }
 
 export interface PreparedResearch {
@@ -146,6 +156,7 @@ export interface PreparedResearch {
   mode: ResearchMode;
   portfolioId: string | null;
   history: Turn[];
+  refresh: { of: number; since: string; facts: Fact[] } | null;
 }
 
 /**
@@ -158,7 +169,21 @@ export async function prepareResearch(
   req: ResearchRequest,
   opts: { limiter?: RateLimiter } = {},
 ): Promise<PreparedResearch> {
-  const question = req.question.trim();
+  const existing = req.threadId ? await ownedThread(db, sessionId, req.threadId) : null;
+  let refresh: PreparedResearch["refresh"] = null;
+  let question = req.question.trim();
+  if (req.refreshOf !== undefined) {
+    if (!existing)
+      throw new AppError("bad_request", "A refresh needs the conversation it belongs to");
+    const prior = (await getThread(db, sessionId, existing.id)).messages;
+    const i = prior.findIndex((m) => m.id === req.refreshOf && m.role === "assistant");
+    const q = prior[i - 1];
+    const a = prior[i];
+    if (i < 1 || q?.role !== "user" || a?.role !== "assistant")
+      throw new AppError("not_found", "Answer to refresh not found");
+    question = q.content;
+    refresh = { of: a.id, since: a.createdAt, facts: a.answer.facts };
+  }
   if (question.length < 3 || question.length > RESEARCH_QUESTION_MAX)
     throw new AppError("bad_request", `Question must be 3 to ${RESEARCH_QUESTION_MAX} characters`);
   const portfolioId = req.portfolioId ?? null;
@@ -169,7 +194,6 @@ export async function prepareResearch(
       .where(and(eq(portfolios.id, portfolioId), eq(portfolios.sessionId, sessionId)));
     if (!p) throw new AppError("not_found", "Portfolio not found");
   }
-  const existing = req.threadId ? await ownedThread(db, sessionId, req.threadId) : null;
 
   const limit = RESEARCH_LIMITS[req.mode];
   const limiter = opts.limiter ?? new RateLimiter(db, limit.max, limit.windowMs);
@@ -210,6 +234,7 @@ export async function prepareResearch(
     mode: req.mode,
     portfolioId,
     history,
+    refresh,
   };
 }
 
@@ -236,7 +261,24 @@ export async function executeResearch(
     edgar: deps.edgar,
   });
   const today = (opts.now ?? new Date()).toISOString().slice(0, 10);
-  const context = `Today is ${today}.${p.portfolioId ? " The user has a portfolio selected; portfolio tools are available." : ""}`;
+  let context = `Today is ${today}.${p.portfolioId ? " The user has a portfolio selected; portfolio tools are available." : ""}`;
+  const refresh = p.refresh;
+  if (refresh) {
+    const since = refresh.since.slice(0, 10);
+    tools.push({
+      name: "get_earlier_figures",
+      description: `The figures behind the earlier answer to this question, from ${since}, for saying what changed.`,
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+      run: async () =>
+        refresh.facts.map((f) => ({
+          label: `${EARLIER_PREFIX} (${since}): ${f.label}`,
+          text: f.text,
+          ...(f.kind ? { kind: f.kind } : {}),
+          ...(f.source ? { source: f.source } : {}),
+        })),
+    });
+    context += ` This question was answered before, on ${since}. Answer it again with fresh tool calls, call get_earlier_figures, and start with what changed since then.`;
+  }
   const answer = await runAssistant(
     deps.model,
     `${context}\n\n${withHistory(p.question, p.history)}`,
@@ -244,6 +286,15 @@ export async function executeResearch(
     { mode: p.mode, signal: opts.signal, onEvent: opts.onEvent },
   );
   const stored: StoredAnswer = { ...answer, mode: p.mode };
+  if (refresh)
+    stored.refresh = {
+      of: refresh.of,
+      since: refresh.since,
+      changes: compareFacts(
+        refresh.facts,
+        answer.facts.filter((f) => !f.label.startsWith(EARLIER_PREFIX)),
+      ),
+    };
   const [row] = await db
     .insert(researchMessages)
     .values({

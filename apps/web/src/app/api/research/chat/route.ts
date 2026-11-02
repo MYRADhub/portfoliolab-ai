@@ -19,10 +19,14 @@ import {
 } from "@/server/research-chat";
 
 const bodySchema = z.object({
-  question: z.string().max(RESEARCH_QUESTION_MAX + 200),
+  question: z
+    .string()
+    .max(RESEARCH_QUESTION_MAX + 200)
+    .default(""),
   mode: z.enum(["quick", "deep"]).default("quick"),
   threadId: z.string().uuid().optional(),
   portfolioId: z.string().uuid().nullable().optional(),
+  refreshOf: z.number().int().positive().optional(),
 });
 
 function deps(): ResearchDeps {

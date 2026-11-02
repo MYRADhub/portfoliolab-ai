@@ -529,3 +529,104 @@ test.describe("portfolio fit", () => {
     ).toHaveAttribute("href", /research\?ask=How%20would%20MSFT%20fit/);
   });
 });
+
+test.describe("refresh and notebook", () => {
+  test.beforeEach(async () => {
+    await mock.reset();
+  });
+
+  test("Refresh asks again and shows what changed", async ({ page }) => {
+    await startUiSession(page);
+    await page.goto("/research");
+    await page.getByLabel("Your question").fill("Tell me about NVDA");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Assistant answer" })).toBeVisible();
+    await page.getByRole("button", { name: "Refresh" }).click();
+    const changes = page.getByRole("region", { name: "What changed" });
+    await expect(changes).toContainText(/What changed since \d{4}-\d{2}-\d{2}/);
+    await expect(changes).toContainText("the same");
+    await expect(page.getByRole("region", { name: "Assistant answer" })).toHaveCount(2);
+    const req = (await mock.requests()).filter((r) => r.path === "/v1/responses").at(-1)!;
+    expect(req.input).toContain("This question was answered before");
+
+    expect(
+      (
+        await page.request.post("/api/research/chat", { data: { question: "", refreshOf: 1 } })
+      ).status(),
+    ).toBe(400);
+  });
+
+  test("answers and charts pin to the portfolio's notebook, with notes and a presentation", async ({
+    page,
+  }) => {
+    const s = await startUiSession(page);
+    await s.create("Covered", COVERED);
+    await page.goto("/research");
+    await page.getByLabel("Your question").fill("Compare these two please");
+    await page.getByRole("button", { name: "Ask", exact: true }).click();
+    await page.getByRole("button", { name: "Pin to notebook" }).click();
+    await expect(page.getByRole("button", { name: "Pinned to notebook" })).toBeDisabled();
+    await page.getByRole("button", { name: "Visualize" }).click();
+    await page.getByRole("button", { name: "Pin chart: Returns by period (%)" }).click();
+    await expect(page.getByRole("button", { name: "Returns by period (%) pinned" })).toBeDisabled();
+
+    await page.getByRole("link", { name: "Research notebook" }).first().click();
+    await expect(page.getByText(/Nothing pinned yet/)).toBeVisible();
+    await page.getByLabel("Notebook").selectOption({ label: "Covered" });
+    const items = page.getByRole("list", { name: "Pinned items" }).locator(":scope > li");
+    await expect(items).toHaveCount(2);
+    await expect(
+      items.nth(1).getByRole("img", { name: "Bar chart: Returns by period (%)" }),
+    ).toBeVisible();
+
+    await items.first().getByLabel("Your note").fill("Lead with this");
+    const saved = page.waitForResponse(
+      (r) => r.url().includes("/api/research/notebook/") && r.request().method() === "PATCH",
+    );
+    await items.first().getByLabel("Your note").blur();
+    expect((await saved).status()).toBe(204);
+    await page.reload();
+    await page.getByLabel("Notebook").selectOption({ label: "Covered" });
+    await expect(items.first().getByLabel("Your note")).toHaveValue("Lead with this");
+
+    await page.getByRole("link", { name: "Presentation" }).click();
+    await page.getByRole("button", { name: "Prepare presentation" }).click();
+    await expect(page.getByRole("region", { name: /^Slide 1 of 5$/ })).toContainText("Mock Deck");
+
+    await page.goto("/research/notebook");
+    await page.getByLabel("Notebook").selectOption({ label: "Covered" });
+    await items
+      .nth(1)
+      .getByRole("button", { name: /Remove pin/ })
+      .click();
+    await expect(items).toHaveCount(1);
+  });
+
+  for (const theme of ["light", "dark"]) {
+    test(`the notebook has no accessibility violations in ${theme}`, async ({ page }) => {
+      await page.addInitScript((t) => localStorage.setItem("pl-theme", t), theme);
+      await startUiSession(page);
+      const { events } = await askApi(page.request, { question: "Compare these two please" });
+      const id = events.at(-1)!.message.id;
+      expect(
+        (await page.request.post("/api/research/notebook", { data: { messageId: id } })).status(),
+      ).toBe(201);
+      expect(
+        (
+          await page.request.post("/api/research/notebook", {
+            data: { messageId: id, displayId: "D4" },
+          })
+        ).status(),
+      ).toBe(201);
+      await page.goto("/research/notebook");
+      await expect(
+        page.getByRole("list", { name: "Pinned items" }).locator(":scope > li"),
+      ).toHaveCount(2);
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+      const r = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      expect(r.violations.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 100)}`)).toEqual([]);
+    });
+  }
+});

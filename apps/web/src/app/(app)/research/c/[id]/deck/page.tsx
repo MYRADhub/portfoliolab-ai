@@ -4,7 +4,16 @@ import { Loading } from "@/components/ui/skeleton";
 
 async function View({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <DeckView threadId={id} />;
+  return (
+    <DeckView
+      apiUrl={`/api/research/threads/${id}/deck`}
+      source="conversation"
+      links={[
+        { href: `/research?thread=${id}`, label: "Back to the conversation" },
+        { href: `/research/c/${id}/dashboard`, label: "Dashboard" },
+      ]}
+    />
+  );
 }
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {

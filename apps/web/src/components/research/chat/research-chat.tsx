@@ -3,6 +3,9 @@
 import {
   BarChart3,
   Layers,
+  NotebookPen,
+  Pin,
+  RefreshCw,
   LayoutDashboard,
   MessageSquarePlus,
   Presentation,
@@ -20,6 +23,7 @@ import type { ChatMessage, ResearchMode, ThreadSummary } from "@/server/research
 import { AnswerView } from "./answer-view";
 import { ProgressView, type Step } from "./progress-view";
 import { AnswerDashboard } from "./visualize";
+import { ChangesView } from "./changes-view";
 
 type StreamEvent =
   | AssistantEvent
@@ -101,6 +105,21 @@ export function ResearchChat() {
   const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [loadingThread, setLoadingThread] = useState(false);
   const [visual, setVisual] = useState<Set<number>>(new Set());
+  /** "messageId" for a whole answer, "messageId:D3" for one chart. */
+  const [pins, setPins] = useState<Set<string>>(new Set());
+
+  async function pin(messageId: number, displayId: string | null) {
+    try {
+      await api("/api/research/notebook", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ messageId, displayId, portfolioId }),
+      });
+      setPins((p) => new Set(p).add(displayId ? `${messageId}:${displayId}` : String(messageId)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not pin it");
+    }
+  }
   const bottom = useRef<HTMLDivElement>(null);
   const autoAsked = useRef(false);
 
@@ -130,7 +149,7 @@ export function ResearchChat() {
   }, [messages.length, running?.steps.length, running?.phase]);
 
   const ask = useCallback(
-    async (question: string, askMode: ResearchMode) => {
+    async (question: string, askMode: ResearchMode, refreshOf?: number) => {
       const q = question.trim();
       if (q.length < 3 || running) return;
       setError(null);
@@ -151,7 +170,7 @@ export function ResearchChat() {
       try {
         await ensureSession();
         const res = await postQuestion(
-          { question: q, mode: askMode, threadId: threadId ?? undefined, portfolioId },
+          { question: q, mode: askMode, threadId: threadId ?? undefined, portfolioId, refreshOf },
           controller.signal,
         );
         await readNdjson<StreamEvent>(res, (e) => {
@@ -314,6 +333,12 @@ export function ResearchChat() {
       >
         <MessageSquarePlus /> New conversation
       </Button>
+      <Link
+        href="/research/notebook"
+        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted"
+      >
+        <NotebookPen className="size-3.5" aria-hidden /> Research notebook
+      </Link>
       <ul className="space-y-0.5">
         {threads.map((t) => (
           <li key={t.id} className="group flex items-center gap-1">
@@ -414,6 +439,7 @@ export function ResearchChat() {
               </li>
             ) : (
               <li key={m.id} className="rounded-xl border p-4">
+                {m.answer.refresh && <ChangesView refresh={m.answer.refresh} />}
                 <AnswerView answer={m.answer} />
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   {m.answer.toolCalls.length > 0 && (
@@ -455,10 +481,41 @@ export function ResearchChat() {
                       Fit to my portfolio
                     </button>
                   )}
+                  <button
+                    type="button"
+                    disabled={pins.has(String(m.id))}
+                    onClick={() => void pin(m.id, null)}
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-foreground hover:bg-muted disabled:opacity-100"
+                  >
+                    <Pin className="size-3.5" aria-hidden />
+                    {pins.has(String(m.id)) ? "Pinned to notebook" : "Pin to notebook"}
+                  </button>
+                  {!running && threadId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const i = messages.findIndex((x) => x.id === m.id);
+                        const q = messages[i - 1];
+                        if (q?.role === "user") void ask(q.content, m.mode ?? "quick", m.id);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-foreground hover:bg-muted"
+                    >
+                      <RefreshCw className="size-3.5" aria-hidden />
+                      Refresh
+                    </button>
+                  )}
                 </div>
                 {visual.has(m.id) && (
                   <section aria-label="Answer charts" className="mt-4 border-t pt-4">
                     <AnswerDashboard
+                      onPin={(d) => void pin(m.id, d)}
+                      pinned={
+                        new Set(
+                          [...pins]
+                            .filter((k) => k.startsWith(`${m.id}:`))
+                            .map((k) => k.slice(String(m.id).length + 1)),
+                        )
+                      }
                       facts={m.answer.facts}
                       displays={m.answer.allDisplays ?? m.answer.displays}
                     />

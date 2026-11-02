@@ -16,7 +16,8 @@ import { getThread, type ChatMessage, type StoredAnswer } from "./research-chat"
 export const DECK_LIMIT = { max: 10, windowMs: 60 * 60 * 1000 };
 
 export interface StoredDeck extends DeckResult {
-  threadId: string;
+  /** The conversation it was made from, or null for a notebook's deck. */
+  threadId: string | null;
   createdAt: string;
   disclaimer: string;
 }
@@ -94,11 +95,33 @@ export async function makeDeck(
   opts: { limiter?: RateLimiter } = {},
 ): Promise<StoredDeck> {
   const t = await getThread(db, sessionId, threadId);
-  const input = deckInputFrom(t.thread.title, t.messages);
+  return buildAndStore(
+    db,
+    sessionId,
+    deckInputFrom(t.thread.title, t.messages),
+    gen,
+    { threadId },
+    opts,
+  );
+}
+
+export type DeckOwner = { threadId: string } | { notebookKey: string };
+
+/** Checks there is something to present and the allowance, then generates, checks and stores the deck. */
+export async function buildAndStore(
+  db: Db,
+  sessionId: string,
+  input: DeckInput,
+  gen: DeckGenerator,
+  owner: DeckOwner,
+  opts: { limiter?: RateLimiter } = {},
+): Promise<StoredDeck> {
   if (input.sections.length === 0)
     throw new AppError(
       "bad_request",
-      "This conversation has no verified answers yet. Ask a question that gets one first.",
+      "threadId" in owner
+        ? "This conversation has no verified answers yet. Ask a question that gets one first."
+        : "This notebook has no verified answers pinned yet.",
     );
   const limiter = opts.limiter ?? new RateLimiter(db, DECK_LIMIT.max, DECK_LIMIT.windowMs);
   if (!(await limiter.tryAcquire(`deck:${sessionId}`)))
@@ -109,16 +132,25 @@ export async function makeDeck(
   const result = await generateDeck(gen, input);
   const stored: StoredDeck = {
     ...result,
-    threadId,
+    threadId: "threadId" in owner ? owner.threadId : null,
     createdAt: new Date().toISOString(),
     disclaimer: DISCLAIMER,
   };
-  await db
-    .insert(researchDecks)
-    .values({ threadId, payload: stored })
-    .onConflictDoUpdate({
-      target: researchDecks.threadId,
-      set: { payload: stored, createdAt: new Date() },
-    });
+  if ("threadId" in owner)
+    await db
+      .insert(researchDecks)
+      .values({ threadId: owner.threadId, payload: stored })
+      .onConflictDoUpdate({
+        target: researchDecks.threadId,
+        set: { payload: stored, createdAt: new Date() },
+      });
+  else
+    await db
+      .insert(researchDecks)
+      .values({ notebookKey: owner.notebookKey, payload: stored })
+      .onConflictDoUpdate({
+        target: researchDecks.notebookKey,
+        set: { payload: stored, createdAt: new Date() },
+      });
   return stored;
 }

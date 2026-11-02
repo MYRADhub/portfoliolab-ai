@@ -1059,6 +1059,19 @@ The company page's what-if card now includes the full fit (a before-and-after ta
 
 ---
 
+## 41. Filing comparison, refreshing an answer, and a research notebook (added 2026-11-01)
+
+**41.1 What changed in a filing is found by code.** Final. Who: You (the feature), Me (the method).
+`compare_filings` takes the same section (Risk Factors, MD&A, or Business) of a company's latest 10-K or 10-Q and of the one before it (or the one about a year earlier). Paragraphs of eight words or more are matched by word overlap: 90% or more is unchanged, 50% to 90% is reworded, less is added; older paragraphs nothing came close to were removed. In a reworded paragraph, only sentences that differ from every older sentence by more than 20% count as new, so small edits are not reported as new language. With a focus, changes about it come first. On NVIDIA's two latest 10-Ks this finds 32 added and 20 removed paragraphs in 0.2 seconds, including the new Groq licence and counterparty risks. The model only explains what the comparison found.
+
+**41.2 Refreshing an answer reports what moved.** Final. Who: You (the feature), Me (the method).
+"Refresh" asks the same question again in the same conversation. What changed is computed by matching the figures of the two answers by label, with dates in labels ignored so "close on 2026-10-26" and "close on 2026-11-02" are the same figure; the result is stored with the new answer and shown above it. The model also gets the earlier figures as a tool, labelled "Earlier answer (date)", so it can describe the changes and still pass the number check; those labels are not counted as new figures.
+
+**41.3 A notebook per portfolio.** Final. Who: You (the feature), Me (the design).
+"Pin to notebook" keeps a whole answer, "Pin chart" keeps one chart; pins go to the notebook of the portfolio selected in the chat, or to General. Each pin can carry a note. Pinning the same thing twice returns the existing pin; a visitor can keep 200 pins. A notebook can be made into a presentation the same way a conversation can: pinned charts become that answer's chosen charts, a whole-answer pin keeps the answer's own choice, and only verified answers are used. The deck table now stores either a conversation's deck or a notebook's, never both (a database check enforces it).
+
+---
+
 ## 13. Mistakes made and fixed (for honesty)
 
 - I miscounted the factor list as 34 when it was 31. Fixed in the doc.

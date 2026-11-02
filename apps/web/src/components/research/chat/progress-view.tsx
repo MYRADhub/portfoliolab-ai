@@ -57,6 +57,30 @@ export function describeStep(name: string, args: string): string {
       return `Listing ${t} SEC filings`;
     case "read_filing":
       return `Reading ${t ? `${t} ` : ""}${String(a.form ?? "10-K")}${a.section ? `, ${SECTION[String(a.section)] ?? a.section}` : ""}${a.focus ? ` on "${String(a.focus)}"` : ""}`;
+    case "compare_filings":
+      return `Comparing ${t} ${String(a.form ?? "10-K")} ${SECTION[String(a.section ?? "risk_factors")] ?? ""} with the ${a.against === "year_ago" ? "year-ago" : "previous"} filing`;
+    case "portfolio_fit":
+      return `How ${t} fits your portfolio`;
+    case "rank_fit":
+      return `Ranking ${list} by fit with your portfolio`;
+    case "get_correlation":
+      return "Reading how your holdings move together";
+    case "compare_to_market":
+      return "Comparing your portfolio with the S&P 500";
+    case "simulate_outcomes":
+      return "Simulating possible paths";
+    case "alternative_weightings":
+      return "Trying other weightings on past prices";
+    case "find_diversifiers":
+      return "Screening for diversifiers";
+    case "custom_scenario":
+      return "Running your scenario";
+    case "todays_move":
+      return "Reading today's move";
+    case "portfolio_insights":
+      return "Reading portfolio alerts";
+    case "get_watchlist":
+      return "Reading your watchlist";
     case "search_filings":
       return `Searching SEC filings: ${String(a.query ?? "")}`;
     case "get_holdings":

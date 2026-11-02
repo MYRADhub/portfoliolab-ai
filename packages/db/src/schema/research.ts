@@ -1,6 +1,7 @@
 import {
   check,
   index,
+  integer,
   jsonb,
   pgTable,
   serial,
@@ -56,11 +57,39 @@ export const researchDecks = pgTable(
   "research_decks",
   {
     id: serial("id").primaryKey(),
-    threadId: uuid("thread_id")
-      .notNull()
-      .references(() => researchThreads.id, { onDelete: "cascade" }),
+    /** Set for a conversation's deck. */
+    threadId: uuid("thread_id").references(() => researchThreads.id, { onDelete: "cascade" }),
+    /** Set for a notebook's deck: "<session id>:<portfolio id or none>". */
+    notebookKey: text("notebook_key"),
     payload: jsonb("payload").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("research_decks_thread_idx").on(t.threadId)],
+  (t) => [
+    uniqueIndex("research_decks_thread_idx").on(t.threadId),
+    uniqueIndex("research_decks_notebook_idx").on(t.notebookKey),
+    check("research_decks_owner_chk", sql`(${t.threadId} is null) <> (${t.notebookKey} is null)`),
+  ],
+);
+
+/**
+ * An answer, or one chart of it, kept in a research notebook. A notebook belongs to a portfolio, or to none ("General").
+ * Pins of a deleted portfolio fall back to General rather than disappear.
+ */
+export const researchPins = pgTable(
+  "research_pins",
+  {
+    id: serial("id").primaryKey(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    portfolioId: uuid("portfolio_id").references(() => portfolios.id, { onDelete: "set null" }),
+    messageId: integer("message_id")
+      .notNull()
+      .references(() => researchMessages.id, { onDelete: "cascade" }),
+    /** A chart or table id (D3) to pin on its own; null pins the whole answer. */
+    displayId: text("display_id"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("research_pins_session_idx").on(t.sessionId, t.portfolioId, t.createdAt)],
 );
