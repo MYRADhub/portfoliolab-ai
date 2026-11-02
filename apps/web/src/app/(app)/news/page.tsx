@@ -6,11 +6,8 @@ export default function Page() {
     <section className="space-y-0">
       <PageHeader
         title="News"
-        description="Stories ranked by how much they matter to your portfolio."
+        description="News about your holdings from every outlet we can find, ranked for your portfolio, with the reasoning behind each ranking."
       />
-      <p className="text-muted-foreground">
-        Fewer, more relevant stories: ranked by how much each one matters to the companies you hold.
-      </p>
       <RadarView />
     </section>
   );

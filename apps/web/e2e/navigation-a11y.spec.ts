@@ -4,6 +4,9 @@ import { COVERED, EXAMPLE, mock, startUiSession, waitForDashboard } from "./help
 
 const pages = [
   { path: "/dashboard", heading: "Dashboard", nav: "Dashboard" },
+  { path: "/research", heading: "Research", nav: "Research" },
+  { path: "/news", heading: "News", nav: "News" },
+  { path: "/watchlist", heading: "Watchlist", nav: "Watchlist" },
   { path: "/terminal", heading: "Terminal", nav: "Terminal" },
   { path: "/exposures", heading: "Exposures", nav: "Exposures" },
   { path: "/correlation", heading: "Correlation", nav: "Correlation" },
@@ -14,10 +17,7 @@ const pages = [
   { path: "/discovery", heading: "Discovery", nav: "Discovery" },
   { path: "/rebalance", heading: "Rebalance Lab", nav: "Rebalance Lab" },
   { path: "/simulation", heading: "Simulation", nav: "Simulation" },
-  { path: "/watchlist", heading: "Watchlist", nav: "Watchlist" },
-  { path: "/news", heading: "News", nav: "News" },
   { path: "/events", heading: "Reactions", nav: "Reactions" },
-  { path: "/research", heading: "Research", nav: "Research" },
   { path: "/evidence", heading: "Evidence", nav: "Evidence" },
   { path: "/report", heading: "Report", nav: "Report" },
   { path: "/guide", heading: "Guide", nav: "Guide" },
@@ -38,6 +38,11 @@ test.describe("navigation", () => {
     const errors = trackErrors(page);
     await page.goto("/dashboard");
     const nav = page.getByRole("navigation", { name: "Primary" });
+    // The analysis tools are folded away at first; opening the group is remembered across pages.
+    const tools = nav.getByRole("button", { name: "Analysis tools" });
+    await expect(tools).toHaveAttribute("aria-expanded", "false");
+    await expect(nav.getByRole("link", { name: "Exposures" })).toBeHidden();
+    await tools.click();
     await expect(nav.getByRole("link")).toHaveText(pages.map((p) => p.nav));
     for (const p of pages) {
       await nav.getByRole("link", { name: p.nav }).click();
@@ -53,7 +58,9 @@ test.describe("navigation", () => {
     await page.goto("/research");
     await expect(page.getByLabel("Look up a company")).toBeVisible();
     await page.goto("/news");
-    await expect(page.getByText(/Fewer, more relevant stories/)).toBeVisible();
+    await expect(
+      page.getByText(/ranked for your portfolio, with the reasoning behind each ranking/),
+    ).toBeVisible();
   });
 
   test("an unknown route shows the not-found page and the app recovers", async ({ page }) => {
@@ -81,6 +88,7 @@ test.describe("navigation", () => {
     page,
   }) => {
     await page.goto("/dashboard");
+    await page.getByRole("button", { name: "Analysis tools" }).click();
     await page.getByRole("link", { name: "Correlation" }).click();
     await expect(page).toHaveURL(/\/correlation$/);
     await page.goBack();

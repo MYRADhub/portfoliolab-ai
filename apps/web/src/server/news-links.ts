@@ -19,6 +19,8 @@ export interface MergedArticle {
   copies: number;
   /** Best link score per company, taken from the earliest article. */
   perCompany: Map<number, number>;
+  /** Every outlet in the group, earliest first. */
+  outlets: string[];
 }
 
 /** One entry per near-duplicate group: its earliest article, so a syndicated story appears once. */
@@ -34,7 +36,15 @@ export function mergeClusters(rows: readonly LinkRow[]): MergedArticle[] {
     for (const m of members.filter((m) => m.id === earliest.id)) {
       perCompany.set(m.companyId, Math.max(perCompany.get(m.companyId) ?? 0, m.score));
     }
-    return { earliest, copies: new Set(members.map((m) => m.id)).size - 1, perCompany };
+    const outlets = [
+      ...new Set(
+        [...members]
+          .sort((a, b) => a.publishedAt.getTime() - b.publishedAt.getTime())
+          .map((m) => m.source)
+          .filter((x): x is string => !!x),
+      ),
+    ];
+    return { earliest, copies: new Set(members.map((m) => m.id)).size - 1, perCompany, outlets };
   });
 }
 
@@ -71,4 +81,31 @@ export async function latestClassifications(
   for (const { articleId, ...info } of rows)
     if (!latest.has(articleId)) latest.set(articleId, info);
   return latest;
+}
+
+/** Coverage counts for the News overview: stories per holding, by type, and the outlets behind them. */
+export function newsOverview(
+  items: readonly {
+    source: string | null;
+    sources?: number;
+    classification: { class: string } | null;
+    relevance: { matched: { ticker: string }[] };
+  }[],
+) {
+  const byHolding = new Map<string, number>();
+  const byClass = new Map<string, number>();
+  const byOutlet = new Map<string, number>();
+  for (const i of items) {
+    for (const m of i.relevance.matched)
+      byHolding.set(m.ticker, (byHolding.get(m.ticker) ?? 0) + 1);
+    const c = i.classification?.class ?? "unclassified";
+    byClass.set(c, (byClass.get(c) ?? 0) + 1);
+    const o = i.source ?? "unknown";
+    byOutlet.set(o, (byOutlet.get(o) ?? 0) + 1);
+  }
+  const sorted = (m: Map<string, number>) =>
+    [...m.entries()]
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+  return { byHolding: sorted(byHolding), byClass: sorted(byClass), byOutlet: sorted(byOutlet) };
 }

@@ -31,6 +31,7 @@ test.describe("mobile layout", () => {
     );
     const box = await nav.boundingBox();
     expect(box!.y).toBeLessThan(main!.y + 400); // opens above the content, not beside it
+    await nav.getByRole("button", { name: "Analysis tools" }).click();
     const vw = page.viewportSize()!.width;
     for (const name of [
       "Dashboard",
@@ -117,12 +118,12 @@ test.describe("mobile layout", () => {
     await page.goto("/dashboard");
     await waitForDashboard(page);
     const snapshot = holdingsSnapshot(page);
-    await expect(snapshot.getByRole("listitem")).toHaveCount(4);
-    for (const item of await snapshot.getByRole("listitem").all()) {
+    await expect(snapshot.getByRole("row")).toHaveCount(4);
+    for (const item of await snapshot.getByRole("row").all()) {
       const b = await item.boundingBox();
       expect(b!.x + b!.width, "snapshot rows fit the viewport").toBeLessThanOrEqual(vw);
     }
-    await expect(snapshot.getByRole("listitem").filter({ hasText: "NVDA" })).toContainText("40%");
+    await expect(snapshot.getByRole("row").filter({ hasText: "NVDA" })).toContainText("40%");
     for (const card of await page
       .getByRole("list", { name: "Insights" })
       .getByRole("listitem")

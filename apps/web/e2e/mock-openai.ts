@@ -338,6 +338,31 @@ createServer(async (req, res) => {
       tools?: { type: string; name?: string }[];
     };
     if (body.tools?.some((t) => t.type === "web_search")) return webSearchTurn(body, send);
+    if (
+      (body as { text?: { format?: { name?: string } } }).text?.format?.name ===
+      "news_classification"
+    ) {
+      requests.push({
+        path: "/v1/responses#classify",
+        auth: undefined,
+        model: body.model,
+        instructions: "",
+        input: String(body.input),
+        mode,
+      });
+      return send(
+        200,
+        responseBody(body.model, {
+          event_type: "guidance_raise",
+          classification: "fundamental",
+          fundamental_importance: 7,
+          market_relevance: 6,
+          expected_persistence: 5,
+          mechanism: "Higher revenue guidance raises expected earnings.",
+          confidence: 0.8,
+        }),
+      );
+    }
     if (typeof body.input === "string" && body.instructions?.includes("slide presentation"))
       return deckTurn(body as { model: string; instructions: string; input: string }, send);
     if (Array.isArray(body.input)) return assistantTurn(body, send);

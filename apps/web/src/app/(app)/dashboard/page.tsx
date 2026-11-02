@@ -6,7 +6,7 @@ export default function Page() {
     <section className="space-y-0">
       <PageHeader
         title="Dashboard"
-        description="Your portfolio at a glance: what changed, what to watch, and why."
+        description="How your portfolio is doing, what drove it, and what to watch."
       />
       <Dashboard />
     </section>

@@ -171,6 +171,17 @@ describe("web results", () => {
     expect(r.text).not.toMatch(/turn|wordlim|305141/);
   });
 
+  it("keeps an exact publication time when the tool states one", () => {
+    const r = cleanSnippet(
+      "citeturn1news2 [wordlim: 100] Published: 2 days ago; Date: Fri Oct 30 14:21:58 2026 UTC\n\nApple will report results next week, analysts said.",
+    );
+    expect(r).toEqual({
+      text: "Apple will report results next week, analysts said.",
+      published: "2 days ago",
+      publishedAt: "2026-10-30T14:21:58.000Z",
+    });
+  });
+
   it("drops line-number prefixes and opened-page metadata", () => {
     const raw =
       'citeturn391216view0 [wordlim: 200] Crawled: today; Content type: text/html; Source: open({"ref_id":"turn1search0"}); Total lines: 462\nL45: # NVIDIA Results\nL47:   * Revenue of $96.2 billion, up 106% from a year ago';

@@ -1,6 +1,9 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import { CLASS_STYLE, type NewsClassKey } from "@/components/news/class-badge";
 import { NewsCard } from "@/components/news/news-card";
 import { cn } from "@/lib/utils";
@@ -25,7 +28,8 @@ function Content({ id }: { id: string }) {
   const [type, setType] = useState<NewsClassKey | "">("");
   const [ticker, setTicker] = useState("");
   const query = new URLSearchParams({ days: String(days), ...(ticker ? { ticker } : {}) });
-  const { data, error } = useApi<Radar>(`/api/portfolios/${id}/radar?${query}`);
+  const [version, setVersion] = useState(0);
+  const { data, error } = useApi<Radar>(`/api/portfolios/${id}/radar?${query}&v=${version}`);
   const filtered = type !== "" || ticker !== "";
 
   return (
@@ -42,6 +46,7 @@ function Content({ id }: { id: string }) {
           not hidden.
         </p>
       </HowToRead>
+      <ScanBar portfolioId={id} onDone={() => setVersion((v) => v + 1)} />
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2">
           Period
@@ -94,7 +99,9 @@ function Content({ id }: { id: string }) {
         </p>
       )}
       {!data && !error && <Loading />}
-      {data && <Results data={data} type={type} setType={setType} filtered={filtered} />}
+      {data && (
+        <Results data={data} type={type} setType={setType} filtered={filtered} portfolioId={id} />
+      )}
     </div>
   );
 }
@@ -104,11 +111,13 @@ function Results({
   type,
   setType,
   filtered,
+  portfolioId,
 }: {
   data: Radar;
   type: NewsClassKey | "";
   setType: (t: NewsClassKey | "") => void;
   filtered: boolean;
+  portfolioId: string;
 }) {
   const byType = type === "" ? data.items : data.items.filter((i) => keyOf(i) === type);
   const shown = byType.filter((i) => i.relevance.score >= data.threshold);
@@ -126,6 +135,7 @@ function Results({
 
   return (
     <div className="space-y-5">
+      <Overview data={data} />
       <div role="group" aria-label="Type" className="flex flex-wrap gap-2">
         <TypeChip
           active={type === ""}
@@ -167,7 +177,7 @@ function Results({
                   Most relevant right now
                 </p>
               )}
-              <NewsCard item={item} />
+              <NewsCard item={item} portfolioId={portfolioId} />
             </li>
           ))}
         </ul>
@@ -181,7 +191,7 @@ function Results({
           <ul className="mt-3 grid gap-3 lg:grid-cols-2" aria-label="Low-relevance news">
             {collapsed.map((item) => (
               <li key={item.url}>
-                <NewsCard item={item} />
+                <NewsCard item={item} portfolioId={portfolioId} />
               </li>
             ))}
           </ul>
@@ -231,5 +241,132 @@ function TypeChip({
         {count}
       </span>
     </button>
+  );
+}
+
+/** Where the news comes from and whom it is about, across every story found in the period. */
+function Overview({ data }: { data: Radar }) {
+  const o = data.overview;
+  const max = Math.max(1, ...o.byHolding.map((h) => h.count));
+  return (
+    <section aria-label="News overview" className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-2xl border bg-card p-4">
+        <h3 className="mb-2 text-xs font-semibold text-muted-foreground">Stories per holding</h3>
+        {o.byHolding.length === 0 ? (
+          <p className="text-sm text-muted-foreground">None linked.</p>
+        ) : (
+          <ul className="space-y-1.5 text-sm">
+            {o.byHolding.slice(0, 6).map((h) => (
+              <li key={h.key} className="grid grid-cols-[3.5rem_1fr_2rem] items-center gap-2">
+                <span className="font-medium">{h.key}</span>
+                <span className="h-1.5 rounded-full bg-muted" aria-hidden="true">
+                  <span
+                    className="block h-1.5 rounded-full bg-primary/70"
+                    style={{ width: `${(h.count / max) * 100}%` }}
+                  />
+                </span>
+                <span className="text-right tabular-nums">{h.count}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="rounded-2xl border bg-card p-4">
+        <h3 className="mb-2 text-xs font-semibold text-muted-foreground">Sources</h3>
+        <ul className="space-y-1 text-sm">
+          {o.byOutlet.slice(0, 6).map((x) => (
+            <li key={x.key} className="flex justify-between gap-2">
+              <span className="truncate">{x.key}</span>
+              <span className="tabular-nums text-muted-foreground">{x.count}</span>
+            </li>
+          ))}
+        </ul>
+        {o.byOutlet.length > 6 && (
+          <p className="mt-1 text-xs text-muted-foreground">and {o.byOutlet.length - 6} more</p>
+        )}
+      </div>
+      <div className="rounded-2xl border bg-card p-4">
+        <h3 className="mb-2 text-xs font-semibold text-muted-foreground">What kind of news</h3>
+        <ul className="space-y-1 text-sm">
+          {o.byClass.map((x) => (
+            <li key={x.key} className="flex justify-between gap-2">
+              <span>{CLASS_STYLE[(x.key as NewsClassKey) ?? "unclassified"]?.label ?? x.key}</span>
+              <span className="tabular-nums text-muted-foreground">{x.count}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Fundamental news changes a company&rsquo;s economics; narrative news moves sentiment;
+          noise does neither.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+interface ScanResult {
+  range: { from: string; to: string };
+  providers: string[];
+  fetched: number;
+  inserted: number;
+  duplicates: number;
+  linked: number;
+  searchLinked: number;
+  classified: number;
+  failures: { provider: string; ticker: string; error: string }[];
+}
+
+/** Looks for fresh news about every holding, then reloads the ranking. */
+function ScanBar({ portfolioId, onDone }: { portfolioId: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  async function scan() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api<ScanResult>(`/api/portfolios/${portfolioId}/news/scan`, {
+        method: "POST",
+      });
+      setResult(r);
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The scan failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">Find the latest news</p>
+        <p className="text-xs text-muted-foreground">
+          Searches the web (and the news feed, when one is set up) for the last week&rsquo;s news on
+          each holding, then links, groups and classifies what it finds.
+        </p>
+      </div>
+      <Button onClick={() => void scan()} disabled={busy} size="sm">
+        <RefreshCw className={cn(busy && "animate-spin")} />{" "}
+        {busy ? "Scanning, this takes a moment" : "Scan now"}
+      </Button>
+      {result && (
+        <p className="w-full text-xs text-muted-foreground" aria-live="polite" role="status">
+          Searched {result.providers.map((p) => (p === "web" ? "the web" : p)).join(" and ")} for{" "}
+          {result.range.from} to {result.range.to}: {result.fetched} dated articles,{" "}
+          {result.inserted} new, {result.duplicates} already known, {result.linked} linked to
+          companies
+          {result.searchLinked
+            ? ` (${result.searchLinked} only by the search that found them)`
+            : ""}
+          , {result.classified} classified
+          {result.failures.length ? `, ${result.failures.length} problems` : ""}.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="w-full text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

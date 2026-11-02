@@ -142,10 +142,8 @@ test.describe("theme", () => {
     const s = await startUiSession(page);
     await s.create("Theme", COVERED);
     await page.goto("/dashboard");
-    await expect(page.getByText("Portfolio index (100 at the start)")).toBeVisible();
-    const card = page
-      .getByText("Portfolio index (100 at the start)")
-      .locator("xpath=ancestor::*[@data-slot='card'][1]");
+    const card = page.getByRole("region", { name: "Performance chart" });
+    await expect(card).toBeVisible();
     const before = await card.evaluate((e) => getComputedStyle(e).backgroundColor);
     const textBefore = await page
       .locator(".recharts-cartesian-axis-tick-value")

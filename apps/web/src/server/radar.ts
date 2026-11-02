@@ -10,11 +10,13 @@ import {
 } from "@portfolio-lab/db";
 import { scoreRelevance, type NewsClass, type RelevanceResult } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
+
 import {
   latestClassifications,
   mergeClusters,
   type ClassificationInfo,
   type LinkRow,
+  newsOverview,
 } from "./news-links";
 
 /** Items scoring below this are collapsed on screen, not hidden. */
@@ -30,6 +32,8 @@ export const CLASS_FILTERS = [
 export type ClassFilter = (typeof CLASS_FILTERS)[number];
 
 export interface RadarItem {
+  /** The earliest article of the story, for the analysis panel. */
+  id: number;
   title: string;
   url: string;
   source: string | null;
@@ -37,6 +41,8 @@ export interface RadarItem {
   session: string | null;
   ageDays: number;
   copies: number;
+  /** Outlets that covered the story, earliest first. */
+  outlets: string[];
   relevance: RelevanceResult;
   classification: ClassificationInfo | null;
 }
@@ -49,6 +55,8 @@ export interface Radar {
   threshold: number;
   items: RadarItem[];
   counts: { total: number; shown: number; collapsed: number; byClass: Record<string, number> };
+  /** Stories per holding, per type and per outlet, across everything found (not only the shown items). */
+  overview: ReturnType<typeof newsOverview>;
 }
 
 /**
@@ -108,7 +116,7 @@ export async function getMarketRadar(
     merged.map((m) => m.earliest.id),
   );
 
-  let items: RadarItem[] = merged.map(({ earliest, copies, perCompany }) => {
+  let items: RadarItem[] = merged.map(({ earliest, copies, perCompany, outlets }) => {
     const c = classes.get(earliest.id) ?? null;
     const ageDays = Math.max(0, (now.getTime() - earliest.publishedAt.getTime()) / 86_400_000);
     const relevance = scoreRelevance({
@@ -123,6 +131,7 @@ export async function getMarketRadar(
       ageDays,
     });
     return {
+      id: earliest.id,
       title: earliest.title,
       url: earliest.url,
       source: earliest.source,
@@ -130,6 +139,7 @@ export async function getMarketRadar(
       session: earliest.session,
       ageDays,
       copies,
+      outlets,
       relevance,
       classification: c,
     };
@@ -164,5 +174,6 @@ export async function getMarketRadar(
     threshold: LOW_RELEVANCE_THRESHOLD,
     items: items.slice(0, RADAR_MAX_ITEMS),
     counts: { total, shown, collapsed: total - shown, byClass },
+    overview: newsOverview(items),
   };
 }

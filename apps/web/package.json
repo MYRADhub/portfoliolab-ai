@@ -16,6 +16,7 @@
   "dependencies": {
     "@base-ui/react": "^1.9.0",
     "@next/env": "^16.4.2",
+    "@portfolio-lab/classify": "workspace:*",
     "@portfolio-lab/data": "workspace:*",
     "@portfolio-lab/db": "workspace:*",
     "@portfolio-lab/explain": "workspace:*",

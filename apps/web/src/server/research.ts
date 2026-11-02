@@ -288,10 +288,11 @@ async function companyNews(
     merged.map((m) => m.earliest.id),
   );
   return merged
-    .map(({ earliest, copies, perCompany }) => {
+    .map(({ earliest, copies, perCompany, outlets }) => {
       const cl = classes.get(earliest.id) ?? null;
       const ageDays = Math.max(0, (now.getTime() - earliest.publishedAt.getTime()) / 86_400_000);
       return {
+        id: earliest.id,
         title: earliest.title,
         url: earliest.url,
         source: earliest.source,
@@ -299,6 +300,7 @@ async function companyNews(
         session: earliest.session,
         ageDays,
         copies,
+        outlets,
         relevance: scoreRelevance({
           links: [{ ticker, linkScore: perCompany.get(companyId) ?? 0, weight: NEUTRAL_WEIGHT }],
           classification: cl
