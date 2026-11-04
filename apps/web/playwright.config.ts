@@ -13,7 +13,21 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["list"]],
-  use: { baseURL, trace: "retain-on-failure", screenshot: "only-on-failure" },
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    // The guided tour opens by itself on a visit's first dashboard; tests that are not about it start opted out.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: baseURL,
+          localStorage: [{ name: "pl-onboarding", value: JSON.stringify({ tourOptOut: true }) }],
+        },
+      ],
+    },
+  },
   projects: [
     {
       name: "desktop",

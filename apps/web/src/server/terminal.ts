@@ -82,6 +82,8 @@ export interface Terminal {
     | { available: false; reason: string }
     | {
         available: true;
+        /** Share of the portfolio with an exposure profile; the figures describe that part. */
+        coverage: number;
         effectiveFactors: number | null;
         effectiveSectors: number;
         topFactors: { name: string; net: number; share: number }[];
@@ -207,6 +209,7 @@ export async function getTerminal(
     exposures: x.available
       ? {
           available: true,
+          coverage: x.coverage.share,
           effectiveFactors: x.concentration.effectiveFactors,
           effectiveSectors: x.concentration.effectiveSectors,
           topFactors: x.factors

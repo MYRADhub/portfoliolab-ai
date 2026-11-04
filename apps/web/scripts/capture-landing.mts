@@ -27,6 +27,16 @@ const context = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
   baseURL: base,
+  // Keep the guided tour from opening over the screenshots.
+  storageState: {
+    cookies: [],
+    origins: [
+      {
+        origin: new URL(base).origin,
+        localStorage: [{ name: "pl-onboarding", value: JSON.stringify({ tourOptOut: true }) }],
+      },
+    ],
+  },
 });
 const page = await context.newPage();
 page.setDefaultTimeout(60_000);

@@ -171,7 +171,11 @@ function Results({
       {shown.length > 0 && (
         <ul className="grid gap-3 lg:grid-cols-2" aria-label="Ranked news">
           {shown.map((item, idx) => (
-            <li key={item.url} className={cn(idx === 0 && "lg:col-span-2")}>
+            <li
+              key={item.url}
+              className={cn(idx === 0 && "lg:col-span-2")}
+              data-tour={idx === 0 ? "news-story" : undefined}
+            >
               {idx === 0 && (
                 <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Most relevant right now

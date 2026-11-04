@@ -11,6 +11,8 @@ export interface OnboardingState {
   checklistHidden: boolean;
   /** The guided tour was finished or skipped. */
   tourDone: boolean;
+  /** "Don't start the tour automatically" was ticked; the Tutorial button still starts it. */
+  tourOptOut: boolean;
   /** Pages visited, used to tick the checklist. */
   visited: string[];
 }
@@ -19,6 +21,7 @@ const EMPTY: OnboardingState = {
   welcomeDismissed: false,
   checklistHidden: false,
   tourDone: false,
+  tourOptOut: false,
   visited: [],
 };
 
@@ -42,6 +45,7 @@ function read(): OnboardingState {
         welcomeDismissed: parsed.welcomeDismissed === true,
         checklistHidden: parsed.checklistHidden === true,
         tourDone: parsed.tourDone === true,
+        tourOptOut: parsed.tourOptOut === true,
         visited: Array.isArray(parsed.visited)
           ? parsed.visited.filter((v) => typeof v === "string")
           : [],
@@ -80,6 +84,30 @@ function subscribe(cb: () => void) {
     listeners.delete(cb);
     window.removeEventListener("storage", cb);
   };
+}
+
+/** The stored onboarding state, read outside React (for example when deciding to start the tour). */
+export function getOnboarding(): OnboardingState {
+  return read();
+}
+
+const VISIT_KEY = "pl-tour-this-visit";
+let shownThisPageLoad = false;
+
+/**
+ * Whether the tour has already started by itself during this visit (this browser tab), and marks it as started.
+ * A visit lasts until the tab is closed. With session storage blocked, it falls back to this page load.
+ */
+export function claimAutoTour(): boolean {
+  try {
+    if (sessionStorage.getItem(VISIT_KEY)) return false;
+    sessionStorage.setItem(VISIT_KEY, "1");
+    return true;
+  } catch {
+    if (shownThisPageLoad) return false;
+    shownThisPageLoad = true;
+    return true;
+  }
 }
 
 /** Onboarding progress, shared by the welcome card, the checklist, the tour and the sidebar. Null until the browser has read storage. */

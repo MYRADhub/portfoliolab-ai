@@ -47,7 +47,9 @@ export function buildInsights(
   const out: Insight[] = [];
 
   // 1. Sectors versus hidden forces: the product's central comparison.
-  if (t.exposures.available && t.exposures.effectiveFactors !== null) {
+  // These cards speak for the whole portfolio, so they need a profile for every holding.
+  const whole = t.exposures.available && t.exposures.coverage >= 0.999;
+  if (whole && t.exposures.available && t.exposures.effectiveFactors !== null) {
     const s = t.exposures.effectiveSectors;
     const f = t.exposures.effectiveFactors;
     out.push(
@@ -108,6 +110,7 @@ export function buildInsights(
 
   // 3. The single largest economic force.
   if (
+    whole &&
     t.exposures.available &&
     t.exposures.topFactors[0] &&
     t.exposures.topFactors[0].share >= THRESHOLDS.topFactorShare

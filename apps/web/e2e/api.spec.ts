@@ -417,11 +417,30 @@ test.describe("exposures", () => {
     expect(x).toMatchObject({ available: false, reason: "no_factors" });
   });
 
-  test("refuses partial coverage and names the missing tickers", async ({ playwright }) => {
+  test("analyses the profiled part and names what it leaves out, but refuses a mostly unprofiled portfolio", async ({
+    playwright,
+  }) => {
     const ctx = await newSession(playwright);
-    const id = await createPortfolio(ctx, "P", EXAMPLE); // JPM has no exposures
+    const id = await createPortfolio(ctx, "P", EXAMPLE); // JPM (20%) has no exposures
     const x = (await (await ctx.get(`/api/portfolios/${id}/exposures`)).json()) as Json;
-    expect(x).toEqual({ available: false, reason: "missing_exposures", missingTickers: ["JPM"] });
+    expect(x.available).toBe(true);
+    expect(x.coverage).toMatchObject({ profiled: 4, total: 5 });
+    expect(x.coverage.share).toBeCloseTo(0.8, 9);
+    expect(x.coverage.missing).toEqual([{ ticker: "JPM", weight: expect.closeTo(0.2, 9) }]);
+    expect(x.holdings.map((h: Json) => h.ticker)).not.toContain("JPM");
+    expect(x.holdings.reduce((a: number, h: Json) => a + h.weight, 0)).toBeCloseTo(1, 9);
+
+    const low = await createPortfolio(ctx, "Low", [
+      { ticker: "JPM", weightPct: 70 },
+      { ticker: "NVDA", weightPct: 30 },
+    ]);
+    const y = (await (await ctx.get(`/api/portfolios/${low}/exposures`)).json()) as Json;
+    expect(y).toMatchObject({
+      available: false,
+      reason: "missing_exposures",
+      missingTickers: ["JPM"],
+      coverage: { share: expect.closeTo(0.3, 9) },
+    });
   });
 
   test("computes loadings, factor HHI and sector HHI that match an independent calculation", async ({

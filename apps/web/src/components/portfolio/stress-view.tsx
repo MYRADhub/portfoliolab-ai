@@ -17,6 +17,7 @@ import type { StressCatalog, StressOutcome } from "@/server/stress";
 import { ExplainTool } from "./explain-tool";
 import { WithPortfolio } from "./with-portfolio";
 import { HowToRead } from "@/components/ui/how-to-read";
+import { CoverageNote, NotEnoughCoverage } from "./coverage-note";
 import { Loading } from "@/components/ui/skeleton";
 
 export function StressView() {
@@ -67,10 +68,15 @@ function Content({ id }: { id: string }) {
     return (
       <Card>
         <CardContent>
-          <p>
-            Stress tests need exposure profiles for every holding. Load exposure data or choose a
-            portfolio whose holdings are covered.
-          </p>
+          {catalog.coverage ? (
+            <NotEnoughCoverage
+              coverage={catalog.coverage}
+              missingTickers={catalog.coverage.missing.map((m) => m.ticker)}
+              what="A stress test"
+            />
+          ) : (
+            <p>Exposure data has not been loaded yet, so there is nothing to stress.</p>
+          )}
         </CardContent>
       </Card>
     );
@@ -79,6 +85,7 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      {catalog.coverage && <CoverageNote coverage={catalog.coverage} what="This stress test" />}
       <HowToRead>
         <p>
           A stress test asks &ldquo;what if this happened?&rdquo; Pick a scenario, such as interest

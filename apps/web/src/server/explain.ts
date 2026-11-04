@@ -12,7 +12,7 @@ import {
 import { pct, signedPct } from "@/lib/format";
 import { AppError } from "./errors";
 import { getPortfolioCorrelation } from "./correlation";
-import { getPortfolioExposures } from "./exposures";
+import { coverageFact, getPortfolioExposures } from "./exposures";
 import { buildMoveFacts, getPortfolioMove, moveTask, type PortfolioMove } from "./move";
 import { getPortfolioAnalytics } from "./portfolios";
 import { RateLimiter, type Limiter } from "./rate-limit";
@@ -83,6 +83,8 @@ export async function buildPortfolioFacts(
 
   const x = await getPortfolioExposures(db, sessionId, portfolioId);
   if (x.available) {
+    const covers = coverageFact(x.coverage);
+    if (covers) entries.push(covers);
     entries.push({
       label: "Effective number of sectors",
       text: x.concentration.effectiveSectors.toFixed(1),

@@ -28,6 +28,7 @@ import { WithPortfolio } from "./with-portfolio";
 import { HowToRead } from "@/components/ui/how-to-read";
 import { EvidenceTable, PriceCheckCard, ScoreMethodCard } from "./score-method";
 import { exposureProvenance } from "@/lib/provenance";
+import { CoverageNote, NotEnoughCoverage } from "./coverage-note";
 import { Loading } from "@/components/ui/skeleton";
 
 export function ExposureView() {
@@ -59,10 +60,11 @@ function Content({ id }: { id: string }) {
           {data.reason === "no_factors" ? (
             <p>Exposure data has not been loaded yet, so there is nothing to analyze.</p>
           ) : (
-            <p>
-              Exposure profiles are missing for: <strong>{data.missingTickers.join(", ")}</strong>.
-              The analysis needs every holding covered so it does not understate your risk.
-            </p>
+            <NotEnoughCoverage
+              coverage={data.coverage}
+              missingTickers={data.missingTickers}
+              what="This analysis"
+            />
           )}
         </CardContent>
       </Card>
@@ -78,6 +80,7 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      <CoverageNote coverage={data.coverage} what="This map" />
       <HowToRead>
         <p>
           Owning different stocks does not mean owning different risks. Each company depends on

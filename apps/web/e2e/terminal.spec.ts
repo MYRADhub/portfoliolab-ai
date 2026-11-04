@@ -68,7 +68,9 @@ test.describe("terminal API", () => {
     expect(t.news.length).toBeGreaterThan(0);
     const scores = t.news.map((n: Json) => n.score);
     expect(scores).toEqual([...scores].sort((x: number, y: number) => y - x));
-    expect(t.exposures).toEqual({ available: false, reason: "missing_exposures" }); // JPM has no exposure fixture
+    // JPM (20%) has no exposure fixture: the figures cover the other 80% and say so.
+    expect(t.exposures.available).toBe(true);
+    expect(t.exposures.coverage).toBeCloseTo(0.8, 9);
   });
 
   test("includes exposure highlights when every holding is covered", async ({ playwright }) => {
@@ -228,7 +230,9 @@ test.describe("terminal page", () => {
     await s.create("Terminal", EXAMPLE);
     await page.goto("/terminal");
     await tab(page, "Context").click();
-    await expect(page.getByText("Some holdings have no exposure data yet.")).toBeVisible();
+    await expect(
+      page.getByText("Covers the 80% of the portfolio with an exposure profile."),
+    ).toBeVisible();
     await expect(
       page.getByRole("list", { name: "Most correlated pairs" }).getByRole("listitem"),
     ).toHaveCount(3);

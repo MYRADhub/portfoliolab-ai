@@ -7,7 +7,7 @@ import {
   type ConcentrationSnapshot,
 } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
-import { getPortfolioExposures } from "./exposures";
+import { getPortfolioExposures, isFullyProfiled } from "./exposures";
 
 export const DEFAULT_CANDIDATE_WEIGHT = 0.05;
 
@@ -53,6 +53,13 @@ export async function getDiscovery(
   const exp = await getPortfolioExposures(db, sessionId, portfolioId);
   if (!exp.available)
     return { available: false, reason: exp.reason, missingTickers: exp.missingTickers };
+  // Suggestions weigh every holding's exposures, so a holding without a profile would count as having none.
+  if (!isFullyProfiled(exp))
+    return {
+      available: false,
+      reason: "missing_exposures",
+      missingTickers: exp.coverage.missing.map((m) => m.ticker),
+    };
 
   const bySigned = new Map<string, Record<string, number>>();
   for (const c of exp.cells) {

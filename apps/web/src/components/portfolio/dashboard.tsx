@@ -282,7 +282,8 @@ function PortfolioView({ id }: { id: string }) {
   const ytd = perf("Year to date");
   const month = perf("1 month");
   const topForce =
-    t.exposures.available && t.exposures.topFactors[0]
+    // Only when every holding is profiled: the summary speaks for the whole portfolio.
+    t.exposures.available && t.exposures.coverage >= 0.999 && t.exposures.topFactors[0]
       ? { name: t.exposures.topFactors[0].name, share: t.exposures.topFactors[0].share }
       : null;
   const summary = summarize({
@@ -305,6 +306,7 @@ function PortfolioView({ id }: { id: string }) {
 
       <section
         aria-label="Summary"
+        data-tour="summary"
         className="rounded-2xl border bg-gradient-to-br from-card to-muted/60 p-6 text-card-foreground"
       >
         <p className="text-xs font-medium text-muted-foreground">

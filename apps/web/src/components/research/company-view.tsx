@@ -173,7 +173,7 @@ export function CompanyView({ ticker }: { ticker: string }) {
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             {data.news.map((n) => (
-              <NewsCard key={n.url} item={n} compact />
+              <NewsCard key={n.url} item={n} compact showWeights={false} />
             ))}
           </div>
         )}
@@ -357,7 +357,7 @@ function WhatIf({ ticker }: { ticker: string }) {
               ? `${ticker} is already in this portfolio.`
               : out.reason === "candidate_unprofiled"
                 ? `${ticker} has no exposure profile yet, so the effect cannot be computed.`
-                : "This portfolio needs exposure profiles for every holding first."}
+                : `The hidden-force effect needs an exposure profile for every holding, and ${out.missingTickers.join(", ")} ${out.missingTickers.length === 1 ? "has" : "have"} none yet. The backtest below uses prices only, so it covers every holding.`}
           </p>
         )}
         {out && out.available && (
@@ -409,7 +409,11 @@ function FitDetail({
   if (!data) return <Loading rows={1} />;
   const [table, ...charts] = data.displays;
   return (
-    <section aria-label="Portfolio fit" className="space-y-3 border-t pt-3">
+    <section
+      aria-label="Portfolio fit"
+      data-tour="portfolio-fit"
+      className="space-y-3 border-t pt-3"
+    >
       <p className="text-xs text-muted-foreground">
         Last year, {data.fit.window.from} to {data.fit.window.to}, constant weights rebalanced
         daily. Correlation with the portfolio:{" "}

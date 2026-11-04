@@ -9,6 +9,7 @@ import { getPortfolioMove } from "./move";
 import { DEFAULT_FIT_WEIGHT, fitFor, loadFitContext, type PortfolioFit } from "./portfolio-fit";
 import { getRebalance } from "./rebalance";
 import { getSimulation } from "./simulation";
+import { coverageFact } from "./exposures";
 import { runStress } from "./stress";
 import { getWatchlist } from "./watchlist";
 
@@ -614,6 +615,8 @@ export function buildPortfolioTools(
         ];
         if (r.ignored.length)
           entries.push({ label: "Shocks no holding is exposed to", text: r.ignored.join(", ") });
+        const covers = coverageFact(r.coverage);
+        if (covers) entries.push(covers);
         for (const h of r.holdings.slice(0, 3))
           entries.push({
             label: `Custom scenario impact on ${h.ticker}`,

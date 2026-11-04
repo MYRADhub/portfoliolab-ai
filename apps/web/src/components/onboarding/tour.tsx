@@ -14,7 +14,13 @@ import {
 } from "react";
 import { RAIL_LABEL } from "@/components/layout/app-sidebar";
 import { Button } from "@/components/ui/button";
-import { markVisited, updateOnboarding } from "@/lib/onboarding";
+import {
+  claimAutoTour,
+  getOnboarding,
+  markVisited,
+  updateOnboarding,
+  useOnboarding,
+} from "@/lib/onboarding";
 import { TOUR_STEPS } from "./steps";
 
 interface TourApi {
@@ -34,8 +40,8 @@ interface Box {
 
 const PAD = 8;
 const POPOVER_WIDTH = 360;
-/** Room kept for the popover when deciding whether it fits above or below the target. */
-const POPOVER_HEIGHT = 240;
+/** Room kept for the popover (text, a hint and the automatic-start choice) when deciding where it fits. */
+const POPOVER_HEIGHT = 360;
 
 function findTarget(name: string | undefined): HTMLElement | null {
   return name ? document.querySelector<HTMLElement>(`[data-tour="${name}"]`) : null;
@@ -62,6 +68,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     returnFocus.current?.focus();
   }, []);
 
+  // Each visit, the tour starts by itself the first time the dashboard opens, unless the visitor turned that off.
+  // Only the dashboard: someone arriving through a link to another page is not pulled away from it.
+  const onPath = useCallback((p: string) => {
+    setPathname(p);
+    if (p !== "/dashboard" || getOnboarding().tourOptOut || !claimAutoTour()) return;
+    // Start only if a tour is not already running (for example one the visitor opened by hand).
+    setIndex((current) => current ?? 0);
+  }, []);
+
   // Move to the page a step belongs to.
   const step = index === null ? null : TOUR_STEPS[index]!;
   useEffect(() => {
@@ -71,7 +86,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   return (
     <TourContext.Provider value={{ start, active }}>
       <Suspense fallback={null}>
-        <PathReporter onPath={setPathname} />
+        <PathReporter onPath={onPath} />
       </Suspense>
       {children}
       {step && index !== null && (
@@ -110,6 +125,7 @@ function TourOverlay({
 }) {
   const step = TOUR_STEPS[stepIndex]!;
   const last = stepIndex === TOUR_STEPS.length - 1;
+  const optOut = useOnboarding()?.tourOptOut ?? false;
   const [box, setBox] = useState<Box | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -163,7 +179,7 @@ function TourOverlay({
       else if (e.key === "Tab") {
         // Keep focus inside the dialog.
         const nodes = dialogRef.current?.querySelectorAll<HTMLElement>(
-          "button, [href], [tabindex]:not([tabindex='-1'])",
+          "button, input, [href], [tabindex]:not([tabindex='-1'])",
         );
         if (!nodes || nodes.length === 0) return;
         const first = nodes[0]!;
@@ -240,7 +256,7 @@ function TourOverlay({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Skip tour"
+            aria-label="Close tour"
             className="-mt-1 -mr-1 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="size-4" aria-hidden="true" />
@@ -249,11 +265,22 @@ function TourOverlay({
         <p id="tour-body" className="mt-2 text-sm text-muted-foreground">
           {step.body}
         </p>
+        {step.hint && (
+          <p className="mt-3 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+            <span className="font-medium">Try it: </span>
+            {step.hint}
+          </p>
+        )}
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground" aria-live="polite">
             Step {stepIndex + 1} of {TOUR_STEPS.length}
           </p>
           <div className="flex items-center gap-2">
+            {!last && (
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                Skip tour
+              </Button>
+            )}
             {stepIndex > 0 && (
               <Button variant="outline" size="sm" onClick={onBack}>
                 <ChevronLeft aria-hidden="true" />
@@ -266,6 +293,15 @@ function TourOverlay({
             </Button>
           </div>
         </div>
+        <label className="mt-3 flex cursor-pointer items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={optOut}
+            onChange={(e) => updateOnboarding({ tourOptOut: e.target.checked })}
+            className="size-3.5 accent-[var(--primary)]"
+          />
+          Don&rsquo;t start this tour automatically
+        </label>
       </div>
     </div>
   );

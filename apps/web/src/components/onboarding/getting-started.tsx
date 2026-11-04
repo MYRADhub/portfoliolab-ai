@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Rocket, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,40 +16,11 @@ const ITEMS: { key: string; label: string; href: string }[] = [
   { key: "tour", label: "Take the guided tour", href: "/dashboard" },
 ];
 
-/** First-visit welcome (non-blocking) and a getting-started checklist that ticks itself off as pages are opened. */
+/** A getting-started checklist that ticks itself off as pages are opened. The tour opens by itself each visit. */
 export function GettingStarted() {
   const state = useOnboarding();
   const { start } = useTour();
   if (!state) return null;
-
-  if (!state.welcomeDismissed && !state.tourDone) {
-    return (
-      <Card className="border-primary/30 bg-accent/40" role="region" aria-label="Welcome">
-        <CardContent className="flex flex-wrap items-center gap-4">
-          <Rocket className="size-6 text-primary" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold">New here? Take the three-minute tutorial.</p>
-            <p className="text-sm text-muted-foreground">
-              See how PortfolioLab finds the hidden risks behind your holdings, step by step.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => {
-                updateOnboarding({ welcomeDismissed: true });
-                start();
-              }}
-            >
-              Start the tour
-            </Button>
-            <Button variant="ghost" onClick={() => updateOnboarding({ welcomeDismissed: true })}>
-              Not now
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (state.checklistHidden) return null;
   const visited = new Set(state.visited);

@@ -66,6 +66,7 @@ function terminal(over: Partial<Terminal> = {}): Terminal {
     ],
     exposures: {
       available: true,
+      coverage: 1,
       effectiveFactors: 3,
       effectiveSectors: 5,
       topFactors: [{ name: "AI spending", net: 1, share: 0.4 }],
@@ -96,11 +97,28 @@ describe("buildInsights", () => {
     expect(i["hidden-concentration"]!.detail).toContain("only 3.0");
   });
 
+  it("does not speak for the whole portfolio from a partly profiled one", () => {
+    const i = byId(
+      terminal({
+        exposures: {
+          available: true,
+          coverage: 0.8,
+          effectiveFactors: 3,
+          effectiveSectors: 5,
+          topFactors: [{ name: "AI spending", net: 1, share: 0.4 }],
+        },
+      }),
+    );
+    expect(i["hidden-concentration"]!.detail).toContain("needs exposure data for every holding");
+    expect(i["top-force"]).toBeUndefined();
+  });
+
   it("is reassuring when forces are at least as spread as sectors", () => {
     const i = byId(
       terminal({
         exposures: {
           available: true,
+          coverage: 1,
           effectiveFactors: 8,
           effectiveSectors: 5,
           topFactors: [{ name: "Rates", net: 1, share: 0.1 }],

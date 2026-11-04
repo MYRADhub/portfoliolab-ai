@@ -11,7 +11,13 @@ import { createTestDb } from "@portfolio-lab/db/testing";
 import { seedDevCompanies } from "../../../../packages/db/src/seed/companies";
 import { createPortfolio } from "./portfolios";
 import { getPortfolioCorrelation } from "./correlation";
-import { getPortfolioExposures } from "./exposures";
+import {
+  coverageFact,
+  getPortfolioExposures,
+  isFullyProfiled,
+  MIN_PROFILED_SHARE,
+  profiledPart,
+} from "./exposures";
 
 let ctx: Awaited<ReturnType<typeof createTestDb>>;
 let sid: string;
@@ -148,11 +154,37 @@ describe("getPortfolioExposures", () => {
       { companyId: await id("NVDA"), factorId: rates!.id, magnitude: 1, direction: -1, ...base },
       { companyId: await id("AAPL"), factorId: rates!.id, magnitude: 1, direction: -1, ...base },
     ]);
+    // 80% of the portfolio is profiled: the figures describe that part, rescaled, and say what is left out.
     const partial = await getPortfolioExposures(ctx.db, sid, p.id);
-    expect(partial).toEqual({
+    if (!partial.available) throw new Error("expected the profiled part to be analysed");
+    expect(partial.coverage).toMatchObject({ profiled: 2, total: 3 });
+    expect(partial.coverage.share).toBeCloseTo(0.8, 12);
+    expect(partial.coverage.missing.map((m) => m.ticker)).toEqual(["JPM"]);
+    expect(partial.coverage.missing[0]!.weight).toBeCloseTo(0.2, 12);
+    expect(isFullyProfiled(partial)).toBe(false);
+    expect(partial.holdings.map((h) => h.ticker)).toEqual(["NVDA", "AAPL"]);
+    expect(partial.holdings[0]!.weight).toBeCloseTo(0.625, 12);
+    expect(partial.holdings[1]!.weight).toBeCloseTo(0.375, 12);
+    expect(partial.factors.find((f) => f.slug === "ai")!.net).toBeCloseTo(3 * 0.625, 12);
+    expect(coverageFact(partial.coverage)).toEqual({
+      label: "Exposure profiles cover",
+      text: "80% of the portfolio by weight; left out for lack of a profile: JPM. Exposure figures describe the profiled part.",
+    });
+
+    // Under half profiled: too little to describe the portfolio, so it says what is missing.
+    const mostlyBank = await createPortfolio(ctx.db, sid, {
+      name: "Mostly JPM",
+      normalize: false,
+      holdings: holdingsOf([
+        ["JPM", 60],
+        ["NVDA", 40],
+      ]),
+    });
+    expect(await getPortfolioExposures(ctx.db, sid, mostlyBank.id)).toMatchObject({
       available: false,
       reason: "missing_exposures",
       missingTickers: ["JPM"],
+      coverage: { share: 0.4 },
     });
 
     await ctx.db.insert(companyFactorExposures).values({
@@ -164,6 +196,9 @@ describe("getPortfolioExposures", () => {
     });
     const full = await getPortfolioExposures(ctx.db, sid, p.id);
     if (!full.available) throw new Error("expected available");
+    expect(isFullyProfiled(full)).toBe(true);
+    expect(full.coverage).toMatchObject({ share: 1, missing: [] });
+    expect(coverageFact(full.coverage)).toBeNull();
     const bySlug = Object.fromEntries(full.factors.map((f) => [f.slug, f]));
     expect(bySlug.ai!.net).toBeCloseTo(1.5, 12);
     expect(bySlug.rates!.net).toBeCloseTo(-0.5 - 0.3 + 0.4, 12);
@@ -178,6 +213,25 @@ describe("getPortfolioExposures", () => {
     expect(full.cells.find((c) => c.ticker === "JPM")).toMatchObject({
       factor: "rates",
       signed: 2,
+    });
+  });
+
+  it("profiledPart rescales the profiled holdings and draws the line at half the portfolio", () => {
+    const hs = [
+      { ticker: "A", weight: 0.25 },
+      { ticker: "B", weight: 0.25 },
+      { ticker: "C", weight: 0.5 },
+    ];
+    const half = profiledPart(hs, (h) => h.ticker !== "C");
+    expect(MIN_PROFILED_SHARE).toBe(0.5);
+    expect(half.usable).toBe(true);
+    expect(half.holdings.map((h) => h.weight)).toEqual([0.5, 0.5]);
+    expect(half.coverage.missing).toEqual([{ ticker: "C", weight: 0.5 }]);
+    expect(profiledPart(hs, (h) => h.ticker === "A").usable).toBe(false);
+    expect(profiledPart(hs, () => false)).toMatchObject({ usable: false, holdings: [] });
+    expect(profiledPart([], () => true)).toMatchObject({
+      usable: false,
+      coverage: { share: 0, total: 0 },
     });
   });
 

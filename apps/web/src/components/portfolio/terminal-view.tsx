@@ -404,7 +404,11 @@ function Overview({ t, radar }: { t: Terminal; radar: Radar | null }) {
             )}
             {t.exposures.available && (
               <Kv
-                label="Effective sectors | forces"
+                label={
+                  t.exposures.coverage < 0.999
+                    ? `Effective sectors | forces (${pct(t.exposures.coverage, 0)} profiled)`
+                    : "Effective sectors | forces"
+                }
                 value={`${t.exposures.effectiveSectors.toFixed(1)} | ${t.exposures.effectiveFactors === null ? "n/a" : t.exposures.effectiveFactors.toFixed(1)}`}
               />
             )}
@@ -676,10 +680,15 @@ function ContextTab({ t, radar }: { t: Terminal; radar: Radar | null }) {
           <p className="text-muted-foreground">
             {t.exposures.reason === "no_factors"
               ? "No exposure data for these holdings."
-              : "Some holdings have no exposure data yet."}
+              : "Too little of this portfolio has exposure data yet."}
           </p>
         ) : (
           <>
+            {t.exposures.coverage < 0.999 && (
+              <p className="text-muted-foreground">
+                Covers the {pct(t.exposures.coverage, 0)} of the portfolio with an exposure profile.
+              </p>
+            )}
             <p>
               Effective sectors{" "}
               <span className="tabular-nums font-semibold">

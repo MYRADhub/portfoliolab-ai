@@ -21,9 +21,10 @@ test.describe("what the forces did", () => {
 
   test("names the holdings that lack an exposure profile", async ({ page }) => {
     const s = await startUiSession(page);
+    // Under half of it is profiled, so the attribution would describe too little of the portfolio.
     const id = await s.create("No profile", [
-      { ticker: "XOM", weightPct: 50 },
-      { ticker: "NVDA", weightPct: 50 },
+      { ticker: "XOM", weightPct: 60 },
+      { ticker: "NVDA", weightPct: 40 },
     ]);
     const b = (await (await page.request.get(`/api/portfolios/${id}/forces`)).json()) as Json;
     expect(b).toMatchObject({ available: false, reason: "missing_exposures" });

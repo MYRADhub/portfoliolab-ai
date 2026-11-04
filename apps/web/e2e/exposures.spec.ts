@@ -17,14 +17,28 @@ test.describe("exposures page", () => {
     await expect(page.getByText("Effective factors")).toHaveCount(0);
   });
 
-  test("names the holdings that lack exposure data instead of showing a partial analysis", async ({
-    page,
-  }) => {
+  test("analyses the profiled holdings and says which it leaves out", async ({ page }) => {
     const s = await startUiSession(page);
     await s.create("Mega caps", EXAMPLE);
     await page.goto("/exposures");
-    await expect(page.getByText(/Exposure profiles are missing for:/)).toContainText("JPM");
-    await expect(page.getByText(/needs every holding covered/)).toBeVisible();
+    const note = page.getByRole("note", { name: "Exposure coverage" });
+    await expect(note).toContainText("80% of the portfolio with an exposure profile");
+    await expect(note).toContainText("4 of 5 holdings");
+    await expect(note).toContainText("JPM (20%)");
+    await expect(page.getByRole("table", { name: "Holdings by factor" })).toBeVisible();
+  });
+
+  test("names the missing holdings when under half the portfolio is profiled", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Mostly unprofiled", [
+      { ticker: "JPM", weightPct: 70 },
+      { ticker: "NVDA", weightPct: 30 },
+    ]);
+    await page.goto("/exposures");
+    await expect(page.getByText(/needs exposure profiles for at least half/)).toContainText(
+      "only 30% is profiled",
+    );
+    await expect(page.getByText(/Missing:/)).toContainText("JPM");
     await expect(page.getByRole("table", { name: "Holdings by factor" })).toHaveCount(0);
   });
 

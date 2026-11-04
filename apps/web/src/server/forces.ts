@@ -8,6 +8,7 @@ import {
   type FactorAttribution,
 } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
+import { profiledPart, type ExposureCoverage } from "./exposures";
 import { loadMarket } from "./events";
 import { exposureMap } from "./research";
 
@@ -30,10 +31,17 @@ export interface ForceRow {
 }
 
 export type ForceReturns =
-  | { available: false; reason: "missing_exposures" | "thin_universe"; missingTickers: string[] }
+  | {
+      available: false;
+      reason: "missing_exposures" | "thin_universe";
+      missingTickers: string[];
+      coverage?: ExposureCoverage;
+    }
   | {
       available: true;
       portfolio: { id: string; name: string };
+      /** Which holdings the attribution describes; their weights are scaled to the profiled part. */
+      coverage: ExposureCoverage;
       window: { from: string; to: string; days: number };
       /** Stocks in the cross-section on an average day, and the forces estimated. */
       universe: { stocks: number; forces: number };
@@ -163,15 +171,21 @@ export async function getForceReturns(
     .where(and(eq(portfolios.id, portfolioId), eq(portfolios.sessionId, sessionId)));
   if (!p) throw new AppError("not_found", "Portfolio not found");
 
-  const held = await db
+  const all = await db
     .select({ id: companies.id, ticker: companies.ticker, weight: holdings.weight })
     .from(holdings)
     .innerJoin(companies, eq(companies.id, holdings.companyId))
     .where(eq(holdings.portfolioId, portfolioId));
   const profiles = await exposureMap(db);
-  const missingTickers = held.filter((h) => !profiles.has(h.id)).map((h) => h.ticker);
-  if (missingTickers.length)
-    return { available: false, reason: "missing_exposures", missingTickers };
+  const part = profiledPart(all, (h) => profiles.has(h.id));
+  if (!part.usable)
+    return {
+      available: false,
+      reason: "missing_exposures",
+      missingTickers: part.coverage.missing.map((m) => m.ticker),
+      coverage: part.coverage,
+    };
+  const held = part.holdings;
 
   const est = await estimateForces(db, { now, days, held: held.map((h) => h.ticker) });
   if (!est) return { available: false, reason: "thin_universe", missingTickers: [] };
@@ -199,6 +213,7 @@ export async function getForceReturns(
   return {
     available: true,
     portfolio: { id: p.id, name: p.name },
+    coverage: part.coverage,
     window: { from: dates[0]!, to: dates.at(-1)!, days: daily.length },
     universe: { stocks: uni.stocks, forces: slugs.length },
     fit: fitStats,

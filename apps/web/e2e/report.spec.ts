@@ -88,9 +88,7 @@ test.describe("report", () => {
     ]);
     await page.goto("/report");
     const report = page.getByRole("article", { name: "Portfolio report" });
-    await expect(
-      report.getByText(/Exposure data is not available for every holding/),
-    ).toBeVisible();
+    await expect(report.getByText(/Too little of this portfolio has exposure data/)).toBeVisible();
     await expect(report.getByText(/Stress tests need exposure data/)).toBeVisible();
     await expect(
       report.getByRole("table", { name: "Report holdings" }).locator("tbody tr"),

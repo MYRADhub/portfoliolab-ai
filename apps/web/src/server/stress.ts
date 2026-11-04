@@ -8,7 +8,7 @@ import {
   type StressResult,
 } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
-import { getPortfolioExposures } from "./exposures";
+import { getPortfolioExposures, type ExposureCoverage } from "./exposures";
 
 export interface StressPreset {
   id: string;
@@ -69,6 +69,8 @@ export const STRESS_PRESETS: StressPreset[] = [
 
 export interface StressCatalog {
   available: boolean;
+  /** Which holdings the scenarios can cover, when any can. */
+  coverage: ExposureCoverage | null;
   /** Factors the portfolio has any exposure to, with a short name for the sliders. */
   factors: { slug: string; name: string; category: string }[];
   presets: StressPreset[];
@@ -76,9 +78,16 @@ export interface StressCatalog {
 }
 
 export type StressOutcome =
-  | { available: false; reason: "no_factors" | "missing_exposures"; missingTickers: string[] }
+  | {
+      available: false;
+      reason: "no_factors" | "missing_exposures";
+      missingTickers: string[];
+      coverage?: ExposureCoverage;
+    }
   | {
       available: true;
+      /** Which holdings the scenario covers; their weights are scaled to the profiled part. */
+      coverage: ExposureCoverage;
       shocks: Record<string, number>;
       /** Shocked factors the portfolio has no exposure to (ignored). */
       ignored: string[];
@@ -99,11 +108,18 @@ export async function getStressCatalog(
   const exp = await getPortfolioExposures(db, sessionId, portfolioId);
   const all = await db.select().from(factors).orderBy(asc(factors.name));
   if (!exp.available)
-    return { available: false, factors: [], presets: [], percentPerPoint: PERCENT_PER_POINT };
+    return {
+      available: false,
+      coverage: exp.coverage ?? null,
+      factors: [],
+      presets: [],
+      percentPerPoint: PERCENT_PER_POINT,
+    };
   const held = new Set(exp.factors.map((f) => f.slug));
   const slugs = new Set(all.map((f) => f.slug));
   return {
     available: true,
+    coverage: exp.coverage,
     factors: all
       .filter((f) => held.has(f.slug))
       .map((f) => ({ slug: f.slug, name: f.name, category: f.category })),
@@ -128,7 +144,12 @@ export async function runStress(
   } else shocks = input.shocks ?? {};
   const exp = await getPortfolioExposures(db, sessionId, portfolioId);
   if (!exp.available)
-    return { available: false, reason: exp.reason, missingTickers: exp.missingTickers };
+    return {
+      available: false,
+      reason: exp.reason,
+      missingTickers: exp.missingTickers,
+      coverage: exp.coverage,
+    };
 
   const byTicker = new Map<string, StressHolding>(
     exp.holdings.map((h) => [h.ticker, { ticker: h.ticker, weight: h.weight, exposures: {} }]),
@@ -147,6 +168,7 @@ export async function runStress(
   const names = new Map(exp.factors.map((f) => [f.slug, f.name]));
   return {
     available: true,
+    coverage: exp.coverage,
     shocks,
     ignored: Object.keys(shocks).filter((s) => !held.has(s)),
     portfolioImpact: result.portfolioImpact,

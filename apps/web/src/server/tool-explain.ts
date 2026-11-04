@@ -7,6 +7,7 @@ import type { Limiter } from "./rate-limit";
 import { getBenchmark } from "./benchmark";
 import { getRebalance } from "./rebalance";
 import { getSimulation } from "./simulation";
+import { coverageFact } from "./exposures";
 import { runStress, STRESS_PRESETS } from "./stress";
 
 export type ToolParams =
@@ -50,6 +51,8 @@ async function stressFacts(
       text: `each exposure point moves a stock by ${pct(r.percentPerPoint, 0)} under a full-size shock`,
     },
   ];
+  const covers = coverageFact(r.coverage);
+  if (covers) list.push(covers);
   for (const f of r.factors.slice(0, 3))
     list.push({
       label: "Force driving the result",

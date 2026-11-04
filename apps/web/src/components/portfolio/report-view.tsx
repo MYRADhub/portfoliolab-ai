@@ -13,6 +13,7 @@ import type { Insight } from "@/server/insights";
 import type { StressOutcome } from "@/server/stress";
 import type { Terminal } from "@/server/terminal";
 import { AreaSeries } from "@/components/charts/area-series";
+import { CoverageNote } from "./coverage-note";
 import { WithPortfolio } from "./with-portfolio";
 
 const PRESETS = ["rate-shock", "ai-pullback", "recession"];
@@ -166,11 +167,12 @@ function Report({ id }: { id: string }) {
       <Section title="Hidden concentration">
         {!x.available ? (
           <p className="text-muted-foreground">
-            Exposure data is not available for every holding, so concentration by economic force
+            Too little of this portfolio has exposure data, so concentration by economic force
             cannot be shown.
           </p>
         ) : (
           <>
+            <CoverageNote coverage={x.coverage} what="This section" />
             <p>
               By sector the portfolio looks like{" "}
               <strong>{x.concentration.effectiveSectors.toFixed(1)}</strong> groups; by economic
@@ -212,7 +214,7 @@ function Report({ id }: { id: string }) {
       <Section title="Stress scenarios (illustrative)">
         {stress.length === 0 ? (
           <p className="text-muted-foreground">
-            Stress tests need exposure data for every holding.
+            Stress tests need exposure data for at least half of the portfolio.
           </p>
         ) : (
           <ul className="space-y-1">

@@ -25,7 +25,7 @@ import {
   type NewsClass,
 } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
-import { getPortfolioExposures } from "./exposures";
+import { getPortfolioExposures, isFullyProfiled } from "./exposures";
 import { latestClassifications, mergeClusters, type LinkRow } from "./news-links";
 import { monthsAgo } from "./portfolio-data";
 import type { RadarItem } from "./radar";
@@ -345,6 +345,12 @@ export async function whatIfAdd(
   const exp = await getPortfolioExposures(db, sessionId, portfolioId);
   if (!exp.available)
     return { available: false, reason: exp.reason, missingTickers: exp.missingTickers };
+  if (!isFullyProfiled(exp))
+    return {
+      available: false,
+      reason: "missing_exposures",
+      missingTickers: exp.coverage.missing.map((m) => m.ticker),
+    };
   if (exp.holdings.some((h) => h.ticker === c.ticker))
     return { available: false, reason: "already_held", missingTickers: [] };
   const profile = (await exposureMap(db)).get(c.id);

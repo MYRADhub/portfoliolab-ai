@@ -1130,6 +1130,23 @@ A free Neon Postgres in `iad1`, next to the functions. The real data was copied 
 **45.5 The deck's title slide shows citations as markers.** Final. Who: Me.
 Found while taking the screenshots: the title slide printed citation tokens such as "[F3, F7]" as raw text. It now renders them like every other slide.
 
+## 46. A tour that opens each visit, and exposure pages that work on part of a portfolio (added 2026-11-04)
+
+**46.1 The tour opens by itself once per visit.** Final. Who: You (each visit, with an opt-out), Me (the details).
+The first time a visit (a browser tab) reaches the dashboard, the guided tour opens. Moving around or reloading during the same visit does not reopen it. A visit that starts on another page, such as a shared link to a company, is left alone until it reaches the dashboard. Every step has a visible "Skip tour" button, and a "Don't start this tour automatically" checkbox that the browser remembers. The Tutorial button always works. The old "New here?" welcome card is gone, because the tour now replaces it; the getting-started checklist stays.
+
+**46.2 A shorter tour about today's app.** Final. Who: You (refresh, about eight steps), Me (the steps).
+There are nine steps: welcome, the portfolio picker, the written summary, what to know now, News with "How we judged this", the research assistant, portfolio fit on a company page (AMD, which the example portfolio does not hold), the analysis tools, and the Guide. Each spotlights the real control, and four of them carry a highlighted "Try it" hint. The old tour sent people to Forces and Evidence, which have nothing to show on the current real data.
+
+**46.3 Exposure pages work on the profiled part of a portfolio.** Final. Who: You (partial coverage), Me (the rule).
+Exposure profiles exist for 24 companies, so the example portfolio (missing COST, LLY and V) and almost any portfolio a visitor builds used to get "missing exposures" on Exposures, Stress Lab and the Report. These now analyse the holdings that have a profile, with their weights scaled up to 100%, as long as they make up at least half the portfolio. A note names every holding left out and its weight; below half, the page says what is missing. The figures given to the AI explanations and the assistant carry the same note, so they cannot describe part of the portfolio as the whole of it.
+
+**46.4 Where a missing profile would count as zero, all holdings are still required.** Final. Who: Me.
+Portfolio fit's exposure part, the "smallest net exposure" mix in Rebalance Lab, the what-if score, Discovery, Compare and the dashboard's insight cards and summary all treat a holding without a profile as having no exposure, which would be wrong. They keep requiring every holding to be profiled; the company page now names the missing holdings and says the price backtest still covers everything. Forces is unchanged: its estimate needs more profiled companies than exist, and it says so.
+
+**46.5 The company page no longer shows a made-up position size on news.** Final. Who: Me.
+Found while testing the tour: a company's own page scores its news at a neutral 25% weight, and the cards printed that as "25% of portfolio". Those cards now name the company without a weight.
+
 ---
 
 ## 13. Mistakes made and fixed (for honesty)

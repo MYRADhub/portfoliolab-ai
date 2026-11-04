@@ -13,7 +13,7 @@ import {
 } from "@portfolio-lab/finance";
 import { pct } from "@/lib/format";
 import { AppError } from "./errors";
-import { getPortfolioExposures } from "./exposures";
+import { getPortfolioExposures, isFullyProfiled } from "./exposures";
 import { loadPortfolioWithPrices, monthsAgo } from "./portfolio-data";
 import { BENCHMARK_SYMBOL } from "./benchmark";
 
@@ -139,10 +139,12 @@ export async function comparePortfolios(
       volatility: annualizedVolatility(r),
       maxDrawdown: maxDrawdown(r),
       sharpe: sharpeRatio(r, 0),
-      effectiveSectors: x.available ? x.concentration.effectiveSectors : null,
-      effectiveFactors: x.available ? x.concentration.effectiveFactors : null,
+      effectiveSectors: x.available && isFullyProfiled(x) ? x.concentration.effectiveSectors : null,
+      effectiveFactors: x.available && isFullyProfiled(x) ? x.concentration.effectiveFactors : null,
       topForce:
-        x.available && x.factors[0] ? { name: x.factors[0].name, share: x.factors[0].share } : null,
+        x.available && isFullyProfiled(x) && x.factors[0]
+          ? { name: x.factors[0].name, share: x.factors[0].share }
+          : null,
       beta: benchRets ? benchmarkRelative(r, benchRets).beta : null,
     };
   };

@@ -155,6 +155,7 @@ export function Nav() {
           type="button"
           aria-expanded={open}
           aria-controls="nav-tools"
+          data-tour="nav-tools"
           onClick={toggle}
           className={cn(
             "flex items-center justify-between rounded-md px-3 pb-1 text-[0.66rem] font-semibold tracking-wider text-muted-foreground uppercase hover:text-foreground",

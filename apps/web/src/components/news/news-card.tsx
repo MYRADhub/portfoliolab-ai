@@ -69,10 +69,13 @@ export function NewsCard({
   item,
   compact = false,
   portfolioId,
+  showWeights = true,
 }: {
   item: NewsCardItem;
   compact?: boolean;
   portfolioId?: string;
+  /** False where the scoring weight is not a real position, such as a company's own page. */
+  showWeights?: boolean;
 }) {
   const [judging, setJudging] = useState(false);
   const r = item.relevance;
@@ -111,15 +114,24 @@ export function NewsCard({
         {c && !compact && (
           <ImportanceMeter value={c.fundamentalImportance} tone={METER_TONE[key]} />
         )}
-        <ul className="flex flex-wrap gap-1.5" aria-label="Holdings touched">
+        <ul
+          className="flex flex-wrap gap-1.5"
+          aria-label={showWeights ? "Holdings touched" : "Companies"}
+        >
           {r.matched.map((m) => (
             <li
               key={m.ticker}
               className="rounded-md border px-1.5 py-0.5 text-xs"
-              title={`${pct(m.linkScore, 0)} sure the story is about ${m.ticker}; ${pct(m.weight, 0)} of your portfolio`}
+              title={
+                showWeights
+                  ? `${pct(m.linkScore, 0)} sure the story is about ${m.ticker}; ${pct(m.weight, 0)} of your portfolio`
+                  : `${pct(m.linkScore, 0)} sure the story is about ${m.ticker}`
+              }
             >
-              <span className="font-semibold">{m.ticker}</span>{" "}
-              <span className="text-muted-foreground">{pct(m.weight, 0)} of portfolio</span>
+              <span className="font-semibold">{m.ticker}</span>
+              {showWeights && (
+                <span className="text-muted-foreground"> {pct(m.weight, 0)} of portfolio</span>
+              )}
             </li>
           ))}
         </ul>

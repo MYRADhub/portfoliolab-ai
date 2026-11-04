@@ -17,7 +17,7 @@ import {
 } from "@portfolio-lab/finance";
 import type { Db } from "@portfolio-lab/db";
 import { AppError } from "./errors";
-import { getPortfolioExposures } from "./exposures";
+import { getPortfolioExposures, isFullyProfiled } from "./exposures";
 import { loadPortfolioWithPrices, monthsAgo } from "./portfolio-data";
 
 export const REBALANCE_YEARS = 3;
@@ -77,14 +77,15 @@ export async function getRebalance(
 
   // Hidden-exposure view: only when every holding has an exposure profile.
   const exp = await getPortfolioExposures(db, sessionId, portfolioId);
-  const slugs = exp.available ? exp.factors.map((f) => f.slug) : [];
+  const full = exp.available && isFullyProfiled(exp);
+  const slugs = full ? exp.factors.map((f) => f.slug) : [];
   const signed = new Map<string, Record<string, number>>();
-  if (exp.available)
+  if (full)
     for (const c of exp.cells)
       signed.set(c.ticker, { ...signed.get(c.ticker), [c.factor]: c.signed });
   const matrix = hs.map((h) => slugs.map((s) => signed.get(h.ticker)?.[s] ?? 0));
   const exposureOf = (w: number[]) => {
-    if (!exp.available) return { effectiveFactors: null, grossLoading: null };
+    if (!full) return { effectiveFactors: null, grossLoading: null };
     const loadings = factorLoadings(
       hs.map((h, i) => ({
         ticker: h.ticker,
@@ -123,7 +124,7 @@ export async function getRebalance(
       description: "Each holding contributes the same share of the portfolio's ups and downs.",
       w: riskParityWeights(cov),
     },
-    ...(exp.available
+    ...(full
       ? [
           {
             id: "min_exposure" as const,

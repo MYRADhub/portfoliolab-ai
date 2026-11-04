@@ -232,6 +232,16 @@ test.describe("research page", () => {
     await expect(page.getByText("AI draft, not reviewed")).toHaveCount(0);
   });
 
+  test("the company page's news names the companies without a made-up position size", async ({
+    page,
+  }) => {
+    await page.goto("/research/NVDA");
+    const news = page.getByRole("region", { name: "Recent news" });
+    await expect(news.getByRole("article").first()).toBeVisible();
+    await expect(news.getByRole("list", { name: "Companies" }).first()).toContainText("NVDA");
+    await expect(news).not.toContainText("of portfolio");
+  });
+
   test("a company without SEC figures says so", async ({ page }) => {
     await page.goto("/research/MSFT");
     await expect(

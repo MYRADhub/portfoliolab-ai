@@ -10,7 +10,7 @@ import { runAssistant } from "@portfolio-lab/explain";
 import { pct, signedPct } from "@/lib/format";
 import { AppError } from "./errors";
 import { buildPortfolioFacts, DISCLAIMER, EXPLAIN_LIMIT } from "./explain";
-import { getPortfolioExposures } from "./exposures";
+import { coverageFact, getPortfolioExposures } from "./exposures";
 import { getMarketRadar } from "./radar";
 import { RateLimiter, type Limiter } from "./rate-limit";
 import { getCompanyResearch, whatIfAdd } from "./research";
@@ -80,7 +80,9 @@ export function buildAssistantTools(
                   : `missing for ${x.missingTickers.join(", ")}`,
             },
           ];
+        const covers = coverageFact(x.coverage);
         return [
+          ...(covers ? [covers] : []),
           {
             label: "Effective number of sectors",
             text: x.concentration.effectiveSectors.toFixed(1),
@@ -210,7 +212,9 @@ export function buildAssistantTools(
           return [{ label: "Stress test", text: "not available without exposure data" }];
         if (!r.touched)
           return [{ label: "Stress test", text: "no holding is exposed to this scenario" }];
+        const covers = coverageFact(r.coverage);
         return [
+          ...(covers ? [covers] : []),
           { label: `Estimated impact, ${preset}`, text: signedPct(r.portfolioImpact, 2) },
           { label: "Vulnerability score", text: `${r.vulnerability.toFixed(1)} of 10` },
           {

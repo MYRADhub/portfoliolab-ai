@@ -52,7 +52,7 @@ test.describe("stress API", () => {
     expect((await post({ preset: "nope" })).status()).toBe(400);
   });
 
-  test("reports unavailable when holdings lack exposures, and hides other sessions' portfolios", async ({
+  test("stresses the profiled part of a partly profiled portfolio, and hides other sessions' portfolios", async ({
     page,
     playwright,
   }) => {
@@ -61,8 +61,17 @@ test.describe("stress API", () => {
     const r = (await (
       await page.request.post(`/api/portfolios/${id}/stress`, { data: { shocks: { rates: 1 } } })
     ).json()) as Json;
-    expect(r).toMatchObject({ available: false, reason: "missing_exposures" });
-    expect(r.missingTickers).toContain("JPM");
+    // Stress runs on the profiled 80% and says what it leaves out.
+    expect(r.available).toBe(true);
+    expect(r.coverage.missing.map((m: Json) => m.ticker)).toEqual(["JPM"]);
+    expect(r.holdings.map((h: Json) => h.ticker)).not.toContain("JPM");
+    // Discovery weighs every holding, so it still needs all of them profiled.
+    const d = (await (await page.request.get(`/api/portfolios/${id}/discovery`)).json()) as Json;
+    expect(d).toMatchObject({
+      available: false,
+      reason: "missing_exposures",
+      missingTickers: ["JPM"],
+    });
 
     const other = await newSession(playwright);
     expect((await other.get(`/api/portfolios/${id}/stress`)).status()).toBe(404);
@@ -96,11 +105,24 @@ test.describe("stress lab page", () => {
     await expect(page.getByText("Choose a scenario or move a slider to begin.")).toBeVisible();
   });
 
-  test("explains what is needed when exposures are missing", async ({ page }) => {
+  test("stresses the profiled holdings of a partly profiled portfolio and names the rest", async ({
+    page,
+  }) => {
     const s = await startUiSession(page);
     await s.create("Partial", EXAMPLE);
     await page.goto("/stress");
-    await expect(page.getByText(/Stress tests need exposure profiles/)).toBeVisible();
+    await expect(page.getByRole("note", { name: "Exposure coverage" })).toContainText("JPM (20%)");
+    await expect(page.getByRole("slider").first()).toBeVisible();
+  });
+
+  test("explains what is needed when under half the portfolio is profiled", async ({ page }) => {
+    const s = await startUiSession(page);
+    await s.create("Mostly unprofiled", [
+      { ticker: "JPM", weightPct: 70 },
+      { ticker: "NVDA", weightPct: 30 },
+    ]);
+    await page.goto("/stress");
+    await expect(page.getByText(/needs exposure profiles for at least half/)).toContainText("JPM");
     await expect(page.getByRole("slider")).toHaveCount(0);
   });
 });

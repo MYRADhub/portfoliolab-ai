@@ -13,7 +13,7 @@ import {
   type StressHolding,
 } from "@portfolio-lab/finance";
 import { AppError } from "./errors";
-import { getPortfolioExposures } from "./exposures";
+import { getPortfolioExposures, isFullyProfiled } from "./exposures";
 import { BENCHMARK_TICKER, closesFor } from "./market-snapshot";
 import { loadPortfolioWithPrices, monthsAgo, type LoadedPortfolio } from "./portfolio-data";
 import { STRESS_PRESETS } from "./stress";
@@ -195,7 +195,7 @@ export async function fitFor(
   let overlaps: PortfolioFit["overlaps"] = [];
   let stressRows: PortfolioFit["stress"] = [];
   let exposureGrid: PortfolioFit["exposureGrid"] = null;
-  if (exp.available) {
+  if (exp.available && isFullyProfiled(exp)) {
     const byTicker = new Map<string, Record<string, { signed: number; confidence: number }>>();
     for (const cell of exp.cells) {
       const v = byTicker.get(cell.ticker) ?? {};

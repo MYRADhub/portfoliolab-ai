@@ -26,6 +26,7 @@ import { isReliable, RELIABLE_T } from "@/lib/force-reliability";
 import { pct, signedPct } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 import type { ForceReturns } from "@/server/forces";
+import { CoverageNote, NotEnoughCoverage } from "./coverage-note";
 import { WithPortfolio } from "./with-portfolio";
 
 export function ForcesView() {
@@ -45,11 +46,18 @@ function Content({ id }: { id: string }) {
     return (
       <Card data-tour="forces-attribution">
         <CardContent>
-          <p>
-            {data.reason === "missing_exposures"
-              ? `This needs an exposure profile for every holding. Missing: ${data.missingTickers.join(", ")}.`
-              : "Not enough companies with exposure profiles and prices to estimate what each force did."}
-          </p>
+          {data.reason === "missing_exposures" ? (
+            <NotEnoughCoverage
+              coverage={data.coverage}
+              missingTickers={data.missingTickers}
+              what="This page"
+            />
+          ) : (
+            <p>
+              Not enough companies with exposure profiles and prices to estimate what each force
+              did.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -68,6 +76,7 @@ function Content({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
+      <CoverageNote coverage={data.coverage} what="This attribution" />
       <HowToRead>
         <p>
           Every day, all the companies in the index are lined up by how much each depends on each
