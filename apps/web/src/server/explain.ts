@@ -15,7 +15,7 @@ import { getPortfolioCorrelation } from "./correlation";
 import { getPortfolioExposures } from "./exposures";
 import { buildMoveFacts, getPortfolioMove, moveTask, type PortfolioMove } from "./move";
 import { getPortfolioAnalytics } from "./portfolios";
-import { RateLimiter } from "./rate-limit";
+import { RateLimiter, type Limiter } from "./rate-limit";
 
 export const DISCLAIMER =
   "PortfolioLab provides research information, not investment advice. Figures are computed from historical data and do not predict future results.";
@@ -120,7 +120,7 @@ export async function runGroundedExplanation(
   sessionId: string,
   facts: Fact[],
   generator: ExplainGenerator,
-  opts: { purpose: string; task?: string; limiter?: RateLimiter },
+  opts: { purpose: string; task?: string; limiter?: Limiter },
 ): Promise<ExplainResult> {
   const {
     purpose,
@@ -174,7 +174,7 @@ export async function getExplanation(
   sessionId: string,
   portfolioId: string,
   generator: ExplainGenerator,
-  opts: { now?: Date; limiter?: RateLimiter } = {},
+  opts: { now?: Date; limiter?: Limiter } = {},
 ): Promise<ExplainResult> {
   const facts = await buildPortfolioFacts(db, sessionId, portfolioId, opts.now);
   return runGroundedExplanation(db, sessionId, facts, generator, {
@@ -189,7 +189,7 @@ export async function getMoveExplanation(
   sessionId: string,
   portfolioId: string,
   generator: ExplainGenerator,
-  opts: { date?: string; now?: Date; limiter?: RateLimiter } = {},
+  opts: { date?: string; now?: Date; limiter?: Limiter } = {},
 ): Promise<ExplainResult & { move: PortfolioMove }> {
   const move = await getPortfolioMove(db, sessionId, portfolioId, {
     date: opts.date,

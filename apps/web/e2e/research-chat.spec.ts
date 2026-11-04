@@ -405,6 +405,9 @@ test.describe("visualizer and presentation", () => {
     await page.getByRole("button", { name: "Prepare presentation" }).click();
     const slide = page.getByRole("region", { name: /^Slide \d+ of 5$/ });
     await expect(slide).toContainText("Mock Deck");
+    // A citation on the title slide shows as a small marker, never as raw "[F1]" text.
+    await expect(slide).toContainText("What the research found");
+    await expect(slide).not.toContainText("[F");
     await page.keyboard.press("ArrowRight");
     await expect(slide.getByRole("heading", { name: "Summary" })).toBeVisible();
     await page.getByRole("button", { name: "Presenter view" }).click();

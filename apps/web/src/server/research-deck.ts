@@ -10,7 +10,7 @@ import {
 } from "@portfolio-lab/explain";
 import { AppError } from "./errors";
 import { DISCLAIMER } from "./explain";
-import { RateLimiter } from "./rate-limit";
+import { RateLimiter, type Limiter } from "./rate-limit";
 import { getThread, type ChatMessage, type StoredAnswer } from "./research-chat";
 
 export const DECK_LIMIT = { max: 10, windowMs: 60 * 60 * 1000 };
@@ -92,7 +92,7 @@ export async function makeDeck(
   sessionId: string,
   threadId: string,
   gen: DeckGenerator,
-  opts: { limiter?: RateLimiter } = {},
+  opts: { limiter?: Limiter } = {},
 ): Promise<StoredDeck> {
   const t = await getThread(db, sessionId, threadId);
   return buildAndStore(
@@ -114,7 +114,7 @@ export async function buildAndStore(
   input: DeckInput,
   gen: DeckGenerator,
   owner: DeckOwner,
-  opts: { limiter?: RateLimiter } = {},
+  opts: { limiter?: Limiter } = {},
 ): Promise<StoredDeck> {
   if (input.sections.length === 0)
     throw new AppError(

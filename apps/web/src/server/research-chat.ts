@@ -12,7 +12,7 @@ import { withHistory, type Turn } from "./assistant";
 import { compareFacts, type FactChanges } from "./fact-changes";
 import { AppError } from "./errors";
 import { DISCLAIMER } from "./explain";
-import { RateLimiter } from "./rate-limit";
+import { RateLimiter, type Limiter } from "./rate-limit";
 import { buildResearchTools, type EdgarLike } from "./research-tools";
 
 export type ResearchMode = "quick" | "deep";
@@ -167,7 +167,7 @@ export async function prepareResearch(
   db: Db,
   sessionId: string,
   req: ResearchRequest,
-  opts: { limiter?: RateLimiter } = {},
+  opts: { limiter?: Limiter } = {},
 ): Promise<PreparedResearch> {
   const existing = req.threadId ? await ownedThread(db, sessionId, req.threadId) : null;
   let refresh: PreparedResearch["refresh"] = null;

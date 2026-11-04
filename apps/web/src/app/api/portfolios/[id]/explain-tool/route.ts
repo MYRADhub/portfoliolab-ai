@@ -3,6 +3,7 @@ import { createOpenAIExplainer } from "@portfolio-lab/explain";
 import { route, AppError } from "@/server/errors";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
+import { aiLimiterFor } from "@/server/ai-guard";
 import { requireSessionId } from "@/server/current-session";
 import { explainTool } from "@/server/tool-explain";
 
@@ -31,5 +32,9 @@ export const POST = route<{ id: string }>(async (req, _rid, ctx) => {
   const body = bodySchema.parse(await req.json());
   const apiKey = env().OPENAI_API_KEY;
   if (!apiKey) throw new AppError("unavailable", "Explanations are not configured on this server");
-  return Response.json(await explainTool(db(), sid, id, body, createOpenAIExplainer(apiKey)));
+  return Response.json(
+    await explainTool(db(), sid, id, body, createOpenAIExplainer(apiKey), {
+      limiter: aiLimiterFor(req, "explain"),
+    }),
+  );
 });

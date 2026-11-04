@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createOpenAIDeckGenerator } from "@portfolio-lab/explain";
+import { aiLimiterFor } from "@/server/ai-guard";
 import { requireSessionId } from "@/server/current-session";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
@@ -21,6 +22,8 @@ export const POST = route(async (req) => {
   const key = env().OPENAI_API_KEY;
   if (!key) throw new AppError("unavailable", "Presentations are not configured on this server");
   return Response.json({
-    deck: await makeNotebookDeck(db(), sid, pid(req), createOpenAIDeckGenerator(key)),
+    deck: await makeNotebookDeck(db(), sid, pid(req), createOpenAIDeckGenerator(key), {
+      limiter: aiLimiterFor(req, "deck"),
+    }),
   });
 });

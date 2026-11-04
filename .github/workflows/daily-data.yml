@@ -1,0 +1,35 @@
+name: Daily data
+
+# Weekdays after the US close: refresh prices for every S&P 500 company, SPY and the exposure-check funds, then scan
+# the news for the example and sample portfolios. Writes to the production database. Can also be run by hand.
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prices
+        run: |
+          db=$(node -e 'console.log(new URL(process.env.DATABASE_URL).pathname.slice(1))')
+          pnpm real:seed --db "$db" --steps prices,benchmark,proxies
+      - name: News
+        run: pnpm --filter @portfolio-lab/web exec tsx scripts/scan-news.mts

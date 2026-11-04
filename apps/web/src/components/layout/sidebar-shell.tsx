@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { RAIL_HIDDEN } from "./app-sidebar";
@@ -15,13 +16,14 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="flex items-center justify-between gap-2.5 md:mb-4 md:group-data-[rail=true]/sidebar:mb-1">
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="sr-only">Home: </span>
           <BrandMark />
           <div className={cn("leading-tight", RAIL_HIDDEN)}>
             <div className="text-base font-semibold tracking-tight">PortfolioLab</div>
             <div className="text-[0.7rem] text-muted-foreground">Research the hidden risks</div>
           </div>
-        </div>
+        </Link>
         <button
           type="button"
           aria-expanded={open}

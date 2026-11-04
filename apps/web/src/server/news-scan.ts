@@ -20,7 +20,7 @@ import {
 } from "@portfolio-lab/db";
 import { AppError } from "./errors";
 import { getNewsAnalysis, type NewsAnalysis } from "./news-analysis";
-import { RateLimiter } from "./rate-limit";
+import { RateLimiter, type Limiter } from "./rate-limit";
 
 export const SCAN_DAYS = 7;
 /** Confidence for a link that rests only on the search that found the article. */
@@ -155,7 +155,7 @@ export async function scanPortfolioNews(
   sessionId: string,
   portfolioId: string,
   deps: NewsScanDeps,
-  opts: { now?: Date; limiter?: RateLimiter } = {},
+  opts: { now?: Date; limiter?: Limiter } = {},
 ): Promise<NewsScanResult> {
   const now = opts.now ?? new Date();
   const [p] = await db
@@ -303,7 +303,7 @@ export async function classifyNewsStory(
   portfolioId: string,
   articleId: number,
   classifier: Classifier | null,
-  opts: { now?: Date; limiter?: RateLimiter } = {},
+  opts: { now?: Date; limiter?: Limiter } = {},
 ): Promise<NewsAnalysis> {
   const before = await getNewsAnalysis(db, sessionId, portfolioId, articleId, { now: opts.now });
   if (before.classifications.length) return before;

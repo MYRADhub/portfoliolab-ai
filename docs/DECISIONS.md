@@ -1113,6 +1113,23 @@ The end-to-end tests blank the Finnhub and Marketaux keys for the app they start
 **44.1 The app and CI run on Node 24.** Final. Who: You.
 `.nvmrc` is 24 (the current long-term-support line), the root `engines` field requires 24 or later, and every package's `@types/node` is 24. The CI actions moved to their Node 24 releases and the jobs are pinned to `ubuntu-24.04`, so the runner image changes only when we choose. Typecheck, lint, unit tests and all 382 end-to-end tests pass on Node 24.22.2.
 
+## 45. Going public: a landing page, AI allowances, Neon and a daily refresh (added 2026-11-03)
+
+**45.1 A landing page at the root.** Final. Who: You (a product showcase), Me (the contents).
+`/` is now a landing page instead of a redirect to the dashboard. It explains the product in five sections (dashboard, news with its reasoning, the research assistant, portfolio fit, presentations), each with a real screenshot of the real-data app in the visitor's theme, then how answers are checked, the analysis tools, and where the data comes from. It says plainly that the exposure profiles are illustrative for now. The app's logo leads back to it. The screenshots are taken by `apps/web/scripts/capture-landing.mts`, so they can be refreshed.
+
+**45.2 AI allowances that hold on a public site.** Final. Who: You (caps per day and per address), Me (the numbers).
+Sessions are free to create, so the per-session limits alone do not protect the OpenAI bill. Every AI call now also counts against the caller's network address (per hour) and a site-wide budget per feature (per 24 hours), checked and recorded in one transaction with the session limit, and only when an AI call will actually be made (a cached explanation costs nothing). Defaults per day: 400 quick and 60 deep research questions, 60 presentations, 600 explanations, 40 news scans, 400 single-story classifications. `AI_LIMIT_SCALE` scales them; `AI_ENABLED=0` turns AI off while everything else keeps working.
+
+**45.3 The database is Neon, added through Vercel.** Final. Who: You.
+A free Neon Postgres in `iad1`, next to the functions. The real data was copied from `pl_real` with its structure but without any visitor data (sessions, portfolios, research threads, allowance records). `ANALYTICS_URL` is now optional, because the web app does not call the Python service yet.
+
+**45.4 A daily refresh from GitHub Actions.** Final. Who: You.
+`.github/workflows/daily-data.yml` runs on weekdays at 22:30 UTC (after the US close) and by hand: it refreshes prices for every S&P 500 company, SPY and the exposure-check funds, then runs `scripts/scan-news.mts`, which scans the example and sample portfolios under one fixed system session. News is shared, so every visitor's News page fills from it. SEC filings are not refreshed daily yet.
+
+**45.5 The deck's title slide shows citations as markers.** Final. Who: Me.
+Found while taking the screenshots: the title slide printed citation tokens such as "[F3, F7]" as raw text. It now renders them like every other slide.
+
 ---
 
 ## 13. Mistakes made and fixed (for honesty)

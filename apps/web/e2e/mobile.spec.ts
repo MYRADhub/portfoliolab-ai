@@ -10,6 +10,16 @@ async function noPageOverflow(page: Page) {
 }
 
 test.describe("mobile layout", () => {
+  test("the landing page fits a phone and leads into the app", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await noPageOverflow(page);
+    await page.locator("#data").scrollIntoViewIfNeeded();
+    await noPageOverflow(page);
+    await page.getByRole("banner").getByRole("link", { name: "Open the app" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
   test("the navigation folds behind a menu button, stays reachable, and closes after a choice", async ({
     page,
   }) => {

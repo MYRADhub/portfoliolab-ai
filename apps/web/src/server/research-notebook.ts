@@ -11,7 +11,7 @@ import type { DeckGenerator } from "@portfolio-lab/explain";
 import { AppError } from "./errors";
 import type { ChatMessage, StoredAnswer } from "./research-chat";
 import { buildAndStore, deckInputFrom, type StoredDeck } from "./research-deck";
-import type { RateLimiter } from "./rate-limit";
+import type { Limiter } from "./rate-limit";
 
 export const MAX_PINS = 200;
 export const NOTE_MAX = 2000;
@@ -233,7 +233,7 @@ export async function makeNotebookDeck(
   sessionId: string,
   portfolioId: string | null,
   gen: DeckGenerator,
-  opts: { limiter?: RateLimiter } = {},
+  opts: { limiter?: Limiter } = {},
 ): Promise<StoredDeck> {
   const p = await ownedPortfolio(db, sessionId, portfolioId);
   const pins = await listPins(db, sessionId, portfolioId);

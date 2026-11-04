@@ -9,10 +9,11 @@ import {
 } from "./helpers";
 
 test.describe("first visit", () => {
-  test("the root redirects to the dashboard, which invites creating a portfolio", async ({
+  test("the landing page leads to the dashboard, which invites creating a portfolio", async ({
     page,
   }) => {
     await page.goto("/");
+    await page.getByRole("banner").getByRole("link", { name: "Open the app" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByText("You have no portfolios yet.")).toBeVisible();

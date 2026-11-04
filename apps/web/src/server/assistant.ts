@@ -12,7 +12,7 @@ import { AppError } from "./errors";
 import { buildPortfolioFacts, DISCLAIMER, EXPLAIN_LIMIT } from "./explain";
 import { getPortfolioExposures } from "./exposures";
 import { getMarketRadar } from "./radar";
-import { RateLimiter } from "./rate-limit";
+import { RateLimiter, type Limiter } from "./rate-limit";
 import { getCompanyResearch, whatIfAdd } from "./research";
 import { runStress, STRESS_PRESETS } from "./stress";
 
@@ -235,7 +235,7 @@ export async function askAssistant(
   portfolioId: string,
   question: string,
   model: AssistantModel,
-  opts: { now?: Date; limiter?: RateLimiter; history?: readonly Turn[] } = {},
+  opts: { now?: Date; limiter?: Limiter; history?: readonly Turn[] } = {},
 ): Promise<AssistantResult> {
   const q = question.trim();
   if (q.length < 3 || q.length > QUESTION_MAX)

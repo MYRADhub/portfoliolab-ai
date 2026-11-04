@@ -150,6 +150,13 @@ Copy `.env.example` to `.env`. Only the database URL is needed to start.
 | `EXPERIMENT_PILOT`       | `1` marks new participants as pilot participants, reported apart from the main analysis.                                    |
 | `STUDY_*`                | The approval details shown on the consent screen. The study enrols nobody until they are set; see `docs/study-protocol.md`. |
 | Other `*_API_KEY`        | Optional paid or rate-limited data providers (Tiingo, Finnhub, Marketaux). Not needed.                                      |
+| `EXAMPLE_DATA`           | `1` gives every new visitor the example and sample portfolios.                                                              |
+| `AI_ENABLED`             | `0` switches every AI feature off; everything else keeps working.                                                           |
+| `AI_LIMIT_SCALE`         | Multiplies the per-address hourly and site-wide daily AI allowances (see `apps/web/src/server/ai-guard.ts`).                |
+
+## Running it in public (Vercel)
+
+The live site runs on Vercel with a Neon Postgres database added from the Vercel Marketplace; the Vercel project's root directory is `apps/web`. Production needs `DATABASE_URL` (set by Neon), `OPENAI_API_KEY`, `FINNHUB_API_KEY`, `SEC_USER_AGENT` and `EXAMPLE_DATA=1`. The GitHub workflow `daily-data.yml` refreshes prices and news on weekdays after the US close; it needs the repository secrets `PRODUCTION_DATABASE_URL` (Neon's direct, unpooled URL), `OPENAI_API_KEY` and `FINNHUB_API_KEY`, and can be run by hand from the Actions tab. To refresh the landing page's screenshots, start `pnpm real` and run `pnpm --filter @portfolio-lab/web exec tsx scripts/capture-landing.mts`.
 
 ## Two special tools (both off by default)
 

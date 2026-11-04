@@ -4,7 +4,8 @@ const optionalKey = z.string().min(1).optional();
 
 export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
-  ANALYTICS_URL: z.string().url(),
+  /** The Python analytics service. The web app does not call it yet, so a deployment can leave it unset. */
+  ANALYTICS_URL: z.string().url().optional(),
   OPENAI_API_KEY: optionalKey,
   TIINGO_API_KEY: optionalKey,
   FINNHUB_API_KEY: optionalKey,
@@ -47,6 +48,13 @@ export const envSchema = z.object({
   /** Secret for the exposure review tool at /review. With none set the tool does not exist. */
   REVIEW_TOKEN: z.string().min(16).optional(),
   EXPERIMENT_ADMIN_TOKEN: z.string().min(16).optional(),
+  /** "0" switches every AI feature off (they answer that it is unavailable); everything else keeps working. */
+  AI_ENABLED: z.enum(["0", "1"]).optional(),
+  /**
+   * Multiplies the per-network hourly and site-wide daily AI allowances (see ai-guard.ts). For example 0.5 halves
+   * them; tests raise it so many sessions from one address are not throttled.
+   */
+  AI_LIMIT_SCALE: z.coerce.number().positive().max(10_000).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

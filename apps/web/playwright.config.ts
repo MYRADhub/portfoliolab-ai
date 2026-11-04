@@ -52,6 +52,8 @@ export default defineConfig({
         OPENAI_BASE_URL: `http://127.0.0.1:${MOCK_PORT}/v1`,
         // Keyed news feeds stay off: a real key in the shell would pull live articles into the test database.
         FINNHUB_API_KEY: "",
+        // Every test shares one address, so the per-address and site-wide AI allowances are raised far out of reach.
+        AI_LIMIT_SCALE: "10000",
         MARKETAUX_API_KEY: "",
         LOG_LEVEL: "warn",
         EXPERIMENT_ENABLED: "1",

@@ -3,6 +3,7 @@ import { factsFromEntries } from "@portfolio-lab/explain";
 import type { Db } from "@portfolio-lab/db";
 import { pct, signedPct } from "@/lib/format";
 import { runGroundedExplanation, type ExplainResult } from "./explain";
+import type { Limiter } from "./rate-limit";
 import { getBenchmark } from "./benchmark";
 import { getRebalance } from "./rebalance";
 import { getSimulation } from "./simulation";
@@ -212,10 +213,12 @@ export async function explainTool(
   portfolioId: string,
   p: ToolParams,
   generator: ExplainGenerator,
+  opts: { limiter?: Limiter } = {},
 ): Promise<ExplainResult> {
   const { facts, task } = await buildToolFacts(db, sessionId, portfolioId, p);
   return runGroundedExplanation(db, sessionId, facts, generator, {
     purpose: `tool_${p.tool}`,
     task,
+    limiter: opts.limiter,
   });
 }

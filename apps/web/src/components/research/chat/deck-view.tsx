@@ -109,10 +109,10 @@ function SlideFace({
       {page.kind === "title" && (
         <div className="my-auto space-y-3">
           <h2 className="text-[clamp(1.4rem,3.4vw,2.6rem)] leading-tight font-semibold">
-            {page.title}
+            <Inline text={page.title} facts={facts} />
           </h2>
           <p className="text-[clamp(0.9rem,1.6vw,1.25rem)] text-muted-foreground">
-            {page.subtitle}
+            <Inline text={page.subtitle} facts={facts} />
           </p>
           <p className="text-xs text-muted-foreground">
             PortfolioLab research, {page.date}. {disclaimer}

@@ -5,6 +5,7 @@ import {
   createOpenAIAssistantModel,
   createOpenAIWebSearcher,
 } from "@portfolio-lab/explain";
+import { aiLimiterFor } from "@/server/ai-guard";
 import { requireSessionId } from "@/server/current-session";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
@@ -50,7 +51,9 @@ export const POST = route(async (req, requestId) => {
   const body = bodySchema.parse(await req.json());
   const d = deps();
   const database = db();
-  const prepared = await prepareResearch(database, sid, body);
+  const prepared = await prepareResearch(database, sid, body, {
+    limiter: aiLimiterFor(req, body.mode === "deep" ? "research_deep" : "research_quick"),
+  });
 
   const ctl = new AbortController();
   req.signal?.addEventListener("abort", () => ctl.abort());

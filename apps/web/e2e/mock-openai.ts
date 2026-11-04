@@ -161,7 +161,7 @@ function deckTurn(
   const bad = mode === "ungrounded";
   const deck = {
     title: "Mock Deck",
-    subtitle: "What the research found",
+    subtitle: `What the research found${facts[0] ? ` [${facts[0].id}]` : ""}`,
     slides: [
       {
         title: "Summary",
