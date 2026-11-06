@@ -129,7 +129,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Python Dependencies (`requirements.txt`)
+### Python Dependencies
 ```text
 # --- Math & Data Processing ---
 numpy>=1.26.0
